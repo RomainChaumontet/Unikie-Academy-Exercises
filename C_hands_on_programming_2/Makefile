@@ -40,25 +40,5 @@ clean:
 	cd solutions && make clean_solutions
 
 # dependencies
-
-server.o: server.c msg_def.h
-client.o: client.c msg_def.h
-
-pulse_server.o: pulse_server.c msg_def.h
-pulse_client.o: pulse_client.c msg_def.h
-
-name_lookup_server.o: name_lookup_server.c msg_def.h
-name_lookup_client.o: name_lookup_client.c msg_def.h
-
-iov_server.o: iov_server.c iov_server.h
-iov_client.o: iov_client.c iov_server.h
-
-disconnect_server.o: disconnect_server.c msg_def.h
-disconnect_client.o: disconnect_client.c msg_def.h
-
-unblock_server.o: unblock_server.c msg_def.h
-unblock_client.o: unblock_client.c msg_def.h
-
-event_server.o: event_server.c event_server.h
-event_client.o: event_client.c event_server.h
-
+ipc_sendfile.o: copyfile.h
+ipc_receivefile.o: copyfile.h
