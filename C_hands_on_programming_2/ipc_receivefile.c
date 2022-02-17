@@ -118,7 +118,7 @@ int main (int argc, char *argv[])
 	switch (method) //launching the correct function
 	{
 		case -1:
-			printf("Error. Missing arguments or wrongs arguments. Use --help to know which arguments you can use\n");
+			printf("Error. Missing arguments or wrong arguments. Use --help to know which arguments you can use\n");
 			return EXIT_FAILURE;
 			break;
 		case 999:
