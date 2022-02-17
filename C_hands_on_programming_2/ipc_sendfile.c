@@ -45,7 +45,7 @@ struct option long_options[] =
 int ipc_message(char filename[], char servername[]);
 long int findSize(char file_name[]);
 
-char filename[MAXFILEMAME];
+char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 iov_msg msg;
 char* data;
@@ -53,6 +53,10 @@ int debug =0;
 
 int main (int argc, char *argv[])
 {
+	// variable method store the message used to send data:
+	// 	-1 not specified => will cause an error
+	//	0 help is invoked
+	//	1 message method is invoked
 	int method=-1;
 	int opt;
 	while(1) //loop for taking care of arguments

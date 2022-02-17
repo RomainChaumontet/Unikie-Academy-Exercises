@@ -44,7 +44,7 @@ struct option long_options[] =
 	  {0, 0, 0, 0}
 };
 
-char filename[MAXFILEMAME];
+char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 int debug = 0; // variable to see each step
 send_by_msg msg;
@@ -56,6 +56,10 @@ int writing(char * data, char filename[], unsigned data_size);
 
 int main (int argc, char *argv[])
 {
+	// variable method store the message used to send data:
+	// 	-1 not specified => will cause an error
+	//	0 help is invoked
+	//	1 message method is invoked
 	int method=-1;
 	int opt;
 	while(1)
