@@ -63,11 +63,6 @@ int writing(char * data, char filename[], unsigned data_size);
 
 int main (int argc, char *argv[])
 {
-	// variable 'method' stores the message used to send data:
-	// 	-1 not specified => will cause an error
-	//	0 help is invoked
-	//	1 message method is invoked
-	//	2 queue method is invoked
 	protocol_t protocol = NONE;
 	int opt;
 	while(1)
