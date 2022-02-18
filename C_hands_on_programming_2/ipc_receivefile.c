@@ -111,11 +111,18 @@ int main (int argc, char *argv[])
 		case 'q':
 			if (strlen(optarg) > MAXQUEUENAME)
 			{
-				printf("The name of the queu is too long. Abort\n");
+				printf("The name of the queue is too long. Abort\n");
 				exit(EXIT_FAILURE);
 			}
-			snprintf(queuename, sizeof(queuename),"%s",optarg);
-			printf("The name of the server is %s\n",queuename);
+			if (optarg[0] == '/')
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue%s",optarg);
+			}
+			else
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue/%s",optarg);
+			}
+			printf("The name of the queue is %s\n",queuename);
 			protocol = QUEUE;
 			break;
 		case 'p':

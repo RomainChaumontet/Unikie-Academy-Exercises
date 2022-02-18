@@ -107,8 +107,15 @@ int main (int argc, char *argv[])
 				printf("The name of the queue is too long. Abort\n");
 				exit(EXIT_FAILURE);
 			}
-			snprintf(queuename, sizeof(queuename),"%s",optarg);
-			printf("The name of the server is %s\n",queuename);
+			if (optarg[0] == '/')
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue%s",optarg);
+			}
+			else
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue/%s",optarg);
+			}
+			printf("The name of the queue is %s\n",queuename);
 			protocol = QUEUE;
 			break;
 		case 'p':
@@ -288,7 +295,7 @@ void ipc_queue(char filename[], char queuename[])
 		}
 
 	}
-	printf ("Successfully opened my_queue:\n");
+	printf ("Successfully opened my_queue\n");
 
 	//opening file
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
@@ -351,6 +358,6 @@ void ipc_queue(char filename[], char queuename[])
 	 exit(EXIT_FAILURE);
 	}
 
-	printf("All data sent with succes\n");
+	printf("All data sent with success\n");
 	exit(EXIT_SUCCESS);
 }
