@@ -3,13 +3,12 @@
 // is given as a command-line argument. 													//
 //------------------------------------------------------------------------------------------//
 // The different methods accepted will be:													//
-//		* message queue 																	//
 // 		* pipe 																				//
 //		* share memory																		//
 //------------------------------------------------------------------------------------------//
 // For the moment theses methods are implemented:											//
-// 		* message passing 																	//
-// 		*																					//
+//		* message queue 																	//
+// 		* message passing																	//
 //------------------------------------------------------------------------------------------//
 // This file should take as argument:														//
 //		* --help to print out a help text containing short description of all supported		//
@@ -28,6 +27,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/dispatch.h>
+#include <mqueue.h>
+#include <fcntl.h>
 #include "copyfile.h"
 
 
@@ -44,20 +45,18 @@ struct option long_options[] =
 
 int ipc_message(char filename[], char servername[]);
 long int findSize(char file_name[]);
+void ipc_queue(char filename[], char queuename[]);
 
 char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
+char queuename[MAXQUEUENAME];
 iov_msg msg;
 char* data;
 int debug =0;
 
 int main (int argc, char *argv[])
 {
-	// variable method store the message used to send data:
-	// 	-1 not specified => will cause an error
-	//	0 help is invoked
-	//	1 message method is invoked
-	int method=-1;
+	protocol_t protocol = NONE;
 	int opt;
 	while(1) //loop for taking care of arguments
 	{
@@ -76,15 +75,15 @@ int main (int argc, char *argv[])
 				"The program accept the following arguments:\n"
 				"	--help to print this information\n"
 				"	--message <ServerName> to send the data to the receiver by IPC message passing\n"
-				"	--queue <TBD> to send the data to the receiver by IPC queue #not yet implemented\n"
+				"	--queue <Queue name> to send the data to the receiver by IPC queue\n"
 				"	--pipe <TBD> to send the data to the receiver by IPC pipe #not yet implemented\n"
 				"	--shm <TBD> to send the data to the receiver with a shared memory #not yet implemented\n"
 				" 	--file <filename> to specify the filename which has to be read\n"
 			);
-			method=0;
+			protocol=HELP;
 			break;
 		case 'f':
-			if (strlen(optarg) > MAXFILEMAME)
+			if (strlen(optarg) > MAXFILENAME)
 			{
 				printf("The name of the file is too long");
 				break;
@@ -100,13 +99,22 @@ int main (int argc, char *argv[])
 			}
 			snprintf(servername, sizeof(servername),"%s",optarg);
 			printf("The name of the server is %s\n",servername);
-			method=1;
+			protocol = MSG;
 			break;
 		case 'q':
+			if (strlen(optarg) > MAXQUEUENAME)
+			{
+				printf("The name of the queue is too long. Abort\n");
+				exit(EXIT_FAILURE);
+			}
+			snprintf(queuename, sizeof(queuename),"%s",optarg);
+			printf("The name of the server is %s\n",queuename);
+			protocol = QUEUE;
+			break;
 		case 'p':
 		case 's':
 			printf("This option is not implemented yet. Use --help to know witch ones are\n");
-			break;
+			exit(EXIT_FAILURE);
 		case '?':
 			break;
 		default:
@@ -115,16 +123,15 @@ int main (int argc, char *argv[])
 
 	}
 
-	switch (method) //launching correct function
+	switch (protocol) //launching correct function
 		{
-			case -1:
+			case NONE:
 				printf("Error. Missing arguments or wrong arguments. Use --help to know which arguments you can use\n");
 				return EXIT_FAILURE;
 				break;
-			case 999:
-			case 0:
+			case HELP:
 				break;
-			case 1:
+			case MSG:
 				if (strlen(filename)==0)
 				{
 					printf("Filename must be specified. Abort\n");
@@ -136,6 +143,19 @@ int main (int argc, char *argv[])
 					return EXIT_FAILURE;
 				}
 				ipc_message(filename, servername);
+				break;
+			case QUEUE:
+				if (strlen(filename)==0)
+				{
+					printf("Filename must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				if (strlen(queuename)==0)
+				{
+					printf("The name of the queue must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				ipc_queue(filename, queuename);
 				break;
 			default:
 				break;
@@ -149,9 +169,9 @@ int main (int argc, char *argv[])
 int ipc_message(char filename[], char servername[])
 {
 	long int file_size = findSize(filename);
-	long int bytes_already_read = 0;
 	int coid = -1;
-	iov_t siov[2];
+	int numberOfIov = file_size/4096+2; // +2 for the header and the last package.
+	iov_t siov[numberOfIov];
 	int fd;
 	int size_read;
 	int status;
@@ -168,42 +188,41 @@ int ipc_message(char filename[], char servername[])
 
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
 
-	while (file_size > bytes_already_read)
+
+	msg.data_size = file_size;
+	SETIOV(&siov[0], &msg, sizeof(msg));
+
+	char* buffer = calloc(numberOfIov-1,4096);
+
+	for (int i=0; i < numberOfIov-1;i++) //filling buffer
 	{
-		char* buffer = malloc(4096);
-
-		size_read = read(fd, buffer, 4096);
-
-		/* Test for error */
+		size_read = read(fd, &buffer[i], 4096);
+		// Test for error
 		if( size_read == -1 )
 		{
 			perror( "Error reading myfile.dat" );
-			return EXIT_FAILURE;
-		}
-
-		msg.data_size = size_read;
-
-		SETIOV(&siov[0], &msg, sizeof(msg));
-		SETIOV(&siov[1], buffer, size_read);
-
-		if (debug) printf("sending one package of %d bytes\n",size_read);
-
-		status = MsgSendvs(coid, siov, 2, NULL, 0);
-		if (status == -1)
-		{ //was there an error sending to server?
-			perror("MsgSend");
+			free(buffer);
 			exit(EXIT_FAILURE);
 		}
-		bytes_already_read += size_read;
 
-		if (debug) printf("Data sent: %ld over %ld\n", bytes_already_read, file_size);
-
-		free(buffer);
+		SETIOV(&siov[i+1], &buffer[i], size_read);
+		if (debug) printf("adding one package of %d bytes\n",size_read);
 	}
+	printf("Send a msg with type: %d\n", msg.msg_type);
+	status = MsgSendvs(coid, siov, numberOfIov, NULL, 0);
+	if (status == -1)
+	{ //was there an error sending to server?
+		perror("MsgSend");
+		free(buffer);
+		exit(EXIT_FAILURE);
+	}
+
+	if (debug) printf("liberate the buffer\n");
+
+	free(buffer);
+
 	if (debug) printf("all data sent\n");
 	close(fd);
-
-
 
 	return EXIT_SUCCESS;
 }
@@ -230,4 +249,108 @@ long int findSize(char file_name[])
 	fclose(fp);
 
 	return res;
+}
+
+
+void ipc_queue(char filename[], char queuename[])
+{
+	long int file_size = findSize(filename);
+	long int bytes_already_read = 0;
+	mqd_t queue = -1;
+	struct mq_attr queueAttr; //variable for the attributes of the queue
+	char* data;
+	int ret;
+	int fd;
+	int size_read;
+	unsigned int prio = QUEUE_PRIORITY;
+
+	// Giving attributes
+	queueAttr.mq_maxmsg = MAX_QUEUE_MSG;
+	queueAttr.mq_msgsize = MAX_QUEUE_MSG_SIZE;
+
+
+	// Opening the queue
+	queue = mq_open(queuename, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
+
+	// If no queue -> the receiver is not launched yet... waiting for it
+	while (queue == -1)
+	{
+		if (errno == ENOENT)
+		{
+			printf("Waiting for the receiver to connect to the queue named %s\n", queuename);
+			queue = mq_open(queuename, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
+			sleep(2);
+		}
+		else
+		{
+			perror("mq_open()");
+			exit(EXIT_FAILURE);
+		}
+
+	}
+	printf ("Successfully opened my_queue:\n");
+
+	//opening file
+	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
+
+
+	while (file_size > bytes_already_read)
+	{
+
+		int data_size = min(MAX_QUEUE_MSG_SIZE, file_size - bytes_already_read);
+		data = malloc(data_size);
+
+		size_read = read(fd, data, data_size);
+
+		/* Test for error */
+		if( size_read == -1 )
+		{
+			perror( "Error reading myfile.dat" );
+			exit(EXIT_FAILURE);
+		}
+
+		//sending message queue
+		ret = mq_send(queue, data, data_size, prio);
+		if (ret == -1)
+		{
+		   perror ("mq_send()");
+		   exit(EXIT_FAILURE);
+		}
+
+		bytes_already_read += size_read;
+
+		if (debug) printf("Data sent this loop: %d \n", size_read);
+		if (debug) printf("Cumulated data sent: %ld over %ld\n", bytes_already_read, file_size);
+
+		free(data);
+
+		//looking at the queue state
+		if (debug)
+		{
+			ret = mq_getattr (queue, &queueAttr);
+			if (ret == -1) {
+				perror ("mq_getattr()");
+				exit(EXIT_FAILURE);
+			}
+			printf("Messages: %ld; send waits: %ld; receive waits: %ld\n\n", queueAttr.mq_curmsgs, queueAttr.mq_sendwait, queueAttr.mq_recvwait);
+		}
+	}
+
+	//close the file
+	ret = close(fd);
+	if (ret !=0)
+	{
+		perror("fclose error");
+		exit(EXIT_FAILURE);
+	}
+
+	ret = mq_close(queue);
+	if (ret == -1)
+	{
+	 perror ("mq_close()");
+	 exit(EXIT_FAILURE);
+	}
+
+	printf("All data sent with succes\n");
+	exit(EXIT_SUCCESS);
 }
