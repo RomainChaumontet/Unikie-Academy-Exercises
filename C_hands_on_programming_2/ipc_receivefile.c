@@ -1,14 +1,11 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 // The program should receive data from the ipc_sendfile program and write it in a file		//
 //------------------------------------------------------------------------------------------//
-// The different methods accepted will be:													//
+// For the moment theses methods are implemented:											//
+// 		* message passing																	//
 //		* message queue 																	//
 // 		* pipe 																				//
 //		* share memory																		//
-//------------------------------------------------------------------------------------------//
-// For the moment theses methods are implemented:											//
-// 		* message passing 																	//
-// 		*																					//
 //------------------------------------------------------------------------------------------//
 // This file should take as argument:														//
 //		* --help to print out a help text containing short description of all supported		//

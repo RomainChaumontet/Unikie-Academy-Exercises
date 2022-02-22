@@ -17,6 +17,7 @@
 #define MAX_QUEUE_MSG 1024
 #define CPY_IOV_MSG_TYPE (_IO_MAX + 5)
 #define QUEUE_PRIORITY 5
+#define SHARED_MEMORY_NAME "shmCopyFile"
 
 typedef struct
 {

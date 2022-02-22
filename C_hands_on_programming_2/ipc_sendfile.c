@@ -2,13 +2,11 @@
 // The program should read a given file and send it to ipc_receivefile using a method that 	//
 // is given as a command-line argument. 													//
 //------------------------------------------------------------------------------------------//
-// The different methods accepted will be:													//
-// 		* pipe 																				//
-//		* share memory																		//
-//------------------------------------------------------------------------------------------//
 // For the moment theses methods are implemented:											//
 //		* message queue 																	//
 // 		* message passing																	//
+// 		* pipe 																				//
+//		* share memory																		//
 //------------------------------------------------------------------------------------------//
 // This file should take as argument:														//
 //		* --help to print out a help text containing short description of all supported		//
@@ -38,7 +36,7 @@ struct option long_options[] =
 	  {"message",  required_argument, NULL, 'm'},
 	  {"queue",  required_argument, NULL, 'q'},
 	  {"pipe",  required_argument, NULL, 'p'},
-	  {"shm",    required_argument, NULL, 's'},
+	  {"shm",    no_argument, NULL, 's'},
 	  {"file",  required_argument, NULL, 'f'},
 	  {0, 0, 0, 0}
 };
@@ -50,6 +48,7 @@ void ipc_queue(char filename[], char queuename[]);
 char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 char queuename[MAXQUEUENAME];
+char shmName[]=SHARED_MEMORY_NAME;
 iov_msg msg;
 char* data;
 int debug =0;
@@ -61,7 +60,7 @@ int main (int argc, char *argv[])
 	while(1) //loop for taking care of arguments
 	{
 		int option_index=0; //getopt_long stores the option index here
-		opt = getopt_long (argc, argv, "hm:q:p:s:f:",long_options,&option_index);
+		opt = getopt_long (argc, argv, "hm:q:p:sf:",long_options,&option_index);
 
 		if (opt == -1) //no more options
 			break;
@@ -77,7 +76,7 @@ int main (int argc, char *argv[])
 				"	--message <ServerName> to send the data to the receiver by IPC message passing\n"
 				"	--queue <Queue name> to send the data to the receiver by IPC queue\n"
 				"	--pipe <TBD> to send the data to the receiver by IPC pipe #not yet implemented\n"
-				"	--shm <TBD> to send the data to the receiver with a shared memory #not yet implemented\n"
+				"	--shm to send the data to the receiver with a shared memory \n"
 				" 	--file <filename> to specify the filename which has to be read\n"
 			);
 			protocol=HELP;
@@ -120,8 +119,9 @@ int main (int argc, char *argv[])
 			break;
 		case 'p':
 		case 's':
-			printf("This option is not implemented yet. Use --help to know witch ones are\n");
-			exit(EXIT_FAILURE);
+			printf("Protocol shared memory is chosen.\n");
+			protocol = SHM;
+			break;
 		case '?':
 			break;
 		default:
@@ -164,6 +164,13 @@ int main (int argc, char *argv[])
 				}
 				ipc_queue(filename, queuename);
 				break;
+			case SHM:
+				if (strlen(filename)==0)
+				{
+					printf("Filename must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				shm(filename, shmName);
 			default:
 				break;
 		}
