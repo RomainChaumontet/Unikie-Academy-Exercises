@@ -52,7 +52,7 @@ char servername[MAXSERVERNAME];
 char queuename[MAXQUEUENAME];
 iov_msg msg;
 char* data;
-int debug =0;
+int debug =1;
 
 int main (int argc, char *argv[])
 {

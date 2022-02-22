@@ -52,7 +52,7 @@ struct option long_options[] =
 char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 char queuename[MAXQUEUENAME];
-int debug = 0; // variable to see each step
+int debug = 1; // variable to see each step
 send_by_msg msg;
 FILE* fptr;
 
@@ -338,33 +338,55 @@ void ipc_queue(char filename[], char queuename[])
 		exit(EXIT_FAILURE);
 	}
 
+	ret = mq_getattr (queue, &queueAttr);
+	if (ret == -1) {
+		perror ("mq_getattr()");
+		exit(EXIT_FAILURE);
+	}
+	if (debug) printf("Messages: %ld; send waits: %ld; receive waits: %ld\n\n", queueAttr.mq_curmsgs, queueAttr.mq_sendwait, queueAttr.mq_recvwait);
+
+	data = malloc(MAX_QUEUE_MSG_SIZE);
+	if (data == NULL)
+	{
+		perror("mallocError");
+		exit(EXIT_FAILURE);
+	}
+
+	clock_gettime(CLOCK_REALTIME, &abs_timeout);
+	abs_timeout.tv_sec += 30;
+
+	//receiving message from queue ... don't wait more than 30s
+	bytes_received = mq_timedreceive (queue, data, MAX_QUEUE_MSG_SIZE, &prio,&abs_timeout);
+	if (bytes_received == -1)
+	{
+		 if (errno == ETIMEDOUT) {
+			printf ("No queue message for 30s. Abort\n");
+			free(data);
+			exit(EXIT_SUCCESS);
+		 }
+		 else
+		 {
+			perror ("mq_timedreceive()");
+			exit(EXIT_FAILURE);
+		 }
+	}
+	else {
+		if (debug) printf("Receiving %lu bytes\n", bytes_received);
+	  }
+
+	//writing on the file
+	writing(data, filename, bytes_received);
 	while(1)
 	{
-		ret = mq_getattr (queue, &queueAttr);
-		if (ret == -1) {
-			perror ("mq_getattr()");
-			exit(EXIT_FAILURE);
-		}
-		if (debug) printf("Messages: %ld; send waits: %ld; receive waits: %ld\n\n", queueAttr.mq_curmsgs, queueAttr.mq_sendwait, queueAttr.mq_recvwait);
-
-
-		data = malloc(MAX_QUEUE_MSG_SIZE);
-			if (data == NULL)
-			{
-				perror("mallocError");
-				exit(EXIT_FAILURE);
-			}
-
 		clock_gettime(CLOCK_REALTIME, &abs_timeout);
-		abs_timeout.tv_sec += 30;
-
+		abs_timeout.tv_sec +=1;
+		if (debug) printf("Messages: %ld; send waits: %ld; receive waits: %ld\n\n", queueAttr.mq_curmsgs, queueAttr.mq_sendwait, queueAttr.mq_recvwait);
 		//receiving message from queue ... don't wait more than 30s
 		bytes_received = mq_timedreceive (queue, data, MAX_QUEUE_MSG_SIZE, &prio,&abs_timeout);
 		if (bytes_received == -1)
 		{
 		     if (errno == ETIMEDOUT) {
-		        printf ("No queue message for 30s. It should be a success.\n");
-		        free(data);
+		        printf ("No more queue message. It should be a success.\n");
 		        break;
 		     }
 		     else
@@ -379,9 +401,11 @@ void ipc_queue(char filename[], char queuename[])
 
 		//writing on the file
 		writing(data, filename, bytes_received);
-		free(data);
 
 	}
+
+	free(data);
+
 	//close the file
 	ret = fclose(fptr);
 	if (ret !=0)
