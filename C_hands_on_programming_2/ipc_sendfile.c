@@ -54,7 +54,7 @@ char queuename[MAXQUEUENAME];
 char pipeName[] = PIPE_NAME;
 iov_msg msg;
 char* data;
-int debug =0;
+int debug =1;
 
 int main (int argc, char *argv[])
 {
@@ -311,27 +311,26 @@ void ipc_queue(char filename[], char queuename[])
 
 	//opening file
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
-
+	int data_size = min(MAX_QUEUE_MSG_SIZE, file_size);
+	data = malloc(data_size);
 
 	while (file_size > bytes_already_read)
 	{
-
-		int data_size = min(MAX_QUEUE_MSG_SIZE, file_size - bytes_already_read);
-		data = malloc(data_size);
-
 		size_read = read(fd, data, data_size);
 
 		/* Test for error */
 		if( size_read == -1 )
 		{
+			free(data);
 			perror( "Error reading myfile.dat" );
 			exit(EXIT_FAILURE);
 		}
 
 		//sending message queue
-		ret = mq_send(queue, data, data_size, prio);
+		ret = mq_send(queue, data, size_read, prio);
 		if (ret == -1)
 		{
+			free(data);
 		   perror ("mq_send()");
 		   exit(EXIT_FAILURE);
 		}
@@ -341,7 +340,7 @@ void ipc_queue(char filename[], char queuename[])
 		if (debug) printf("Data sent this loop: %d \n", size_read);
 		if (debug) printf("Cumulated data sent: %ld over %ld\n", bytes_already_read, file_size);
 
-		free(data);
+
 
 		//looking at the queue state
 		if (debug)
@@ -354,7 +353,7 @@ void ipc_queue(char filename[], char queuename[])
 			printf("Messages: %ld; send waits: %ld; receive waits: %ld\n\n", queueAttr.mq_curmsgs, queueAttr.mq_sendwait, queueAttr.mq_recvwait);
 		}
 	}
-
+	free(data);
 	//close the file
 	ret = close(fd);
 	if (ret !=0)
@@ -366,8 +365,8 @@ void ipc_queue(char filename[], char queuename[])
 	ret = mq_close(queue);
 	if (ret == -1)
 	{
-	 perror ("mq_close()");
-	 exit(EXIT_FAILURE);
+		perror ("mq_close()");
+		exit(EXIT_FAILURE);
 	}
 
 	printf("All data sent with success\n");
@@ -377,7 +376,7 @@ void ipc_queue(char filename[], char queuename[])
 void ipc_pipe(char filename[], char pipeName[])
 {
 	char * data;
-	int size_read;
+	int size_read =1;
 	int fd;
 	int fifofd;
 
@@ -399,23 +398,17 @@ void ipc_pipe(char filename[], char pipeName[])
 	}
 
 	data = malloc(PIPE_BUFF);
-	size_read = read(fd, data, PIPE_BUFF); // reading the file
 
-	write(fifofd, data, PIPE_BUFF); // writing on the pipe
-	if (debug) printf( "Successfully wrote in the pipe\n");
-	free(data);
 
 	while(size_read != 0)
 	{
-		data = malloc(PIPE_BUFF);
 		size_read = read(fd, data, PIPE_BUFF); // reading the file
 		if (debug) printf( "%d bytes read on the file\n", size_read);
 
 		write(fifofd, data, size_read); // writing on the pipe
 		if (debug) printf( "Successfully wrote in the pipe\n");
-		free(data);
 	}
-
+	free(data);
 	printf("Finished reading and sending data.\n");
 	close(fifofd);
 	close(fd);

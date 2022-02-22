@@ -53,7 +53,7 @@ char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 char queuename[MAXQUEUENAME];
 char pipeName[] = PIPE_NAME;
-int debug = 0; // variable to see each step
+int debug = 1; // variable to see each step
 send_by_msg msg;
 FILE* fptr;
 
@@ -351,6 +351,13 @@ void ipc_queue(char filename[], char queuename[])
 		exit(EXIT_FAILURE);
 	}
 
+	data = malloc(MAX_QUEUE_MSG_SIZE);
+	if (data == NULL)
+	{
+		perror("mallocError");
+		exit(EXIT_FAILURE);
+	}
+
 	while(1)
 	{
 		ret = mq_getattr (queue, &queueAttr);
@@ -361,12 +368,7 @@ void ipc_queue(char filename[], char queuename[])
 		if (debug) printf("Messages: %ld; send waits: %ld; receive waits: %ld\n\n", queueAttr.mq_curmsgs, queueAttr.mq_sendwait, queueAttr.mq_recvwait);
 
 
-		data = malloc(MAX_QUEUE_MSG_SIZE);
-			if (data == NULL)
-			{
-				perror("mallocError");
-				exit(EXIT_FAILURE);
-			}
+
 
 		clock_gettime(CLOCK_REALTIME, &abs_timeout);
 		abs_timeout.tv_sec += 30;
@@ -377,12 +379,13 @@ void ipc_queue(char filename[], char queuename[])
 		{
 		     if (errno == ETIMEDOUT) {
 		        printf ("No queue message for 30s. It should be a success.\n");
-		        free(data);
+
 		        break;
 		     }
 		     else
 		     {
 		        perror ("mq_timedreceive()");
+		        free(data);
 		        exit(EXIT_FAILURE);
 		     }
 		}
@@ -392,9 +395,9 @@ void ipc_queue(char filename[], char queuename[])
 
 		//writing on the file
 		writing(data, filename, bytes_received);
-		free(data);
 
 	}
+	free(data);
 	//close the file
 	ret = fclose(fptr);
 	if (ret !=0)
@@ -449,17 +452,16 @@ void ipc_pipe(char filename[], char pipeName[])
 	}
 	writing(data, filename, size_read);
 	if (debug) printf("%d bytes written on the file\n", size_read);
-	free(data);
+
 
 	while(size_read > 0)
 	{
-		data = malloc(PIPE_BUFF);
 		size_read = read(fd, data, PIPE_BUFF);
 		writing(data, filename, size_read);
 		if (debug) printf("%d bytes written on the file\n", size_read);
-		free(data);
 	}
 
+	free(data);
 	//Closing pipe and file
 	status = close(fd);
 	if (status != 0)
