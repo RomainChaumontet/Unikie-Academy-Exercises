@@ -44,7 +44,7 @@ struct option long_options[] =
 };
 
 int ipc_message(char filename[], char servername[]);
-long int findSize(char file_name[]);
+off_t findSize(char file_name[]);
 void ipc_queue(char filename[], char queuename[]);
 
 char filename[MAXFILENAME];
@@ -175,7 +175,7 @@ int main (int argc, char *argv[])
 
 int ipc_message(char filename[], char servername[])
 {
-	long int file_size = findSize(filename);
+	off_t file_size = findSize(filename);
 	int coid = -1;
 	int numberOfIov = file_size/4096+2; // +2 for the header and the last package.
 	iov_t siov[numberOfIov];
@@ -236,32 +236,24 @@ int ipc_message(char filename[], char servername[])
 
 
 
-long int findSize(char file_name[])
+off_t findSize(char file_name[])
 {
-	// opening the file in read mode
-	FILE* fp = fopen(file_name, "r");
+	struct stat statFile;
+	int status;
 
-	// checking if the file exist or not
-	if (fp == NULL) {
-		printf("File Not Found!\n");
+	status = stat(file_name, &statFile);
+	if (status == -1)
+	{
+		printf("stat\n");
 		exit(EXIT_FAILURE);
 	}
-
-	fseek(fp, 0L, SEEK_END);
-
-	// calculating the size of the file
-	long int res = ftell(fp);
-
-	// closing the file
-	fclose(fp);
-
-	return res;
+	return statFile.st_size;
 }
 
 
 void ipc_queue(char filename[], char queuename[])
 {
-	long int file_size = findSize(filename);
+	off_t file_size = findSize(filename);
 	long int bytes_already_read = 0;
 	mqd_t queue = -1;
 	struct mq_attr queueAttr; //variable for the attributes of the queue
