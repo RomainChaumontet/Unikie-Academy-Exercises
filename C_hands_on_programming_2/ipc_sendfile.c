@@ -317,7 +317,7 @@ void ipc_queue(char filename[], char queuename[])
 		}
 
 		//sending message queue
-		ret = mq_send(queue, data, data_size, prio);
+		ret = mq_send(queue, data, size_read, prio);
 		if (ret == -1)
 		{
 		   perror ("mq_send()");
