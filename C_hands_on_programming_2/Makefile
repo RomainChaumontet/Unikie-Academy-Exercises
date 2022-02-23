@@ -38,7 +38,6 @@ all: $(BINS)
 clean:
 	rm -f *.o $(BINS)
 
-
 # dependencies
 ipc_sendfile.o: copyfile.h
 ipc_receivefile.o: copyfile.h
