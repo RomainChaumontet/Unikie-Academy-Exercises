@@ -37,7 +37,6 @@ all: $(BINS)
 # make target to clean up object files, binaries and stripped (.tmp) files
 clean:
 	rm -f *.o $(BINS)
-	cd solutions && make clean_solutions
 
 # dependencies
 ipc_sendfile.o: copyfile.h
