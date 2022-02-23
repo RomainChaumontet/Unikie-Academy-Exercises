@@ -18,6 +18,7 @@
 #define CPY_IOV_MSG_TYPE (_IO_MAX + 5)
 #define QUEUE_PRIORITY 5
 #define SHARED_MEMORY_NAME "shmCopyFile"
+#define SHARE_MEMORY_BUFF 409600
 
 typedef struct
 {
@@ -28,5 +29,16 @@ typedef struct
 typedef enum {
 	NONE, MSG, QUEUE, PIPE, SHM, HELP
 } protocol_t;
+
+typedef struct
+{
+	volatile unsigned init_flag;  // has the shared memory and control structures been initialized
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	int data_version;  // for tracking updates, 64-bit count won't wrap during lifetime of a system
+	int data_size;
+	int bothConnected;
+	char text[SHARE_MEMORY_BUFF];
+} shmem_t;
 
 #endif /* COPYFILE_H_ */

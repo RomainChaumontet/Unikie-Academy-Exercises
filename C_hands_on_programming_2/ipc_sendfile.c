@@ -27,6 +27,8 @@
 #include <sys/dispatch.h>
 #include <mqueue.h>
 #include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include "copyfile.h"
 
 
@@ -44,6 +46,7 @@ struct option long_options[] =
 int ipc_message(char filename[], char servername[]);
 off_t findSize(char file_name[]);
 void ipc_queue(char filename[], char queuename[]);
+void ipc_shm(char filename[]);
 
 char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
@@ -52,6 +55,12 @@ char shmName[]=SHARED_MEMORY_NAME;
 iov_msg msg;
 char* data;
 int debug =1;
+
+void unlink_and_exit(char *name)
+{
+	(void)shm_unlink(name);
+	exit(EXIT_FAILURE);
+}
 
 int main (int argc, char *argv[])
 {
@@ -170,7 +179,8 @@ int main (int argc, char *argv[])
 					printf("Filename must be specified. Abort\n");
 					return EXIT_FAILURE;
 				}
-				shm(filename, shmName);
+				ipc_shm(filename);
+				break;
 			default:
 				break;
 		}
@@ -359,4 +369,161 @@ void ipc_queue(char filename[], char queuename[])
 
 	printf("All data sent with success\n");
 	exit(EXIT_SUCCESS);
+}
+
+
+
+void ipc_shm(char filename[])
+{
+	int fd;
+	shmem_t *ptr;
+	int ret;
+	pthread_mutexattr_t mutex_attr;
+	pthread_condattr_t cond_attr;
+	int size_read = 1;
+
+
+
+	//Opening share memory
+	fd = shm_open(shmName, O_RDWR | O_CREAT | O_EXCL, 0660);
+	if (fd == -1)
+	{
+		perror("shm_open()");
+		unlink_and_exit(shmName);
+	}
+
+	/* set the size of the shared memory object, allocating at least one page of memory */
+	ret = ftruncate(fd, sizeof(shmem_t));
+	if (ret == -1)
+	{
+		perror("ftruncate");
+		unlink_and_exit(shmName);
+	}
+
+	/* get a pointer to the shared memory */
+
+	ptr = mmap(0, sizeof(shmem_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (ptr == MAP_FAILED)
+	{
+		perror("mmap");
+		unlink_and_exit(shmName);
+	}
+
+	/* don't need fd anymore, so close it */
+	close(fd);
+
+	pthread_mutexattr_init(&mutex_attr);
+	pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
+	ret = pthread_mutex_init(&ptr->mutex, &mutex_attr);
+	if (ret != EOK)
+	{
+		perror("pthread_mutex_init");
+		unlink_and_exit(shmName);
+	}
+
+	pthread_condattr_init(&cond_attr);
+	pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED);
+	ret = pthread_cond_init(&ptr->cond, &cond_attr);
+	if (ret != EOK)
+	{
+		perror("pthread_cond_init");
+		unlink_and_exit(shmName);
+	}
+
+	/*
+	 * our memory is now "setup", so set the init_flag
+	 * it was guaranteed to be zero at allocation time
+	 */
+	ptr->init_flag = 1;
+
+	printf("Shared memory created and init_flag set to let users know shared memory object is usable.\n");
+
+	//opening file to read
+	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
+/*
+	while(1)
+	{
+		ret = pthread_mutex_lock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_lock");
+			unlink_and_exit(shmName);
+		}
+
+		if (ptr->data_version != 0)
+			break;
+
+		printf("Waiting for the receiver\n");
+		ret = pthread_mutex_unlock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_unlock");
+			unlink_and_exit(shmName);
+		}
+
+
+		ret = pthread_cond_broadcast(&ptr->cond);
+		if (ret != EOK)
+		{
+			perror("pthread_cond_broadcast");
+			unlink_and_exit(shmName);
+		}
+
+		sleep(1);
+	}*/
+
+	while (size_read > 0) {
+		sleep(1);
+
+		/* lock the mutex because we're about to update shared data */
+		ret = pthread_mutex_lock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_lock");
+			unlink_and_exit(shmName);
+		}
+		if (ptr->bothConnected > 0)
+		{
+			ptr->data_version++;
+			size_read = read(fd, ptr->text, SHARE_MEMORY_BUFF);
+
+			ptr->data_size = size_read;
+
+		}
+		else
+			printf("Waiting for ipc_receivefile\n");
+
+
+		/* finished accessing shared data, unlock the mutex */
+		ret = pthread_mutex_unlock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_unlock");
+			unlink_and_exit(shmName);
+		}
+
+		/* wake up any readers that may be waiting */
+		ret = pthread_cond_broadcast(&ptr->cond);
+		if (ret != EOK)
+		{
+			perror("pthread_cond_broadcast");
+			unlink_and_exit(shmName);
+		}
+	}
+
+	sleep(1);
+	/* unmap() not actually needed on termination as all memory mappings are freed on process termination */
+	if (munmap(ptr, sizeof(shmem_t)) == -1)
+	{
+		perror("munmap");
+	}
+
+	/* but the name must be removed */
+	if (shm_unlink(shmName) == -1)
+	{
+		perror("shm_unlink");
+	}
+
+	exit(EXIT_SUCCESS);
+
 }

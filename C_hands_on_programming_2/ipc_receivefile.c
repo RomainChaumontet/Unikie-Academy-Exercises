@@ -1,18 +1,18 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-// The program should receive data from the ipc_sendfile program and write it in a file		//
-//------------------------------------------------------------------------------------------//
-// For the moment theses methods are implemented:											//
-// 		* message passing																	//
-//		* message queue 																	//
-// 		* pipe 																				//
-//		* share memory																		//
-//------------------------------------------------------------------------------------------//
-// This file should take as argument:														//
-//		* --help to print out a help text containing short description of all supported		//
-//			command line arguments															//
-//		* --file <filename> file used to write data											//
-//		* --<method> <element to connect to the sender> to give the method use and the 		//
-//			way to recognize the sender.													//
+// The program should receive data from the ipc_sendfile program and write it in a file
+//------------------------------------------------------------------------------------------
+// For the moment theses methods are implemented:
+// 		* message passing
+//		* message queue
+// 		* pipe
+//		* share memory
+//------------------------------------------------------------------------------------------
+// This file should take as argument:
+//		* --help to print out a help text containing short description of all supported
+//			command line arguments
+//		* --file <filename> file used to write data
+//		* --<method> <element to connect to the sender> to give the method use and the
+//			way to recognize the sender.
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
@@ -24,6 +24,8 @@
 #include <mqueue.h>
 #include <fcntl.h>
 #include <time.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include "copyfile.h"
 
 typedef union
@@ -41,7 +43,7 @@ struct option long_options[] =
 	  {"message",  required_argument, NULL, 'm'},
 	  {"queue",  required_argument, NULL, 'q'},
 	  {"pipe",  required_argument, NULL, 'p'},
-	  {"shm",    required_argument, NULL, 's'},
+	  {"shm",    no_argument, NULL, 's'},
 	  {"file",  required_argument, NULL, 'f'},
 	  {0, 0, 0, 0}
 };
@@ -49,13 +51,16 @@ struct option long_options[] =
 char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 char queuename[MAXQUEUENAME];
+char shmName[]=SHARED_MEMORY_NAME;
 int debug = 1; // variable to see each step
 send_by_msg msg;
 FILE* fptr;
 
 void ipc_message(char filename[], char servername[]);
 void ipc_queue(char filename[], char queuename[]);
+void ipc_shm(char filename[]);
 int writing(char * data, char filename[], unsigned data_size);
+void *get_shared_memory_pointer( char *name, unsigned num_retries );
 
 
 int main (int argc, char *argv[])
@@ -65,7 +70,7 @@ int main (int argc, char *argv[])
 	while(1)
 	{
 		int option_index=0; //getopt_long stores the option index here
-		opt = getopt_long (argc, argv, "hm:q:p:s:f:",long_options,&option_index);
+		opt = getopt_long (argc, argv, "hm:q:p:sf:",long_options,&option_index);
 
 		if (opt == -1) //no more options
 			break;
@@ -81,7 +86,7 @@ int main (int argc, char *argv[])
 				"	--message <ServerName> to receive the data from the sender by IPC message passing\n"
 				"	--queue <TBD> to receive the data from the sender by IPC queue #not yet implemented\n"
 				"	--pipe <TBD> to receive the data from the sender by IPC pipe #not yet implemented\n"
-				"	--shm <TBD> to receive the data from the sender with a shared memory #not yet implemented\n"
+				"	--shm to receive the data from the sender with a shared memory\n"
 				" 	--file <filename> to specify the filename which has to be write\n"
 			);
 			protocol=HELP;
@@ -124,8 +129,9 @@ int main (int argc, char *argv[])
 			break;
 		case 'p':
 		case 's':
-			printf("This option is not implemented yet. Use --help to know witch ones are\n");
-			exit(EXIT_FAILURE);
+			protocol = SHM;
+			printf("Shared memory procotol is chosen \n");
+			break;
 		case '?':
 			break;
 		default:
@@ -166,6 +172,14 @@ int main (int argc, char *argv[])
 				return EXIT_FAILURE;
 			}
 			ipc_queue(filename, queuename);
+			break;
+		case SHM:
+			if (strlen(filename)==0)
+			{
+				printf("Filename must be specified. Abort\n");
+				return EXIT_FAILURE;
+			}
+			ipc_shm(filename);
 			break;
 		default:
 			break;
@@ -425,7 +439,146 @@ void ipc_queue(char filename[], char queuename[])
 	 exit(EXIT_FAILURE);
 	}
 }
-unsigned int prio;
+
+
+void ipc_shm(char filename[])
+{
+	int ret;
+	shmem_t *ptr;
+	uint8_t continueLoop = 1; // Become 0 if there is no more data to read.
+	int last_version =0;
+
+
+	/* try to get access to the shared memory object, retrying for 100 times (100 seconds) */
+	ptr = get_shared_memory_pointer(shmName, 100);
+	if (ptr == MAP_FAILED)
+	{
+		fprintf(stderr, "Unable to access object '%s' - was creator run with same name?\n", shmName);
+		exit(EXIT_FAILURE);
+	}
+
+	fptr = fopen64(filename, "wb");  //Create/open the file in write binary mode
+
+	/*
+	//Signaling the sender that we are available
+	ret = pthread_mutex_lock(&ptr->mutex);
+	if (ret != EOK)
+	{
+		perror("pthread_mutex_lock");
+		fclose(fptr);
+		exit(EXIT_FAILURE);
+	}
+	ptr->data_version = 1;
+	last_version = 1;
+	printf("Telling the sendfile that we are available\n")
+	ret = pthread_mutex_unlock(&ptr->mutex);
+	if (ret != EOK)
+	{
+		perror("pthread_mutex_unlock");
+		fclose(fptr);
+		exit(EXIT_FAILURE);
+	}*/
+
+
+	//receiving data
+	while (continueLoop == 1) {
+		/* lock the mutex because we're about to access shared data */
+		ret = pthread_mutex_lock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_lock");
+			fclose(fptr);
+			exit(EXIT_FAILURE);
+		}
+
+		/* wait for changes to the shared memory object */
+		while (last_version == ptr->data_version) {
+			if (ptr->bothConnected == 0)
+			{
+				ptr->bothConnected = 1;
+			}
+			ret = pthread_cond_wait(&ptr->cond, &ptr->mutex); /* does an unlock, wait, lock */
+			if (ret != EOK)
+			{
+				perror("pthread_cond_wait");
+				fclose(fptr);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		/* update local version and data */
+		last_version = ptr->data_version;
+
+		writing(ptr->text, filename, ptr->data_size);
+
+		if (ptr->data_size == 0)
+		{
+			continueLoop = 0;
+		}
+
+		/* finished accessing shared data, unlock the mutex */
+		ret = pthread_mutex_unlock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_unlock");
+			fclose(fptr);
+			exit(EXIT_FAILURE);
+		}
+
+	}
+
+	fclose(fptr);
+	exit(EXIT_SUCCESS);
+
+}
+
+void *get_shared_memory_pointer( char *name, unsigned num_retries )
+{
+	unsigned tries;
+	shmem_t *ptr;
+	int fd;
+
+	for (tries = 0;;) {
+		fd = shm_open(name, O_RDWR, 0);
+		if (fd != -1) break;
+		++tries;
+		if (tries > num_retries) {
+			perror("shmn_open");
+			return MAP_FAILED;
+		}
+		/* wait one second then try again */
+		sleep(1);
+	}
+
+	for (tries = 0;;) {
+		ptr = mmap(0, sizeof(shmem_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		if (ptr != MAP_FAILED) break;
+		++tries;
+		if (tries > num_retries) {
+			perror("mmap");
+			return MAP_FAILED;
+		}
+		/* wait one second then try again */
+		sleep(1);
+	}
+
+	/* no longer need fd */
+	(void)close(fd);
+
+	for (tries=0;;) {
+		if (ptr->init_flag) break;
+		++tries;
+		if (tries > num_retries) {
+			fprintf(stderr, "init flag never set\n");
+			(void)munmap(ptr, sizeof(shmem_t));
+			return MAP_FAILED;
+		}
+		/* wait on second then try again */
+		sleep(1);
+	}
+
+	return ptr;
+}
 
 /*
  * ipc_receivefile.c
