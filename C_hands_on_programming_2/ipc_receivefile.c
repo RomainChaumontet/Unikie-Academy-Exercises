@@ -459,29 +459,10 @@ void ipc_shm(char filename[])
 
 	fptr = fopen64(filename, "wb");  //Create/open the file in write binary mode
 
-	/*
-	//Signaling the sender that we are available
-	ret = pthread_mutex_lock(&ptr->mutex);
-	if (ret != EOK)
-	{
-		perror("pthread_mutex_lock");
-		fclose(fptr);
-		exit(EXIT_FAILURE);
-	}
-	ptr->data_version = 1;
-	last_version = 1;
-	printf("Telling the sendfile that we are available\n")
-	ret = pthread_mutex_unlock(&ptr->mutex);
-	if (ret != EOK)
-	{
-		perror("pthread_mutex_unlock");
-		fclose(fptr);
-		exit(EXIT_FAILURE);
-	}*/
-
 
 	//receiving data
-	while (continueLoop == 1) {
+	while (continueLoop == 1)
+	{
 		/* lock the mutex because we're about to access shared data */
 		ret = pthread_mutex_lock(&ptr->mutex);
 		if (ret != EOK)
@@ -495,7 +476,7 @@ void ipc_shm(char filename[])
 		while (last_version == ptr->data_version) {
 			if (ptr->bothConnected == 0)
 			{
-				ptr->bothConnected = 1;
+				ptr->bothConnected = 1; //Signaling sender can start tranfer data
 			}
 			ret = pthread_cond_wait(&ptr->cond, &ptr->mutex); /* does an unlock, wait, lock */
 			if (ret != EOK)
@@ -508,13 +489,10 @@ void ipc_shm(char filename[])
 
 		/* update local version and data */
 		last_version = ptr->data_version;
-
 		writing(ptr->text, filename, ptr->data_size);
 
-		if (ptr->data_size == 0)
-		{
+		if (ptr->data_size == 0) //no more data to write -> stop the loop after unlocking the mutex.
 			continueLoop = 0;
-		}
 
 		/* finished accessing shared data, unlock the mutex */
 		ret = pthread_mutex_unlock(&ptr->mutex);
@@ -524,7 +502,6 @@ void ipc_shm(char filename[])
 			fclose(fptr);
 			exit(EXIT_FAILURE);
 		}
-
 	}
 
 	fclose(fptr);
