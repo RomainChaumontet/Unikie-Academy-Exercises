@@ -2,11 +2,13 @@
 // The program should read a given file and send it to ipc_receivefile using a method that 	//
 // is given as a command-line argument. 													//
 //------------------------------------------------------------------------------------------//
+// The different methods accepted will be:													//
+//		* share memory																		//
+//------------------------------------------------------------------------------------------//
 // For the moment theses methods are implemented:											//
 //		* message queue 																	//
 // 		* message passing																	//
-// 		* pipe 			
-//		* share memory			
+// 		* pipe 																				//
 //------------------------------------------------------------------------------------------//
 // This file should take as argument:														//
 //		* --help to print out a help text containing short description of all supported		//
@@ -27,36 +29,21 @@
 #include <sys/dispatch.h>
 #include <mqueue.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include "copyfile.h"
+#include "ipc_common_file.h"
 
 
-struct option long_options[] =
-{
-	  {"help",     no_argument, NULL, 'h'},
-	  {"message",  required_argument, NULL, 'm'},
-	  {"queue",  required_argument, NULL, 'q'},
-	  {"shm",    no_argument, NULL, 's'},
-	  {"pipe",  no_argument, NULL, 'p'},
-	  {"file",  required_argument, NULL, 'f'},
-	  {0, 0, 0, 0}
-};
 
-int ipc_message(char filename[], char servername[]);
-off_t findSize(char file_name[]);
-void ipc_queue(char filename[], char queuename[]);
-void ipc_shm(char filename[]);
-void ipc_pipe(char filename[], char pipeName[]);
+int ipc_message(char * filename);
+off_t findSize(char * file_name);
+void ipc_queue(char* filename);
+void ipc_pipe(char* filename);
+void ipc_shm(char* filename);
 
-char filename[MAXFILENAME];
-char servername[MAXSERVERNAME];
-char queuename[MAXQUEUENAME];
-char shmName[]=SHARED_MEMORY_NAME;
-char pipeName[] = PIPE_NAME;
-iov_msg msg;
-char* data;
-int debug =1;
+char* filename;
+int debug = DEBUG_VALUE;
 
 void unlink_and_exit(char *name)
 {
@@ -64,88 +51,12 @@ void unlink_and_exit(char *name)
 	exit(EXIT_FAILURE);
 }
 
+
 int main (int argc, char *argv[])
 {
-	protocol_t protocol = NONE;
-	int opt;
-	while(1) //loop for taking care of arguments
-	{
-		int option_index=0; //getopt_long stores the option index here
-		opt = getopt_long (argc, argv, "hm:q:psf:",long_options,&option_index);
-		opt = getopt_long (argc, argv, "hm:q:ps:f:",long_options,&option_index);
+	arguments argumentsProvided = analyseArguments(argc,argv);
 
-		if (opt == -1) //no more options
-			break;
-
-		switch (opt)
-		{
-		case 'h':
-			printf
-			(
-				"Ipc_sendfile is a program which read a file and send the data to another program.\n"
-				"The program accept the following arguments:\n"
-				"	--help to print this information\n"
-				"	--message <ServerName> to send the data to the receiver by IPC message passing\n"
-				"	--queue <Queue name> to send the data to the receiver by IPC queue\n"
-				"	--pipe to send the data to the receiver by IPC pipe #not yet implemented\n"
-				"	--shm to send the data to the receiver with a shared memory \n"
-				" --file <filename> to specify the filename which has to be read\n"
-			);
-			protocol=HELP;
-			break;
-		case 'f':
-			if (strlen(optarg) > MAXFILENAME)
-			{
-				printf("The name of the file is too long");
-				break;
-			}
-			snprintf(filename, sizeof(filename),"%s",optarg);
-			printf("The name of the file is %s\n",filename);
-			break;
-		case 'm':
-			if (strlen(optarg) > MAXSERVERNAME)
-			{
-				printf("The servername is too long. Abort\n");
-				break;
-			}
-			snprintf(servername, sizeof(servername),"%s",optarg);
-			printf("The name of the server is %s\n",servername);
-			protocol = MSG;
-			break;
-		case 'q':
-			if (strlen(optarg) > MAXQUEUENAME)
-			{
-				printf("The name of the queue is too long. Abort\n");
-				exit(EXIT_FAILURE);
-			}
-			if (optarg[0] == '/')
-			{
-				snprintf(queuename, sizeof(queuename),"/ipc_queue%s",optarg);
-			}
-			else
-			{
-				snprintf(queuename, sizeof(queuename),"/ipc_queue/%s",optarg);
-			}
-			printf("The name of the queue is %s\n",queuename);
-			protocol = QUEUE;
-			break;
-		case 'p':
-			protocol = PIPE;
-			printf("The pipe protocol has been chosen.\n");
-			break;
-		case 's':
-			printf("Protocol shared memory is chosen.\n");
-			protocol = SHM;
-			break;
-		case '?':
-			break;
-		default:
-			break;
-		}
-
-	}
-
-	switch (protocol) //launching correct function
+	switch (argumentsProvided.protocol) //launching correct function
 		{
 			case NONE:
 				printf("Error. Missing arguments or wrong arguments. Use --help to know which arguments you can use\n");
@@ -154,47 +65,23 @@ int main (int argc, char *argv[])
 			case HELP:
 				break;
 			case MSG:
-				if (strlen(filename)==0)
-				{
-					printf("Filename must be specified. Abort\n");
-					return EXIT_FAILURE;
-				}
-				if (strlen(servername)==0)
-				{
-					printf("Servername must be specified. Abort\n");
-					return EXIT_FAILURE;
-				}
-				ipc_message(filename, servername);
+				ipc_message(argumentsProvided.filename);
 				break;
 			case QUEUE:
-				if (strlen(filename)==0)
-				{
-					printf("Filename must be specified. Abort\n");
-					return EXIT_FAILURE;
-				}
-				if (strlen(queuename)==0)
-				{
-					printf("The name of the queue must be specified. Abort\n");
-					return EXIT_FAILURE;
-				}
-				ipc_queue(filename, queuename);
-				break;
-      
-			case SHM:
-       if (strlen(filename)==0)
-				{
-					printf("Filename must be specified. Abort\n");
-					return EXIT_FAILURE;
-				}
-				ipc_shm(filename);
+				if (debug) printf("Launching ipc_queue protocol.\n");
+				ipc_queue(argumentsProvided.filename);
 				break;
 			case PIPE:
-				if (strlen(filename)==0)
+				ipc_pipe(argumentsProvided.filename);
+				break;
+			case SHM:
+				if (strlen(argumentsProvided.filename)==0)
 				{
 					printf("Filename must be specified. Abort\n");
 					return EXIT_FAILURE;
 				}
-				ipc_pipe(filename, pipeName);
+				ipc_shm(argumentsProvided.filename);
+				break;
 			default:
 				break;
 		}
@@ -204,85 +91,78 @@ int main (int argc, char *argv[])
 
 }
 
-int ipc_message(char filename[], char servername[])
+int ipc_message(char* filename)
 {
+	iov_msg msg;
 	off_t file_size = findSize(filename);
 	int coid = -1;
-	int numberOfIov = file_size/4096+2; // +2 for the header and the last package.
-	iov_t siov[numberOfIov];
+	iov_t siov[2];
 	int fd;
-	int size_read;
 	int status;
+	int bytesRemaining = file_size;
 
-	//locate the server
+
+	//locate or wait the server
 	while (coid == -1)
 	{
-		coid = name_open(servername,0);
-		printf("Waiting for %s\n", servername);
-		sleep(5);
+		coid = name_open(INTERFACE_NAME,0);
+		printf("Waiting for the server.\n");
+		sleep(2);
 	}
-
-	msg.msg_type = CPY_IOV_MSG_TYPE;
 
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
 
+	char* data = calloc(MAX_MSG_BUFF_SIZE,sizeof(char));
+	if (debug) printf("Allocating %d bytes.\n", MAX_MSG_BUFF_SIZE);
 
-	msg.data_size = file_size;
-	SETIOV(&siov[0], &msg, sizeof(msg));
-
-	char* buffer = calloc(numberOfIov-1,4096);
-
-	for (int i=0; i < numberOfIov-1;i++) //filling buffer
+	while (bytesRemaining > 0)
 	{
-		size_read = read(fd, &buffer[i], 4096);
-		// Test for error
-		if( size_read == -1 )
+
+		msg.data_size = read(fd, data, MAX_MSG_BUFF_SIZE);
+		if( msg.data_size == -1 )
 		{
-			perror( "Error reading myfile.dat" );
-			free(buffer);
+			perror( "Error reading the file");
+			free(data);
 			exit(EXIT_FAILURE);
 		}
 
-		SETIOV(&siov[i+1], &buffer[i], size_read);
-		if (debug) printf("adding one package of %d bytes\n",size_read);
-	}
-	printf("Send a msg with type: %d\n", msg.msg_type);
-	status = MsgSendvs(coid, siov, numberOfIov, NULL, 0);
-	if (status == -1)
-	{ //was there an error sending to server?
-		perror("MsgSend");
-		free(buffer);
-		exit(EXIT_FAILURE);
-	}
+		if (debug) printf("%lu data read.\n", msg.data_size);
 
+		//Set the header
+		msg.msg_type = CPY_IOV_MSG_TYPE;
+
+		SETIOV(&siov[0], &msg, sizeof(msg));
+		SETIOV(&siov[1], data, msg.data_size);
+
+		printf("sending data...");
+		if (debug) printf("Send a msg with type: %d\n", msg.msg_type);
+		status = MsgSendvs(coid, siov, 2, NULL, 0);
+
+		if (status == -1)
+		{ //was there an error sending to server?
+			perror("MsgSend");
+			free(data);
+			exit(EXIT_FAILURE);
+		}
+		bytesRemaining -= msg.data_size;
+	}
 	if (debug) printf("liberate the buffer\n");
 
-	free(buffer);
+	free(data);
 
 	if (debug) printf("all data sent\n");
 	close(fd);
 
+	printf("All done. Closing the app.\n");
 	return EXIT_SUCCESS;
+
 }
 
 
 
-off_t findSize(char file_name[])
-{
-	struct stat statFile;
-	int status;
-
-	status = stat(file_name, &statFile);
-	if (status == -1)
-	{
-		printf("stat\n");
-		exit(EXIT_FAILURE);
-	}
-	return statFile.st_size;
-}
 
 
-void ipc_queue(char filename[], char queuename[])
+void ipc_queue(char* filename)
 {
 	off_t file_size = findSize(filename);
 	long int bytes_already_read = 0;
@@ -300,15 +180,15 @@ void ipc_queue(char filename[], char queuename[])
 
 
 	// Opening the queue
-	queue = mq_open(queuename, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
+	queue = mq_open(INTERFACE_NAME, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
 
 	// If no queue -> the receiver is not launched yet... waiting for it
 	while (queue == -1)
 	{
 		if (errno == ENOENT)
 		{
-			printf("Waiting for the receiver to connect to the queue named %s\n", queuename);
-			queue = mq_open(queuename, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
+			printf("Waiting for the receiver to connect to the queue\n");
+			queue = mq_open(INTERFACE_NAME, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
 			sleep(2);
 		}
 		else
@@ -333,7 +213,7 @@ void ipc_queue(char filename[], char queuename[])
 		if( size_read == -1 )
 		{
 			free(data);
-			perror( "Error reading myfile.dat" );
+			perror( "Error reading the file" );
 			exit(EXIT_FAILURE);
 		}
 
@@ -384,7 +264,50 @@ void ipc_queue(char filename[], char queuename[])
 	exit(EXIT_SUCCESS);
 }
 
-void ipc_shm(char filename[])
+void ipc_pipe(char* filename)
+{
+	char * data;
+	int size_read =1;
+	int fd;
+	int fifofd;
+
+	//opening file
+	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
+
+	while ( (fifofd = open(INTERFACE_NAME, O_WRONLY  | O_LARGEFILE, S_IRUSR | S_IWUSR )) == -1)
+	{
+		if (errno == ENOENT)
+		{
+			printf("Waiting for the receiver. Sleep(2)\n");
+			sleep(2);
+		}
+		else
+		{
+			perror("fopen");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	data = malloc(PIPE_BUF);
+
+
+	while(size_read != 0)
+	{
+		size_read = read(fd, data, PIPE_BUF); // reading the file
+		if (debug) printf( "%d bytes read on the file\n", size_read);
+
+		write(fifofd, data, size_read); // writing on the pipe
+		if (debug) printf( "Successfully wrote in the pipe\n");
+	}
+	free(data);
+	printf("Finished reading and sending data.\n");
+	close(fifofd);
+	close(fd);
+
+}
+
+
+void ipc_shm(char* filename)
 {
 	int fd;
 	shmem_t *ptr;
@@ -393,14 +316,12 @@ void ipc_shm(char filename[])
 	pthread_condattr_t cond_attr;
 	int size_read = 1;
 
-
-
 	//Opening share memory
-	fd = shm_open(shmName, O_RDWR | O_CREAT | O_EXCL, 0660);
+	fd = shm_open(INTERFACE_NAME, O_RDWR | O_CREAT | O_EXCL, 0660);
 	if (fd == -1)
 	{
 		perror("shm_open()");
-		unlink_and_exit(shmName);
+		unlink_and_exit(INTERFACE_NAME);
 	}
 
 	/* set the size of the shared memory object, allocating at least one page of memory */
@@ -408,7 +329,7 @@ void ipc_shm(char filename[])
 	if (ret == -1)
 	{
 		perror("ftruncate");
-		unlink_and_exit(shmName);
+		unlink_and_exit(INTERFACE_NAME);
 	}
 
 	/* get a pointer to the shared memory */
@@ -417,7 +338,7 @@ void ipc_shm(char filename[])
 	if (ptr == MAP_FAILED)
 	{
 		perror("mmap");
-		unlink_and_exit(shmName);
+		unlink_and_exit(INTERFACE_NAME);
 	}
 
 	/* don't need fd anymore, so close it */
@@ -429,7 +350,7 @@ void ipc_shm(char filename[])
 	if (ret != EOK)
 	{
 		perror("pthread_mutex_init");
-		unlink_and_exit(shmName);
+		unlink_and_exit(INTERFACE_NAME);
 	}
 
 	pthread_condattr_init(&cond_attr);
@@ -438,7 +359,7 @@ void ipc_shm(char filename[])
 	if (ret != EOK)
 	{
 		perror("pthread_cond_init");
-		unlink_and_exit(shmName);
+		unlink_and_exit(INTERFACE_NAME);
 	}
 
 	/*
@@ -451,37 +372,6 @@ void ipc_shm(char filename[])
 
 	//opening file to read
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
-/*
-	while(1)
-	{
-		ret = pthread_mutex_lock(&ptr->mutex);
-		if (ret != EOK)
-		{
-			perror("pthread_mutex_lock");
-			unlink_and_exit(shmName);
-		}
-
-		if (ptr->data_version != 0)
-			break;
-
-		printf("Waiting for the receiver\n");
-		ret = pthread_mutex_unlock(&ptr->mutex);
-		if (ret != EOK)
-		{
-			perror("pthread_mutex_unlock");
-			unlink_and_exit(shmName);
-		}
-
-
-		ret = pthread_cond_broadcast(&ptr->cond);
-		if (ret != EOK)
-		{
-			perror("pthread_cond_broadcast");
-			unlink_and_exit(shmName);
-		}
-
-		sleep(1);
-	}*/
 
 	while (size_read > 0) {
 		sleep(1);
@@ -491,7 +381,7 @@ void ipc_shm(char filename[])
 		if (ret != EOK)
 		{
 			perror("pthread_mutex_lock");
-			unlink_and_exit(shmName);
+			unlink_and_exit(INTERFACE_NAME);
 		}
 		if (ptr->bothConnected > 0)
 		{
@@ -510,7 +400,7 @@ void ipc_shm(char filename[])
 		if (ret != EOK)
 		{
 			perror("pthread_mutex_unlock");
-			unlink_and_exit(shmName);
+			unlink_and_exit(INTERFACE_NAME);
 		}
 
 		/* wake up any readers that may be waiting */
@@ -518,7 +408,7 @@ void ipc_shm(char filename[])
 		if (ret != EOK)
 		{
 			perror("pthread_cond_broadcast");
-			unlink_and_exit(shmName);
+			unlink_and_exit(INTERFACE_NAME);
 		}
 	}
 
@@ -530,52 +420,25 @@ void ipc_shm(char filename[])
 	}
 
 	/* but the name must be removed */
-	if (shm_unlink(shmName) == -1)
+	if (shm_unlink(INTERFACE_NAME) == -1)
 	{
 		perror("shm_unlink");
 	}
 
+	printf("All data sent.\n");
 	exit(EXIT_SUCCESS);
 }
 
-void ipc_pipe(char filename[], char pipeName[])
+off_t findSize(char * file_name)
 {
-	char * data;
-	int size_read =1;
-	int fd;
-	int fifofd;
+	struct stat statFile;
+	int status;
 
-	//opening file
-	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
-
-	while ( (fifofd = open(pipeName, O_WRONLY  | O_LARGEFILE, S_IRUSR | S_IWUSR )) == -1)
+	status = stat(file_name, &statFile);
+	if (status == -1)
 	{
-		if (errno == ENOENT)
-		{
-			printf("Waiting for the receiver. Sleep(2)\n");
-			sleep(2);
-		}
-		else
-		{
-			perror("fopen");
-			exit(EXIT_FAILURE);
-		}
+		printf("stat\n");
+		exit(EXIT_FAILURE);
 	}
-
-	data = malloc(PIPE_BUFF);
-
-
-	while(size_read != 0)
-	{
-		size_read = read(fd, data, PIPE_BUFF); // reading the file
-		if (debug) printf( "%d bytes read on the file\n", size_read);
-
-		write(fifofd, data, size_read); // writing on the pipe
-		if (debug) printf( "Successfully wrote in the pipe\n");
-	}
-	free(data);
-	printf("Finished reading and sending data.\n");
-	close(fifofd);
-	close(fd);
-
+	return statFile.st_size;
 }
