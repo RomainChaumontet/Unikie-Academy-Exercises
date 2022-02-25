@@ -29,24 +29,113 @@
 #include <sys/dispatch.h>
 #include <mqueue.h>
 #include <fcntl.h>
-#include <limit.h>
-#include "ipc_common_file.h"
+#include "copyfile.h"
 
 
+struct option long_options[] =
+{
+	  {"help",     no_argument, NULL, 'h'},
+	  {"message",  required_argument, NULL, 'm'},
+	  {"queue",  required_argument, NULL, 'q'},
+	  {"pipe",  no_argument, NULL, 'p'},
+	  {"shm",    required_argument, NULL, 's'},
+	  {"file",  required_argument, NULL, 'f'},
+	  {0, 0, 0, 0}
+};
 
-int ipc_message(char * filename);
-off_t findSize(char * file_name);
-void ipc_queue(char* filename);
-void ipc_pipe(char* filename);
+int ipc_message(char filename[], char servername[]);
+off_t findSize(char file_name[]);
+void ipc_queue(char filename[], char queuename[]);
+void ipc_pipe(char filename[], char pipeName[]);
 
-char* filename;
-int debug = DEBUG_VALUE;
+char filename[MAXFILENAME];
+char servername[MAXSERVERNAME];
+char queuename[MAXQUEUENAME];
+char pipeName[] = PIPE_NAME;
+iov_msg msg;
+char* data;
+int debug =1;
 
 int main (int argc, char *argv[])
 {
-	arguments argumentsProvided = analyseArguments(argc,argv);
+	protocol_t protocol = NONE;
+	int opt;
+	while(1) //loop for taking care of arguments
+	{
+		int option_index=0; //getopt_long stores the option index here
+		opt = getopt_long (argc, argv, "hm:q:ps:f:",long_options,&option_index);
 
-	switch (argumentsProvided.protocol) //launching correct function
+		if (opt == -1) //no more options
+			break;
+
+		switch (opt)
+		{
+		case 'h':
+			printf
+			(
+				"Ipc_sendfile is a program which read a file and send the data to another program.\n"
+				"The program accept the following arguments:\n"
+				"	--help to print this information\n"
+				"	--message <ServerName> to send the data to the receiver by IPC message passing\n"
+				"	--queue <Queue name> to send the data to the receiver by IPC queue\n"
+				"	--pipe to send the data to the receiver by IPC pipe \n"
+				"	--shm <TBD> to send the data to the receiver with a shared memory #not yet implemented\n"
+				" 	--file <filename> to specify the filename which has to be read\n"
+			);
+			protocol=HELP;
+			break;
+		case 'f':
+			if (strlen(optarg) > MAXFILENAME)
+			{
+				printf("The name of the file is too long");
+				break;
+			}
+			snprintf(filename, sizeof(filename),"%s",optarg);
+			printf("The name of the file is %s\n",filename);
+			break;
+		case 'm':
+			if (strlen(optarg) > MAXSERVERNAME)
+			{
+				printf("The servername is too long. Abort\n");
+				break;
+			}
+			snprintf(servername, sizeof(servername),"%s",optarg);
+			printf("The name of the server is %s\n",servername);
+			protocol = MSG;
+			break;
+		case 'q':
+			if (strlen(optarg) > MAXQUEUENAME)
+			{
+				printf("The name of the queue is too long. Abort\n");
+				exit(EXIT_FAILURE);
+			}
+			if (optarg[0] == '/')
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue%s",optarg);
+			}
+			else
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue/%s",optarg);
+			}
+			printf("The name of the queue is %s\n",queuename);
+			protocol = QUEUE;
+			break;
+		case 'p':
+			protocol = PIPE;
+			printf("The pipe protocol has been chosen.\n");
+			break;
+		case 's':
+			printf("This option is not implemented yet. Use --help to know witch ones are\n");
+			exit(EXIT_FAILURE);
+		case '?':
+			break;
+		default:
+			break;
+		}
+
+	}
+
+	switch (protocol) //launching correct function
 		{
 			case NONE:
 				printf("Error. Missing arguments or wrong arguments. Use --help to know which arguments you can use\n");
@@ -55,15 +144,38 @@ int main (int argc, char *argv[])
 			case HELP:
 				break;
 			case MSG:
-				ipc_message(argumentsProvided.filename);
+				if (strlen(filename)==0)
+				{
+					printf("Filename must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				if (strlen(servername)==0)
+				{
+					printf("Servername must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				ipc_message(filename, servername);
 				break;
 			case QUEUE:
-				if (debug) printf("Launching ipc_queue protocol.\n");
-				ipc_queue(argumentsProvided.filename);
+				if (strlen(filename)==0)
+				{
+					printf("Filename must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				if (strlen(queuename)==0)
+				{
+					printf("The name of the queue must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				ipc_queue(filename, queuename);
 				break;
 			case PIPE:
-				ipc_pipe(argumentsProvided.filename);
-				break;
+				if (strlen(filename)==0)
+				{
+					printf("Filename must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				ipc_pipe(filename, pipeName);
 			default:
 				break;
 		}
@@ -73,78 +185,85 @@ int main (int argc, char *argv[])
 
 }
 
-int ipc_message(char* filename)
+int ipc_message(char filename[], char servername[])
 {
-	iov_msg msg;
 	off_t file_size = findSize(filename);
 	int coid = -1;
-	iov_t siov[2];
+	int numberOfIov = file_size/4096+2; // +2 for the header and the last package.
+	iov_t siov[numberOfIov];
 	int fd;
+	int size_read;
 	int status;
-	int bytesRemaining = file_size;
 
-
-	//locate or wait the server
+	//locate the server
 	while (coid == -1)
 	{
-		coid = name_open(INTERFACE_NAME,0);
-		printf("Waiting for the server.\n");
-		sleep(2);
+		coid = name_open(servername,0);
+		printf("Waiting for %s\n", servername);
+		sleep(5);
 	}
+
+	msg.msg_type = CPY_IOV_MSG_TYPE;
 
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
 
-	char* data = calloc(MAX_MSG_BUFF_SIZE,sizeof(char));
-	if (debug) printf("Allocating %d bytes.\n", MAX_MSG_BUFF_SIZE);
 
-	while (bytesRemaining > 0)
+	msg.data_size = file_size;
+	SETIOV(&siov[0], &msg, sizeof(msg));
+
+	char* buffer = calloc(numberOfIov-1,4096);
+
+	for (int i=0; i < numberOfIov-1;i++) //filling buffer
 	{
-
-		msg.data_size = read(fd, data, MAX_MSG_BUFF_SIZE);
-		if( msg.data_size == -1 )
+		size_read = read(fd, &buffer[i], 4096);
+		// Test for error
+		if( size_read == -1 )
 		{
-			perror( "Error reading the file");
-			free(data);
+			perror( "Error reading myfile.dat" );
+			free(buffer);
 			exit(EXIT_FAILURE);
 		}
 
-		if (debug) printf("%lu data read.\n", msg.data_size);
-
-		//Set the header
-		msg.msg_type = CPY_IOV_MSG_TYPE;
-
-		SETIOV(&siov[0], &msg, sizeof(msg));
-		SETIOV(&siov[1], data, msg.data_size);
-
-		printf("sending data...");
-		if (debug) printf("Send a msg with type: %d\n", msg.msg_type);
-		status = MsgSendvs(coid, siov, 2, NULL, 0);
-
-		if (status == -1)
-		{ //was there an error sending to server?
-			perror("MsgSend");
-			free(data);
-			exit(EXIT_FAILURE);
-		}
-		bytesRemaining -= msg.data_size;
+		SETIOV(&siov[i+1], &buffer[i], size_read);
+		if (debug) printf("adding one package of %d bytes\n",size_read);
 	}
+	printf("Send a msg with type: %d\n", msg.msg_type);
+	status = MsgSendvs(coid, siov, numberOfIov, NULL, 0);
+	if (status == -1)
+	{ //was there an error sending to server?
+		perror("MsgSend");
+		free(buffer);
+		exit(EXIT_FAILURE);
+	}
+
 	if (debug) printf("liberate the buffer\n");
 
-	free(data);
+	free(buffer);
 
 	if (debug) printf("all data sent\n");
 	close(fd);
 
-	printf("All done. Closing the app.\n");
 	return EXIT_SUCCESS;
-
 }
 
 
 
+off_t findSize(char file_name[])
+{
+	struct stat statFile;
+	int status;
+
+	status = stat(file_name, &statFile);
+	if (status == -1)
+	{
+		printf("stat\n");
+		exit(EXIT_FAILURE);
+	}
+	return statFile.st_size;
+}
 
 
-void ipc_queue(char* filename)
+void ipc_queue(char filename[], char queuename[])
 {
 	off_t file_size = findSize(filename);
 	long int bytes_already_read = 0;
@@ -162,15 +281,15 @@ void ipc_queue(char* filename)
 
 
 	// Opening the queue
-	queue = mq_open(INTERFACE_NAME, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
+	queue = mq_open(queuename, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
 
 	// If no queue -> the receiver is not launched yet... waiting for it
 	while (queue == -1)
 	{
 		if (errno == ENOENT)
 		{
-			printf("Waiting for the receiver to connect to the queue\n");
-			queue = mq_open(INTERFACE_NAME, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
+			printf("Waiting for the receiver to connect to the queue named %s\n", queuename);
+			queue = mq_open(queuename, O_WRONLY , S_IRWXU | S_IRWXG, &queueAttr);
 			sleep(2);
 		}
 		else
@@ -195,7 +314,7 @@ void ipc_queue(char* filename)
 		if( size_read == -1 )
 		{
 			free(data);
-			perror( "Error reading the file" );
+			perror( "Error reading myfile.dat" );
 			exit(EXIT_FAILURE);
 		}
 
@@ -246,7 +365,7 @@ void ipc_queue(char* filename)
 	exit(EXIT_SUCCESS);
 }
 
-void ipc_pipe(char* filename)
+void ipc_pipe(char filename[], char pipeName[])
 {
 	char * data;
 	int size_read =1;
@@ -256,7 +375,7 @@ void ipc_pipe(char* filename)
 	//opening file
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
 
-	while ( (fifofd = open(INTERFACE_NAME, O_WRONLY  | O_LARGEFILE, S_IRUSR | S_IWUSR )) == -1)
+	while ( (fifofd = open(pipeName, O_WRONLY  | O_LARGEFILE, S_IRUSR | S_IWUSR )) == -1)
 	{
 		if (errno == ENOENT)
 		{
@@ -270,12 +389,12 @@ void ipc_pipe(char* filename)
 		}
 	}
 
-	data = malloc(PIPE_BUF);
+	data = malloc(PIPE_BUFF);
 
 
 	while(size_read != 0)
 	{
-		size_read = read(fd, data, PIPE_BUF); // reading the file
+		size_read = read(fd, data, PIPE_BUFF); // reading the file
 		if (debug) printf( "%d bytes read on the file\n", size_read);
 
 		write(fifofd, data, size_read); // writing on the pipe
@@ -286,18 +405,4 @@ void ipc_pipe(char* filename)
 	close(fifofd);
 	close(fd);
 
-}
-
-off_t findSize(char * file_name)
-{
-	struct stat statFile;
-	int status;
-
-	status = stat(file_name, &statFile);
-	if (status == -1)
-	{
-		printf("stat\n");
-		exit(EXIT_FAILURE);
-	}
-	return statFile.st_size;
 }
