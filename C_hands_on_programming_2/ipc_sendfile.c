@@ -42,6 +42,7 @@ void ipc_queue(char* filename);
 void ipc_pipe(char* filename);
 void ipc_shm(char* filename);
 
+
 char* filename;
 int debug = DEBUG_VALUE;
 
@@ -100,8 +101,7 @@ int ipc_message(char* filename)
 	int fd;
 	int status;
 	int bytesRemaining = file_size;
-
-
+  
 	//locate or wait the server
 	while (coid == -1)
 	{
@@ -157,8 +157,6 @@ int ipc_message(char* filename)
 	return EXIT_SUCCESS;
 
 }
-
-
 
 
 
@@ -305,7 +303,6 @@ void ipc_pipe(char* filename)
 	close(fd);
 
 }
-
 
 void ipc_shm(char* filename)
 {

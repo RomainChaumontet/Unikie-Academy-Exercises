@@ -45,7 +45,6 @@ typedef union
 
 arguments analyseArguments(int argc, char *argv[]);
 
-
 typedef struct
 {
 	volatile unsigned init_flag;  // has the shared memory and control structures been initialized
