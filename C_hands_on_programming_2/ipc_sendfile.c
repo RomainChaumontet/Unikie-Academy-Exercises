@@ -194,7 +194,7 @@ void ipc_queue(char* filename)
 		if( size_read == -1 )
 		{
 			free(data);
-			perror( "Error reading myfile.dat" );
+			perror( "Error reading the file" );
 			exit(EXIT_FAILURE);
 		}
 
