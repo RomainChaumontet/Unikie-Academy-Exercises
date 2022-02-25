@@ -39,5 +39,5 @@ clean:
 	rm -f *.o $(BINS)
 
 # dependencies
-ipc_sendfile.o: copyfile.h
-ipc_receivefile.o: copyfile.h
+ipc_sendfile: ipc_sendfile.c ipc_common_file.o
+ipc_receivefile: ipc_receivefile.c ipc_common_file.o
