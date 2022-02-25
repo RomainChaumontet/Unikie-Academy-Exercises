@@ -27,6 +27,7 @@
 #include <mqueue.h>
 #include <fcntl.h>
 #include <time.h>
+#include <limit.h>
 #include "ipc_common_file.h"
 
 char * filename;
@@ -84,10 +85,16 @@ int main (int argc, char *argv[])
 
 int writing(char * data, char * filename,unsigned data_size)
 {
+	int ret;
 	if (debug) printf("Try writing the file %s with %u bytes\n", filename, data_size);
 
 	//write the text
-	fwrite(data, data_size, 1, fptr);
+	ret = fwrite(data, data_size, 1, fptr);
+	if (ret == -1)
+	{
+		perror("writing file");
+		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }
@@ -177,7 +184,12 @@ void ipc_message(char * filename)
 			}
 
 			if (debug) printf("%lu bytes to write\n", strlen(data));
-			writing(data, filename, msg.msg.data_size);
+			status = writing(data, filename, msg.msg.data_size);
+			if (status == -1)
+			{
+				free(data);
+				exit(EXIT_FAILURE);
+			}
 			free(data);
 			status = MsgReply(rcvid, EOK, NULL, 0);
 			if (status == -1)
@@ -269,7 +281,12 @@ void ipc_queue(char * filename)
 	  }
 
 	//writing on the file
-	writing(data, filename, bytes_received);
+	ret = writing(data, filename, bytes_received);
+	if (ret == -1)
+	{
+		free(data);
+		exit(EXIT_FAILURE);
+	}
 	while(1)
 	{
 		clock_gettime(CLOCK_REALTIME, &abs_timeout);
@@ -295,7 +312,12 @@ void ipc_queue(char * filename)
 		  }
 
 		//writing on the file
-		writing(data, filename, bytes_received);
+		ret = writing(data, filename, bytes_received);
+		if (ret == -1)
+		{
+			free(data);
+			exit(EXIT_FAILURE);
+		}
 
 	}
 	free(data);
@@ -346,20 +368,30 @@ void ipc_pipe(char * filename)
 
 	fd = open(INTERFACE_NAME,O_RDONLY);
 
-	data = malloc(PIPE_BUFF);
+	data = malloc(PIPE_BUF);
 	while (size_read == 0 ) //waiting for data on the pipe
 	{
 		sleep(1);
-		size_read = read(fd, data, PIPE_BUFF);
+		size_read = read(fd, data, PIPE_BUF);
 	}
-	writing(data, filename, size_read);
+	status = writing(data, filename, size_read);
+	if (status == -1)
+	{
+		free(data);
+		exit(EXIT_FAILURE);
+	}
 	if (debug) printf("%d bytes written on the file\n", size_read);
 
 
 	while(size_read > 0)
 	{
-		size_read = read(fd, data, PIPE_BUFF);
-		writing(data, filename, size_read);
+		size_read = read(fd, data, PIPE_BUF);
+		status = writing(data, filename, size_read);
+		if (status == -1)
+		{
+			free(data);
+			exit(EXIT_FAILURE);
+		}
 		if (debug) printf("%d bytes written on the file\n", size_read);
 	}
 

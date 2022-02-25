@@ -29,6 +29,7 @@
 #include <sys/dispatch.h>
 #include <mqueue.h>
 #include <fcntl.h>
+#include <limit.h>
 #include "ipc_common_file.h"
 
 
@@ -269,12 +270,12 @@ void ipc_pipe(char* filename)
 		}
 	}
 
-	data = malloc(PIPE_BUFF);
+	data = malloc(PIPE_BUF);
 
 
 	while(size_read != 0)
 	{
-		size_read = read(fd, data, PIPE_BUFF); // reading the file
+		size_read = read(fd, data, PIPE_BUF); // reading the file
 		if (debug) printf( "%d bytes read on the file\n", size_read);
 
 		write(fifofd, data, size_read); // writing on the pipe
