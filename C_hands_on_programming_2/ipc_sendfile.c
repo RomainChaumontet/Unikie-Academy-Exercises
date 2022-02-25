@@ -5,15 +5,15 @@
 // For the moment theses methods are implemented:											//
 //		* message queue 																	//
 // 		* message passing																	//
-// 		* pipe 																				//
-//		* share memory																		//
+// 		* pipe 			
+//		* share memory			
 //------------------------------------------------------------------------------------------//
 // This file should take as argument:														//
 //		* --help to print out a help text containing short description of all supported		//
 //			command line arguments															//
 //		* --file <filename> file used to read data											//
-//		* --<method> <element to connect to the receiver> to give the method use and the 	//
-//			way to recognize the receiver.													//
+//		* --<method> <element to connect to the receiver in asked> to give the method use 	//
+//			 and the way to recognize the receiver.											//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
@@ -37,8 +37,8 @@ struct option long_options[] =
 	  {"help",     no_argument, NULL, 'h'},
 	  {"message",  required_argument, NULL, 'm'},
 	  {"queue",  required_argument, NULL, 'q'},
-	  {"pipe",  required_argument, NULL, 'p'},
 	  {"shm",    no_argument, NULL, 's'},
+	  {"pipe",  no_argument, NULL, 'p'},
 	  {"file",  required_argument, NULL, 'f'},
 	  {0, 0, 0, 0}
 };
@@ -47,11 +47,13 @@ int ipc_message(char filename[], char servername[]);
 off_t findSize(char file_name[]);
 void ipc_queue(char filename[], char queuename[]);
 void ipc_shm(char filename[]);
+void ipc_pipe(char filename[], char pipeName[]);
 
 char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 char queuename[MAXQUEUENAME];
 char shmName[]=SHARED_MEMORY_NAME;
+char pipeName[] = PIPE_NAME;
 iov_msg msg;
 char* data;
 int debug =1;
@@ -69,7 +71,8 @@ int main (int argc, char *argv[])
 	while(1) //loop for taking care of arguments
 	{
 		int option_index=0; //getopt_long stores the option index here
-		opt = getopt_long (argc, argv, "hm:q:p:sf:",long_options,&option_index);
+		opt = getopt_long (argc, argv, "hm:q:psf:",long_options,&option_index);
+		opt = getopt_long (argc, argv, "hm:q:ps:f:",long_options,&option_index);
 
 		if (opt == -1) //no more options
 			break;
@@ -84,9 +87,9 @@ int main (int argc, char *argv[])
 				"	--help to print this information\n"
 				"	--message <ServerName> to send the data to the receiver by IPC message passing\n"
 				"	--queue <Queue name> to send the data to the receiver by IPC queue\n"
-				"	--pipe <TBD> to send the data to the receiver by IPC pipe #not yet implemented\n"
+				"	--pipe to send the data to the receiver by IPC pipe #not yet implemented\n"
 				"	--shm to send the data to the receiver with a shared memory \n"
-				" 	--file <filename> to specify the filename which has to be read\n"
+				" --file <filename> to specify the filename which has to be read\n"
 			);
 			protocol=HELP;
 			break;
@@ -127,6 +130,9 @@ int main (int argc, char *argv[])
 			protocol = QUEUE;
 			break;
 		case 'p':
+			protocol = PIPE;
+			printf("The pipe protocol has been chosen.\n");
+			break;
 		case 's':
 			printf("Protocol shared memory is chosen.\n");
 			protocol = SHM;
@@ -173,14 +179,22 @@ int main (int argc, char *argv[])
 				}
 				ipc_queue(filename, queuename);
 				break;
+      
 			case SHM:
-				if (strlen(filename)==0)
+       if (strlen(filename)==0)
 				{
 					printf("Filename must be specified. Abort\n");
 					return EXIT_FAILURE;
 				}
 				ipc_shm(filename);
 				break;
+			case PIPE:
+				if (strlen(filename)==0)
+				{
+					printf("Filename must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				ipc_pipe(filename, pipeName);
 			default:
 				break;
 		}
@@ -308,19 +322,17 @@ void ipc_queue(char filename[], char queuename[])
 
 	//opening file
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
-
+	int data_size = min(MAX_QUEUE_MSG_SIZE, file_size);
+	data = malloc(data_size);
 
 	while (file_size > bytes_already_read)
 	{
-
-		int data_size = min(MAX_QUEUE_MSG_SIZE, file_size - bytes_already_read);
-		data = malloc(data_size);
-
 		size_read = read(fd, data, data_size);
 
 		/* Test for error */
 		if( size_read == -1 )
 		{
+			free(data);
 			perror( "Error reading myfile.dat" );
 			exit(EXIT_FAILURE);
 		}
@@ -329,6 +341,7 @@ void ipc_queue(char filename[], char queuename[])
 		ret = mq_send(queue, data, size_read, prio);
 		if (ret == -1)
 		{
+			free(data);
 		   perror ("mq_send()");
 		   exit(EXIT_FAILURE);
 		}
@@ -338,7 +351,7 @@ void ipc_queue(char filename[], char queuename[])
 		if (debug) printf("Data sent this loop: %d \n", size_read);
 		if (debug) printf("Cumulated data sent: %ld over %ld\n", bytes_already_read, file_size);
 
-		free(data);
+
 
 		//looking at the queue state
 		if (debug)
@@ -351,7 +364,7 @@ void ipc_queue(char filename[], char queuename[])
 			printf("Messages: %ld; send waits: %ld; receive waits: %ld\n\n", queueAttr.mq_curmsgs, queueAttr.mq_sendwait, queueAttr.mq_recvwait);
 		}
 	}
-
+	free(data);
 	//close the file
 	ret = close(fd);
 	if (ret !=0)
@@ -363,15 +376,13 @@ void ipc_queue(char filename[], char queuename[])
 	ret = mq_close(queue);
 	if (ret == -1)
 	{
-	 perror ("mq_close()");
-	 exit(EXIT_FAILURE);
+		perror ("mq_close()");
+		exit(EXIT_FAILURE);
 	}
 
 	printf("All data sent with success\n");
 	exit(EXIT_SUCCESS);
 }
-
-
 
 void ipc_shm(char filename[])
 {
@@ -525,5 +536,46 @@ void ipc_shm(char filename[])
 	}
 
 	exit(EXIT_SUCCESS);
+}
+
+void ipc_pipe(char filename[], char pipeName[])
+{
+	char * data;
+	int size_read =1;
+	int fd;
+	int fifofd;
+
+	//opening file
+	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
+
+	while ( (fifofd = open(pipeName, O_WRONLY  | O_LARGEFILE, S_IRUSR | S_IWUSR )) == -1)
+	{
+		if (errno == ENOENT)
+		{
+			printf("Waiting for the receiver. Sleep(2)\n");
+			sleep(2);
+		}
+		else
+		{
+			perror("fopen");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	data = malloc(PIPE_BUFF);
+
+
+	while(size_read != 0)
+	{
+		size_read = read(fd, data, PIPE_BUFF); // reading the file
+		if (debug) printf( "%d bytes read on the file\n", size_read);
+
+		write(fifofd, data, size_read); // writing on the pipe
+		if (debug) printf( "Successfully wrote in the pipe\n");
+	}
+	free(data);
+	printf("Finished reading and sending data.\n");
+	close(fifofd);
+	close(fd);
 
 }

@@ -19,6 +19,8 @@
 #define QUEUE_PRIORITY 5
 #define SHARED_MEMORY_NAME "shmCopyFile"
 #define SHARE_MEMORY_BUFF 409600
+#define PIPE_NAME "ipcPipeName"
+#define PIPE_BUFF 4096
 
 typedef struct
 {

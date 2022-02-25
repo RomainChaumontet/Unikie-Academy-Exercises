@@ -42,8 +42,8 @@ struct option long_options[] =
 	  {"help",     no_argument, NULL, 'h'},
 	  {"message",  required_argument, NULL, 'm'},
 	  {"queue",  required_argument, NULL, 'q'},
-	  {"pipe",  required_argument, NULL, 'p'},
 	  {"shm",    no_argument, NULL, 's'},
+	  {"pipe",  no_argument, NULL, 'p'},
 	  {"file",  required_argument, NULL, 'f'},
 	  {0, 0, 0, 0}
 };
@@ -52,6 +52,7 @@ char filename[MAXFILENAME];
 char servername[MAXSERVERNAME];
 char queuename[MAXQUEUENAME];
 char shmName[]=SHARED_MEMORY_NAME;
+char pipeName[] = PIPE_NAME;
 int debug = 1; // variable to see each step
 send_by_msg msg;
 FILE* fptr;
@@ -62,6 +63,8 @@ void ipc_shm(char filename[]);
 int writing(char * data, char filename[], unsigned data_size);
 void *get_shared_memory_pointer( char *name, unsigned num_retries );
 
+void ipc_pipe(char filename[], char pipeName[]);
+
 
 int main (int argc, char *argv[])
 {
@@ -70,7 +73,7 @@ int main (int argc, char *argv[])
 	while(1)
 	{
 		int option_index=0; //getopt_long stores the option index here
-		opt = getopt_long (argc, argv, "hm:q:p:sf:",long_options,&option_index);
+		opt = getopt_long (argc, argv, "hm:q:psf:",long_options,&option_index);
 
 		if (opt == -1) //no more options
 			break;
@@ -84,9 +87,9 @@ int main (int argc, char *argv[])
 				"The program accept the following arguments:\n"
 				"	--help to print this information\n"
 				"	--message <ServerName> to receive the data from the sender by IPC message passing\n"
-				"	--queue <TBD> to receive the data from the sender by IPC queue #not yet implemented\n"
-				"	--pipe <TBD> to receive the data from the sender by IPC pipe #not yet implemented\n"
-				"	--shm to receive the data from the sender with a shared memory\n"
+				"	--queue <Choose_your_queue_name> to receive the data from the sender by IPC queue #not yet implemented\n"
+				"	--pipe to receive the data from the sender by IPC pipe \n"
+				"	--shm to receive the data from the sender with a shared memory #not yet implemented\n"
 				" 	--file <filename> to specify the filename which has to be write\n"
 			);
 			protocol=HELP;
@@ -128,6 +131,9 @@ int main (int argc, char *argv[])
 			protocol = QUEUE;
 			break;
 		case 'p':
+			protocol = PIPE;
+			printf("The pipe protocol has been chosen.\n");
+			break;
 		case 's':
 			protocol = SHM;
 			printf("Shared memory procotol is chosen \n");
@@ -174,12 +180,20 @@ int main (int argc, char *argv[])
 			ipc_queue(filename, queuename);
 			break;
 		case SHM:
-			if (strlen(filename)==0)
+      if (strlen(filename)==0)
 			{
 				printf("Filename must be specified. Abort\n");
 				return EXIT_FAILURE;
 			}
 			ipc_shm(filename);
+      break;
+		case PIPE:
+			if (strlen(filename)==0)
+			{
+				printf("Filename must be specified. Abort\n");
+				return EXIT_FAILURE;
+			}
+			ipc_pipe(filename, pipeName);
 			break;
 		default:
 			break;
@@ -403,6 +417,7 @@ void ipc_queue(char filename[], char queuename[])
 		     else
 		     {
 		        perror ("mq_timedreceive()");
+		        free(data);
 		        exit(EXIT_FAILURE);
 		     }
 		}
@@ -414,7 +429,6 @@ void ipc_queue(char filename[], char queuename[])
 		writing(data, filename, bytes_received);
 
 	}
-
 	free(data);
 
 	//close the file
@@ -555,6 +569,70 @@ void *get_shared_memory_pointer( char *name, unsigned num_retries )
 	}
 
 	return ptr;
+}
+
+void ipc_pipe(char filename[], char pipeName[])
+{
+	int status;
+	int fd; //pipe file descriptor
+	int size_read = 0; //size of data read on the pipe
+	char * data;
+
+	fptr = fopen64(filename, "wb");  //Create/open the file in write binary mode
+	if (fptr==NULL)
+	{
+		perror("Openfile");
+		exit(EXIT_FAILURE);
+	}
+
+	status = mkfifo(pipeName, S_IRWXU | S_IRWXG);
+	if (status == -1 && errno != EEXIST)
+	{
+		perror("mkfifo");
+		exit(EXIT_FAILURE);
+	}
+
+	fd = open(pipeName,O_RDONLY);
+
+	data = malloc(PIPE_BUFF);
+	while (size_read == 0 ) //waiting for data on the pipe
+	{
+		sleep(1);
+		size_read = read(fd, data, PIPE_BUFF);
+	}
+	writing(data, filename, size_read);
+	if (debug) printf("%d bytes written on the file\n", size_read);
+
+
+	while(size_read > 0)
+	{
+		size_read = read(fd, data, PIPE_BUFF);
+		writing(data, filename, size_read);
+		if (debug) printf("%d bytes written on the file\n", size_read);
+	}
+
+	free(data);
+	//Closing pipe and file
+	status = close(fd);
+	if (status != 0)
+	{
+		perror("Pipe close");
+	}
+
+	printf("Finished writing data.\n");
+
+	status = fclose(fptr);
+	if (status == -1)
+	{
+	 perror ("file_close()");
+	}
+
+	status = remove(pipeName);
+	if (status != 0)
+	{
+		perror("pipe remove");
+	}
+
 }
 
 /*
