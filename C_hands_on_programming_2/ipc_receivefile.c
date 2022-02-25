@@ -27,24 +27,122 @@
 #include <mqueue.h>
 #include <fcntl.h>
 #include <time.h>
-#include <limit.h>
-#include "ipc_common_file.h"
+#include "copyfile.h"
 
-char * filename;
-int debug = DEBUG_VALUE; // variable to see each step
+typedef union
+{
+	uint16_t msg_type;
+	struct _pulse pulse;
+	iov_msg msg;
+} send_by_msg;
+
+
+
+struct option long_options[] =
+{
+	  {"help",     no_argument, NULL, 'h'},
+	  {"message",  required_argument, NULL, 'm'},
+	  {"queue",  required_argument, NULL, 'q'},
+	  {"pipe",  no_argument, NULL, 'p'},
+	  {"shm",    required_argument, NULL, 's'},
+	  {"file",  required_argument, NULL, 'f'},
+	  {0, 0, 0, 0}
+};
+
+char filename[MAXFILENAME];
+char servername[MAXSERVERNAME];
+char queuename[MAXQUEUENAME];
+char pipeName[] = PIPE_NAME;
+int debug = 1; // variable to see each step
+send_by_msg msg;
 FILE* fptr;
 
-void ipc_message(char * filename);
-void ipc_queue(char * filename);
-int writing(char * data, char * filename, unsigned data_size);
-void ipc_pipe(char * filename);
+void ipc_message(char filename[], char servername[]);
+void ipc_queue(char filename[], char queuename[]);
+int writing(char * data, char filename[], unsigned data_size);
+void ipc_pipe(char filename[], char pipeName[]);
 
 
 int main (int argc, char *argv[])
 {
-	arguments argumentsProvided = analyseArguments(argc,argv);
+	protocol_t protocol = NONE;
+	int opt;
+	while(1)
+	{
+		int option_index=0; //getopt_long stores the option index here
+		opt = getopt_long (argc, argv, "hm:q:ps:f:",long_options,&option_index);
 
-	switch (argumentsProvided.protocol) //launching the correct function
+		if (opt == -1) //no more options
+			break;
+
+		switch (opt)
+		{
+		case 'h':
+			printf
+			(
+				"Ipc_sendfile is a program which get some data and write it to a file.\n"
+				"The program accept the following arguments:\n"
+				"	--help to print this information\n"
+				"	--message <ServerName> to receive the data from the sender by IPC message passing\n"
+				"	--queue <Choose_your_queue_name> to receive the data from the sender by IPC queue #not yet implemented\n"
+				"	--pipe to receive the data from the sender by IPC pipe \n"
+				"	--shm <TBD> to receive the data from the sender with a shared memory #not yet implemented\n"
+				" 	--file <filename> to specify the filename which has to be write\n"
+			);
+			protocol=HELP;
+			break;
+		case 'f':
+			if (strlen(optarg) > MAXFILENAME)
+			{
+				printf("The name of the file is too long. Abort\n");
+				break;
+			}
+			snprintf(filename, sizeof(filename),"%s",optarg);
+			printf("The name of the file is %s\n",filename);
+			break;
+		case 'm':
+			if (strlen(optarg) > MAXSERVERNAME)
+			{
+				printf("The servername is too long. Abort\n");
+				exit(EXIT_FAILURE);
+			}
+			snprintf(servername, sizeof(servername),"%s",optarg);
+			printf("The name of the server is %s\n",servername);
+			protocol=MSG;
+			break;
+		case 'q':
+			if (strlen(optarg) > MAXQUEUENAME)
+			{
+				printf("The name of the queue is too long. Abort\n");
+				exit(EXIT_FAILURE);
+			}
+			if (optarg[0] == '/')
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue%s",optarg);
+			}
+			else
+			{
+				snprintf(queuename, sizeof(queuename),"/ipc_queue/%s",optarg);
+			}
+			printf("The name of the queue is %s\n",queuename);
+			protocol = QUEUE;
+			break;
+		case 'p':
+			protocol = PIPE;
+			printf("The pipe protocol has been chosen.\n");
+			break;
+		case 's':
+			printf("This option is not implemented yet. Use --help to know witch ones are\n");
+			exit(EXIT_FAILURE);
+		case '?':
+			break;
+		default:
+			break;
+		}
+
+	}
+
+	switch (protocol) //launching the correct function
 	{
 		case NONE:
 			printf("Error. Missing arguments or wrong arguments. Use --help to know which arguments you can use\n");
@@ -52,28 +150,38 @@ int main (int argc, char *argv[])
 		case HELP:
 			break;
 		case MSG:
-			if (strlen(argumentsProvided.filename)==0)
+			if (strlen(filename)==0)
 			{
 				printf("Filename must be specified. Abort\n");
 				return EXIT_FAILURE;
 			}
-			ipc_message(argumentsProvided.filename);
+			if (strlen(servername)==0)
+			{
+				printf("ServerName must be specified. Abort\n");
+				return EXIT_FAILURE;
+			}
+			ipc_message(filename, servername);
 			break;
 		case QUEUE:
-			if (strlen(argumentsProvided.filename)==0)
+			if (strlen(filename)==0)
 			{
 				printf("Filename must be specified. Abort\n");
 				return EXIT_FAILURE;
 			}
-			ipc_queue(argumentsProvided.filename);
+			if (strlen(queuename)==0)
+			{
+				printf("The name of the queue must be specified. Abort\n");
+				return EXIT_FAILURE;
+			}
+			ipc_queue(filename, queuename);
 			break;
 		case PIPE:
-			if (strlen(argumentsProvided.filename)==0)
+			if (strlen(filename)==0)
 			{
 				printf("Filename must be specified. Abort\n");
 				return EXIT_FAILURE;
 			}
-			ipc_pipe(argumentsProvided.filename);
+			ipc_pipe(filename, pipeName);
 			break;
 		default:
 			break;
@@ -83,32 +191,30 @@ int main (int argc, char *argv[])
 
 }
 
-int writing(char * data, char * filename,unsigned data_size)
+int writing(char * data, char filename[],unsigned data_size)
 {
-	int ret;
 	if (debug) printf("Try writing the file %s with %u bytes\n", filename, data_size);
-
+	int status;
 	//write the text
-	ret = fwrite(data, data_size, 1, fptr);
-	if (ret == -1)
-	{
-		perror("writing file");
-		return EXIT_FAILURE;
-	}
+	status = fwrite(data, data_size, 1, fptr);
+	if (debug) printf( "Successfully wrote %d records\n", status );
+
+
 
 	return EXIT_SUCCESS;
+
 }
 
-void ipc_message(char * filename)
+void ipc_message(char filename[], char servername[])
 {
-	send_by_msg msg;
+	if (debug) printf("Entering ipc_message\n");
 	int rcvid;
 	char* data;
 	int status;
 	name_attach_t *attach;
 
 
-	attach = name_attach(NULL, INTERFACE_NAME,0);
+	attach = name_attach(NULL, servername,0);
 	if (attach == NULL)
 	{
 		perror("name_attach");
@@ -128,7 +234,6 @@ void ipc_message(char * filename)
 	while(1)
 	{
 		if (debug) printf("Waiting for message\n");
-
 		rcvid = MsgReceive(attach->chid, &msg, sizeof(msg), NULL);
 		if (rcvid == -1)
 		{ //was there an error receiving msg?
@@ -140,7 +245,7 @@ void ipc_message(char * filename)
 		{
 			if (msg.pulse.code == _PULSE_CODE_DISCONNECT)
 			{
-				printf("Client disconnected, the copy is finished.\n");
+				printf("Client disconnected, copy finished\n");
 				if (ConnectDetach(msg.pulse.scoid) == -1)
 				{
 					perror("ConnectDetach");
@@ -150,7 +255,6 @@ void ipc_message(char * filename)
 			else
 			{
 				printf("unknown pulse received, code = %d\n", msg.pulse.code);
-				exit(EXIT_FAILURE);
 			}
 
 		}
@@ -162,46 +266,49 @@ void ipc_message(char * filename)
 				perror("MsgReceive, unknown type.");
 				exit(EXIT_FAILURE);
 			}
+			int numberOfIov = msg.msg.data_size/4096+1;
 
-			data = calloc(msg.msg.data_size,sizeof(char));
+
+			data = calloc(numberOfIov,4096);
+			if (debug) printf("allocating %lu bytes\n", msg.msg.data_size);
 			if (data == NULL)
 			{
-				perror("MsgError");
-				free(data);
-				exit(EXIT_FAILURE);
+				if (MsgError(rcvid, ENOMEM ) == -1)
+				{
+					perror("MsgError");
+					free(data);
+					exit(EXIT_FAILURE);
+				}
 			}
-
-			if (debug) printf("allocating %lu bytes\n", msg.msg.data_size);
-
-			//Receive data and call writing function
-			status = MsgRead(rcvid, data, msg.msg.data_size, sizeof(iov_msg));
-			if (status == -1)
+			else
 			{
-				perror("MsgRead");
-				if (debug) printf("Length of MsgRead expected : %lu\n", msg.msg.data_size);
-				free(data);
-				exit(EXIT_FAILURE);
-			}
+				//preparing iov
+				iov_t siov[numberOfIov];
+				for (int i=0; i<numberOfIov;i++)
+				{
+					SETIOV(&siov[i], &data[i], 4096);
+				}
 
-			if (debug) printf("%lu bytes to write\n", strlen(data));
-			status = writing(data, filename, msg.msg.data_size);
-			if (status == -1)
-			{
+				//Receive data and call writing function
+				status = MsgReadv(rcvid, siov, numberOfIov, sizeof(iov_msg));
+				if (status == -1)
+				{
+					perror("MsgRead");
+					free(data);
+					exit(EXIT_FAILURE);
+				}
+				if (debug) printf("%lu bytes to write\n", strlen(data));
+				writing(data, filename, msg.msg.data_size);
 				free(data);
-				exit(EXIT_FAILURE);
+				status = MsgReply(rcvid, EOK, NULL, 0);
+				if (status == -1)
+				{
+					perror("MsgReply");
+					exit(EXIT_FAILURE);
+				}
 			}
-			free(data);
-			status = MsgReply(rcvid, EOK, NULL, 0);
-			if (status == -1)
-			{
-				perror("MsgReply");
-				exit(EXIT_FAILURE);
-			}
-
 		}
 	}
-
-
 	//close the file
 	status = fclose(fptr);
 	if (status !=0)
@@ -215,7 +322,7 @@ void ipc_message(char * filename)
 
 
 
-void ipc_queue(char * filename)
+void ipc_queue(char filename[], char queuename[])
 {
 	mqd_t queue;
 	struct mq_attr queueAttr; //variable for the attributes of the queue
@@ -230,7 +337,7 @@ void ipc_queue(char * filename)
 	queueAttr.mq_msgsize = MAX_QUEUE_MSG_SIZE;
 
 	// Opening the queue
-	queue = mq_open(INTERFACE_NAME, O_CREAT | O_RDONLY , S_IRWXU | S_IRWXG, &queueAttr);
+	queue = mq_open(queuename, O_CREAT | O_RDONLY , S_IRWXU | S_IRWXG, &queueAttr);
 	if (queue == -1) {
 	     perror ("mq_open()");
 	     exit(EXIT_FAILURE);
@@ -281,12 +388,7 @@ void ipc_queue(char * filename)
 	  }
 
 	//writing on the file
-	ret = writing(data, filename, bytes_received);
-	if (ret == -1)
-	{
-		free(data);
-		exit(EXIT_FAILURE);
-	}
+	writing(data, filename, bytes_received);
 	while(1)
 	{
 		clock_gettime(CLOCK_REALTIME, &abs_timeout);
@@ -312,12 +414,7 @@ void ipc_queue(char * filename)
 		  }
 
 		//writing on the file
-		ret = writing(data, filename, bytes_received);
-		if (ret == -1)
-		{
-			free(data);
-			exit(EXIT_FAILURE);
-		}
+		writing(data, filename, bytes_received);
 
 	}
 	free(data);
@@ -331,7 +428,7 @@ void ipc_queue(char * filename)
 	}
 
 	/* Unlink and then close the message queue. */
-	ret = mq_unlink (INTERFACE_NAME);
+	ret = mq_unlink (queuename);
 	if (ret == -1) {
 	 perror ("mq_unlink()");
 	 exit(EXIT_FAILURE);
@@ -345,7 +442,7 @@ void ipc_queue(char * filename)
 	}
 }
 
-void ipc_pipe(char * filename)
+void ipc_pipe(char filename[], char pipeName[])
 {
 	int status;
 	int fd; //pipe file descriptor
@@ -359,39 +456,29 @@ void ipc_pipe(char * filename)
 		exit(EXIT_FAILURE);
 	}
 
-	status = mkfifo(INTERFACE_NAME, S_IRWXU | S_IRWXG);
+	status = mkfifo(pipeName, S_IRWXU | S_IRWXG);
 	if (status == -1 && errno != EEXIST)
 	{
 		perror("mkfifo");
 		exit(EXIT_FAILURE);
 	}
 
-	fd = open(INTERFACE_NAME,O_RDONLY);
+	fd = open(pipeName,O_RDONLY);
 
-	data = malloc(PIPE_BUF);
+	data = malloc(PIPE_BUFF);
 	while (size_read == 0 ) //waiting for data on the pipe
 	{
 		sleep(1);
-		size_read = read(fd, data, PIPE_BUF);
+		size_read = read(fd, data, PIPE_BUFF);
 	}
-	status = writing(data, filename, size_read);
-	if (status == -1)
-	{
-		free(data);
-		exit(EXIT_FAILURE);
-	}
+	writing(data, filename, size_read);
 	if (debug) printf("%d bytes written on the file\n", size_read);
 
 
 	while(size_read > 0)
 	{
-		size_read = read(fd, data, PIPE_BUF);
-		status = writing(data, filename, size_read);
-		if (status == -1)
-		{
-			free(data);
-			exit(EXIT_FAILURE);
-		}
+		size_read = read(fd, data, PIPE_BUFF);
+		writing(data, filename, size_read);
 		if (debug) printf("%d bytes written on the file\n", size_read);
 	}
 
@@ -411,7 +498,7 @@ void ipc_pipe(char * filename)
 	 perror ("file_close()");
 	}
 
-	status = remove(INTERFACE_NAME);
+	status = remove(pipeName);
 	if (status != 0)
 	{
 		perror("pipe remove");
