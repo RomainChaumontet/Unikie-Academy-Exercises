@@ -16,7 +16,7 @@ struct option long_options[] =
 	  {"message",  no_argument, NULL, 'm'},
 	  {"queue",  no_argument, NULL, 'q'},
 	  {"pipe",  no_argument, NULL, 'p'},
-	  {"shm",    required_argument, NULL, 's'},
+	  {"shm",    no_argument, NULL, 's'},
 	  {"file",  required_argument, NULL, 'f'},
 	  {0, 0, 0, 0}
 };
@@ -30,7 +30,7 @@ arguments analyseArguments(int argc, char *argv[])
 	while(1)
 	{
 		int option_index=0; //getopt_long stores the option index here
-		opt = getopt_long (argc, argv, "hmqps:f:",long_options,&option_index);
+		opt = getopt_long (argc, argv, "hmqpsf:",long_options,&option_index);
 
 		if (opt == -1) //no more options
 			break;
@@ -68,8 +68,9 @@ arguments analyseArguments(int argc, char *argv[])
 			printf("The pipe protocol has been chosen.\n");
 			break;
 		case 's':
-			printf("This option is not implemented yet. Use --help to know witch ones are\n");
-			exit(EXIT_FAILURE);
+			retval.protocol = SHM;
+			printf("Shared memory procotol is chosen \n");
+			break;
 		case '?':
 			break;
 		default:
@@ -81,5 +82,3 @@ arguments analyseArguments(int argc, char *argv[])
 	return retval;
 
 }
-
-

@@ -27,7 +27,10 @@
 #include <mqueue.h>
 #include <fcntl.h>
 #include <time.h>
-#include <limit.h>
+#include <limits.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <semaphore.h>
 #include "ipc_common_file.h"
 
 char * filename;
@@ -38,6 +41,8 @@ void ipc_message(char * filename);
 void ipc_queue(char * filename);
 int writing(char * data, char * filename, unsigned data_size);
 void ipc_pipe(char * filename);
+void ipc_shm(char* filename);
+void *get_shared_memory_pointer( char *name, unsigned num_retries );
 
 
 int main (int argc, char *argv[])
@@ -74,6 +79,14 @@ int main (int argc, char *argv[])
 				return EXIT_FAILURE;
 			}
 			ipc_pipe(argumentsProvided.filename);
+			break;
+		case SHM:
+			if (strlen(argumentsProvided.filename)==0)
+				{
+					printf("Filename must be specified. Abort\n");
+					return EXIT_FAILURE;
+				}
+				ipc_shm(argumentsProvided.filename);
 			break;
 		default:
 			break;
@@ -419,11 +432,158 @@ void ipc_pipe(char * filename)
 
 }
 
-/*
- * ipc_receivefile.c
- *
- *  Created on: Feb 15, 2022
- *      Author: romain
- */
+void ipc_shm(char* filename)
+{
+	int ret;
+	shmem_t *ptr;
+	uint8_t continueLoop = 1; // Become 0 if there is no more data to read.
+	sem_t* semaphorePtr;
+	const char * semName = SEMAPHORE_NAME;
 
+
+	/* try to get access to the shared memory object, retrying for 100 times (100 seconds) */
+	ptr = get_shared_memory_pointer(INTERFACE_NAME, 100);
+	if (ptr == MAP_FAILED)
+	{
+		fprintf(stderr, "Unable to access object '%s' - was creator run with same name?\n", INTERFACE_NAME);
+		exit(EXIT_FAILURE);
+	}
+
+	fptr = fopen64(filename, "wb");  //Create/open the file in write binary mode
+
+	//Opening Semaphore
+	semaphorePtr = sem_open(semName, 0);
+	while (semaphorePtr == SEM_FAILED)
+	{
+		if (errno == EACCES)
+		{
+			printf("The semaphore is not create for the moment. Waiting for ipc_sendfile.\n");
+			sleep(1);
+			semaphorePtr = sem_open(semName, 0);
+		}
+		else
+		{
+			perror("sem_open");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	// Launching Semaphore for ipc_sendfile
+	ret = sem_post(semaphorePtr);
+	if (ret == -1)
+	{
+		perror("sem_post");
+		exit(EXIT_FAILURE);
+	}
+
+
+	//receiving data
+	while (continueLoop == 1)
+	{
+		ret = sem_wait(semaphorePtr);
+		if (ret == -1)
+		{
+			perror("sem_wait");
+			exit(EXIT_FAILURE);
+		}
+		/* lock the mutex because we're about to access shared data */
+		ret = pthread_mutex_lock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_lock");
+			fclose(fptr);
+			exit(EXIT_FAILURE);
+		}
+
+		/* update local version and data */
+		writing(ptr->text, filename, ptr->data_size);
+
+		if (ptr->data_size == 0) //no more data to write -> stop the loop after unlocking the mutex.
+			continueLoop = 0;
+
+		/* finished accessing shared data, unlock the mutex */
+		ret = pthread_mutex_unlock(&ptr->mutex);
+		if (ret != EOK)
+		{
+			perror("pthread_mutex_unlock");
+			fclose(fptr);
+			exit(EXIT_FAILURE);
+		}
+
+		ret = sem_post(semaphorePtr);
+		if (ret == -1)
+		{
+			perror("sem_post");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	fclose(fptr);
+
+	printf("All data received.\n");
+
+	ret = sem_close(semaphorePtr);
+	if (ret == -1)
+	{
+		perror("sem_close");
+		exit(EXIT_FAILURE);
+	}
+
+	/* unmap() not actually needed on termination as all memory mappings are freed on process termination */
+	if (munmap(ptr, sizeof(shmem_t)) == -1)
+	{
+		perror("munmap");
+	}
+
+	exit(EXIT_SUCCESS);
+
+}
+
+void *get_shared_memory_pointer( char *name, unsigned num_retries )
+{
+	unsigned tries;
+	shmem_t *ptr;
+	int fd;
+
+	for (tries = 0;;) {
+		fd = shm_open(name, O_RDWR, 0);
+		if (fd != -1) break;
+		++tries;
+		if (tries > num_retries) {
+			perror("shmn_open");
+			return MAP_FAILED;
+		}
+		/* wait one second then try again */
+		sleep(1);
+	}
+
+	for (tries = 0;;) {
+		ptr = mmap(0, sizeof(shmem_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		if (ptr != MAP_FAILED) break;
+		++tries;
+		if (tries > num_retries) {
+			perror("mmap");
+			return MAP_FAILED;
+		}
+		/* wait one second then try again */
+		sleep(1);
+	}
+
+	/* no longer need fd */
+	(void)close(fd);
+
+	for (tries=0;;) {
+		if (ptr->init_flag) break;
+		++tries;
+		if (tries > num_retries) {
+			fprintf(stderr, "init flag never set\n");
+			(void)munmap(ptr, sizeof(shmem_t));
+			return MAP_FAILED;
+		}
+		/* wait on second then try again */
+		sleep(1);
+	}
+
+	return ptr;
+}
 

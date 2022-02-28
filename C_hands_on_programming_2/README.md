@@ -5,5 +5,5 @@ To do list:
 - [x] Command message implemented
 - [x] Command queue implemented
 - [x] Command pipe implemented
-- [ ] Command shared memory implemented
+- [x] Command shared memory implemented
 
