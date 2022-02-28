@@ -82,5 +82,3 @@ arguments analyseArguments(int argc, char *argv[])
 	return retval;
 
 }
-
-

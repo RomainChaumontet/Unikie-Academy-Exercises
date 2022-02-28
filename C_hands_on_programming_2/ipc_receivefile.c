@@ -30,6 +30,7 @@
 #include <limits.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <semaphore.h>
 #include "ipc_common_file.h"
 
 char * filename;
@@ -436,7 +437,8 @@ void ipc_shm(char* filename)
 	int ret;
 	shmem_t *ptr;
 	uint8_t continueLoop = 1; // Become 0 if there is no more data to read.
-	int last_version =0;
+	sem_t* semaphorePtr;
+	const char * semName = SEMAPHORE_NAME;
 
 
 	/* try to get access to the shared memory object, retrying for 100 times (100 seconds) */
@@ -449,10 +451,41 @@ void ipc_shm(char* filename)
 
 	fptr = fopen64(filename, "wb");  //Create/open the file in write binary mode
 
+	//Opening Semaphore
+	semaphorePtr = sem_open(semName, 0);
+	while (semaphorePtr == SEM_FAILED)
+	{
+		if (errno == EACCES)
+		{
+			printf("The semaphore is not create for the moment. Waiting for ipc_sendfile.\n");
+			sleep(1);
+			semaphorePtr = sem_open(semName, 0);
+		}
+		else
+		{
+			perror("sem_open");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	// Launching Semaphore for ipc_sendfile
+	ret = sem_post(semaphorePtr);
+	if (ret == -1)
+	{
+		perror("sem_post");
+		exit(EXIT_FAILURE);
+	}
+
 
 	//receiving data
 	while (continueLoop == 1)
 	{
+		ret = sem_wait(semaphorePtr);
+		if (ret == -1)
+		{
+			perror("sem_wait");
+			exit(EXIT_FAILURE);
+		}
 		/* lock the mutex because we're about to access shared data */
 		ret = pthread_mutex_lock(&ptr->mutex);
 		if (ret != EOK)
@@ -462,23 +495,7 @@ void ipc_shm(char* filename)
 			exit(EXIT_FAILURE);
 		}
 
-		/* wait for changes to the shared memory object */
-		while (last_version == ptr->data_version) {
-			if (ptr->bothConnected == 0)
-			{
-				ptr->bothConnected = 1; //Signaling sender can start tranfer data
-			}
-			ret = pthread_cond_wait(&ptr->cond, &ptr->mutex); /* does an unlock, wait, lock */
-			if (ret != EOK)
-			{
-				perror("pthread_cond_wait");
-				fclose(fptr);
-				exit(EXIT_FAILURE);
-			}
-		}
-
 		/* update local version and data */
-		last_version = ptr->data_version;
 		writing(ptr->text, filename, ptr->data_size);
 
 		if (ptr->data_size == 0) //no more data to write -> stop the loop after unlocking the mutex.
@@ -492,11 +509,32 @@ void ipc_shm(char* filename)
 			fclose(fptr);
 			exit(EXIT_FAILURE);
 		}
+
+		ret = sem_post(semaphorePtr);
+		if (ret == -1)
+		{
+			perror("sem_post");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	fclose(fptr);
 
 	printf("All data received.\n");
+
+	ret = sem_close(semaphorePtr);
+	if (ret == -1)
+	{
+		perror("sem_close");
+		exit(EXIT_FAILURE);
+	}
+
+	/* unmap() not actually needed on termination as all memory mappings are freed on process termination */
+	if (munmap(ptr, sizeof(shmem_t)) == -1)
+	{
+		perror("munmap");
+	}
+
 	exit(EXIT_SUCCESS);
 
 }

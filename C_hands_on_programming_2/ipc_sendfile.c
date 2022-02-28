@@ -32,6 +32,7 @@
 #include <limits.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <semaphore.h>
 #include "ipc_common_file.h"
 
 
@@ -310,15 +311,28 @@ void ipc_shm(char* filename)
 	shmem_t *ptr;
 	int ret;
 	pthread_mutexattr_t mutex_attr;
-	pthread_condattr_t cond_attr;
 	int size_read = 1;
+	sem_t* semaphorePtr;
+	const char * semName = SEMAPHORE_NAME;
+
 
 	//Opening share memory
 	fd = shm_open(INTERFACE_NAME, O_RDWR | O_CREAT | O_EXCL, 0660);
-	if (fd == -1)
+	while(fd == -1)
 	{
-		perror("shm_open()");
-		unlink_and_exit(INTERFACE_NAME);
+		if (errno == EEXIST)
+		{
+			if (shm_unlink(INTERFACE_NAME) == -1)
+			{
+				perror("shm_unlink");
+			}
+			fd = shm_open(INTERFACE_NAME, O_RDWR | O_CREAT | O_EXCL, 0660);
+		}
+		else
+		{
+			perror("shm_open()");
+			unlink_and_exit(INTERFACE_NAME);
+		}
 	}
 
 	/* set the size of the shared memory object, allocating at least one page of memory */
@@ -350,28 +364,46 @@ void ipc_shm(char* filename)
 		unlink_and_exit(INTERFACE_NAME);
 	}
 
-	pthread_condattr_init(&cond_attr);
-	pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED);
-	ret = pthread_cond_init(&ptr->cond, &cond_attr);
-	if (ret != EOK)
-	{
-		perror("pthread_cond_init");
-		unlink_and_exit(INTERFACE_NAME);
-	}
-
 	/*
 	 * our memory is now "setup", so set the init_flag
 	 * it was guaranteed to be zero at allocation time
 	 */
 	ptr->init_flag = 1;
 
-	printf("Shared memory created and init_flag set to let users know shared memory object is usable.\n");
+	if (debug) printf("Shared memory created and init_flag set to let users know shared memory object is usable.\n");
+
+	//Creating semaphore
+	semaphorePtr = sem_open(semName, O_CREAT , S_IRWXU | S_IRWXG, 0);
+	while (semaphorePtr == SEM_FAILED )
+	{
+		if (errno == EEXIST)
+		{
+			ret = sem_unlink(semName);
+			if (ret == -1)
+			{
+				perror("sem_unlink when oppening\n");
+				unlink_and_exit(INTERFACE_NAME);
+			}
+			semaphorePtr = sem_open(semName, O_CREAT | O_EXCL, S_IRWXU | S_IRWXG, 0);
+		}
+		else
+		{
+			perror("sem_open");
+			unlink_and_exit(INTERFACE_NAME);
+		}
+	}
+	if (debug) printf("Semaphore is created.\n");
 
 	//opening file to read
 	fd = open(filename, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR );
 
 	while (size_read > 0) {
-		sleep(1);
+		ret = sem_wait(semaphorePtr);
+		if (ret == -1)
+		{
+			perror("sem_wait");
+			unlink_and_exit(INTERFACE_NAME);
+		}
 
 		/* lock the mutex because we're about to update shared data */
 		ret = pthread_mutex_lock(&ptr->mutex);
@@ -380,17 +412,11 @@ void ipc_shm(char* filename)
 			perror("pthread_mutex_lock");
 			unlink_and_exit(INTERFACE_NAME);
 		}
-		if (ptr->bothConnected > 0)
-		{
-			ptr->data_version++;
-			size_read = read(fd, ptr->text, SHARE_MEMORY_BUFF);
+		if (debug) printf("Mutex locked -> going to write on it.\n");
 
-			ptr->data_size = size_read;
+		size_read = read(fd, ptr->text, SHARE_MEMORY_BUFF);
 
-		}
-		else
-			printf("Waiting for ipc_receivefile\n");
-
+		ptr->data_size = size_read;
 
 		/* finished accessing shared data, unlock the mutex */
 		ret = pthread_mutex_unlock(&ptr->mutex);
@@ -400,16 +426,28 @@ void ipc_shm(char* filename)
 			unlink_and_exit(INTERFACE_NAME);
 		}
 
-		/* wake up any readers that may be waiting */
-		ret = pthread_cond_broadcast(&ptr->cond);
-		if (ret != EOK)
+		ret = sem_post(semaphorePtr);
+		if (ret == -1)
 		{
-			perror("pthread_cond_broadcast");
+			perror("sem_post");
 			unlink_and_exit(INTERFACE_NAME);
 		}
 	}
 
-	sleep(1);
+	ret = sem_close(semaphorePtr);
+	if (ret == -1)
+	{
+		perror("sem_close");
+		unlink_and_exit(INTERFACE_NAME);
+	}
+
+	ret = sem_unlink(semName);
+	if (ret == -1)
+	{
+		perror("sem_unlink\n");
+		unlink_and_exit(INTERFACE_NAME);
+	}
+
 	/* unmap() not actually needed on termination as all memory mappings are freed on process termination */
 	if (munmap(ptr, sizeof(shmem_t)) == -1)
 	{
