@@ -9,7 +9,7 @@
 - [File structure](#file-structure)
   - [Program sources](#program-sources)
   - [Test sources](#test-sources)
-- [Documentation](#documentation)
+- [Test explainations](#test-explainations)
 
 # Introduction
 
@@ -22,10 +22,9 @@ The IPC methods implemented are:
 
 # Setup environment, build and test
 
-To setup environment you first need to make executable the shell script `setup_environment.sh` and execute it with root privilege:
+To setup your environment, you shall execute `setup_environment.sh`:
 ```bash
-$ chmod +x setup_environment.sh
-$ sudo ./setup_environment.sh
+$ ./setup_environment.sh
 ```
 
 This script will check if Bazel and g++ are already installed and install them if not.
@@ -61,6 +60,7 @@ Thoses files use the library write in the `/lib` folder.
 `Gtest_manageOpt.cpp` is a file which provides tests for the class IpcParameters.
 `Gtest_IpcCopyFile.cpp` is a file which provides tests for the class copyFilethroughIPC.
 
-# Documentation
-*Todo*
+# Test explainations
+
+Some information can be found on the [Test explanation](/C++_hands_on_programming_RC/Documentation/Tests/TestsExplanation.md)
 

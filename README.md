@@ -1,7 +1,7 @@
 # Personal Repository
 
-C_hands_on_programming_2 correspond to [C, hands-on programming 2](https://unikie.atlassian.net/browse/QA-185)
-C++_hands_on_programming_RC correspond to [C++, hands-on programming 1](https://unikie.atlassian.net/browse/QA-186)
+* C_hands_on_programming_2 correspond to [C, hands-on programming 2](https://unikie.atlassian.net/browse/QA-185)
+* C++_hands_on_programming_RC correspond to [C++, hands-on programming 1](https://unikie.atlassian.net/browse/QA-186)
 
 
 # How to clone only a part of the repo
