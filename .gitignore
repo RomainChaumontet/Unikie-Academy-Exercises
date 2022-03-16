@@ -1,1 +1,10 @@
 *.o
+C++_hands_on_programming_RC/bazel-bin
+C++_hands_on_programming_RC/bazel-C++_hands_on_programming_RC
+C++_hands_on_programming_RC/bazel-out
+C++_hands_on_programming_RC/.vscode/settings.json
+C++_hands_on_programming_RC/Brainstorm
+C++_hands_on_programming_RC/bazel-testlogs
+C++_hands_on_programming_RC/.vscode/launch.json
+C_hands_on_programming_2/ipc_receivefile
+C_hands_on_programming_2/ipc_sendfile

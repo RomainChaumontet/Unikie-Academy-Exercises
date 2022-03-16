@@ -1,0 +1,101 @@
+<diagram program="umletino" version="14.4.0-SNAPSHOT"><zoom_level>10</zoom_level><help_text>&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;280&lt;/x&gt;&lt;y&gt;260&lt;/y&gt;&lt;w&gt;270&lt;/w&gt;&lt;h&gt;160&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Reader
+Package::IpcCopyFile
+--
+- fileToRead_: std::ifstream
+- bufferForReading_: std::vector&amp;lt;char&amp;gt; 
+- sizeRead_: size_t
+--
++ openFileToRead(in filepath: std::string): bool
++ closeFileToRead(): void
++ readDataOnFile(): bool
++ getSizeRead(): size_t
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;Space for diagram notes&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;510&lt;/x&gt;&lt;y&gt;70&lt;/y&gt;&lt;w&gt;270&lt;/w&gt;&lt;h&gt;230&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;/copyFilethroughIPC/
+Package::IpcCopyFile
+--
+- name_: std::string = "ipcCopyFile"
+- bufferSize_: size_t = 4096
+- file_: std::fstream
+- buffer_: std::vector&amp;lt;char&amp;gt;
+--
++ getName(): std::string
++ changeName(in name: std::string): std::string
++ getBufferSize(): size_t
++ changeBufferSize(in bufferSize: size_t): size_t
+/+ openFile(in filepath: std::string): bool/
++ closeFile(): void
+/+ syncFileWithBuffer(): bool/
+
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;70&lt;/x&gt;&lt;y&gt;330&lt;/y&gt;&lt;w&gt;270&lt;/w&gt;&lt;h&gt;100&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Writer
+Package::IpcCopyFile
+--
+--
++ openFile(in filepath: std::string): bool
++ syncFileWithBuffer(): bool
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;200&lt;/x&gt;&lt;y&gt;290&lt;/y&gt;&lt;w&gt;370&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;350;10;350;30;10;30;10;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;440&lt;/x&gt;&lt;y&gt;290&lt;/y&gt;&lt;w&gt;130&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;110;10;110;30;10;30;40;30;40;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;350&lt;/x&gt;&lt;y&gt;330&lt;/y&gt;&lt;w&gt;270&lt;/w&gt;&lt;h&gt;100&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Reader
+Package::IpcCopyFile
+--
+--
++ openFile(in filepath: std::string): bool
++ syncFileWithBuffer(): bool
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;680&lt;/x&gt;&lt;y&gt;330&lt;/y&gt;&lt;w&gt;100&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Queue&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;790&lt;/x&gt;&lt;y&gt;330&lt;/y&gt;&lt;w&gt;100&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Pipe&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;900&lt;/x&gt;&lt;y&gt;330&lt;/y&gt;&lt;w&gt;100&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Shared memory&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;720&lt;/x&gt;&lt;y&gt;290&lt;/y&gt;&lt;w&gt;250&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;30;230;30;230;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;720&lt;/x&gt;&lt;y&gt;290&lt;/y&gt;&lt;w&gt;140&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;30;120;30;120;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;720&lt;/x&gt;&lt;y&gt;290&lt;/y&gt;&lt;w&gt;30&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;520&lt;/x&gt;&lt;y&gt;580&lt;/y&gt;&lt;w&gt;100&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Queue SendFile
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;650&lt;/x&gt;&lt;y&gt;580&lt;/y&gt;&lt;w&gt;100&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Pipe SendFile
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;790&lt;/x&gt;&lt;y&gt;580&lt;/y&gt;&lt;w&gt;140&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Shared mem SendFile
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;510&lt;/x&gt;&lt;y&gt;650&lt;/y&gt;&lt;w&gt;120&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Queue ReceiveFile
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;650&lt;/x&gt;&lt;y&gt;650&lt;/y&gt;&lt;w&gt;100&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Pipe ReceiveFile
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;810&lt;/x&gt;&lt;y&gt;650&lt;/y&gt;&lt;w&gt;140&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Shared mem ReceiveFile
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;604&lt;/x&gt;&lt;y&gt;350&lt;/y&gt;&lt;w&gt;150&lt;/w&gt;&lt;h&gt;260&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;130;10;130;180;30;180;30;240;10;240&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;614&lt;/x&gt;&lt;y&gt;350&lt;/y&gt;&lt;w&gt;140&lt;/w&gt;&lt;h&gt;330&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;120;10;120;180;20;180;20;310;10;310&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;474&lt;/x&gt;&lt;y&gt;420&lt;/y&gt;&lt;w&gt;120&lt;/w&gt;&lt;h&gt;180&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;140;100;140;100;160&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;474&lt;/x&gt;&lt;y&gt;420&lt;/y&gt;&lt;w&gt;240&lt;/w&gt;&lt;h&gt;180&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;140;220;140;220;160&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;474&lt;/x&gt;&lt;y&gt;420&lt;/y&gt;&lt;w&gt;400&lt;/w&gt;&lt;h&gt;180&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;140;380;140;380;160&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;734&lt;/x&gt;&lt;y&gt;350&lt;/y&gt;&lt;w&gt;130&lt;/w&gt;&lt;h&gt;330&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;110;10;110;180;30;180;30;310;10;310&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;184&lt;/x&gt;&lt;y&gt;420&lt;/y&gt;&lt;w&gt;710&lt;/w&gt;&lt;h&gt;250&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;210;690;210;690;230&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;184&lt;/x&gt;&lt;y&gt;420&lt;/y&gt;&lt;w&gt;530&lt;/w&gt;&lt;h&gt;250&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;210;510;210;510;230&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;184&lt;/x&gt;&lt;y&gt;420&lt;/y&gt;&lt;w&gt;400&lt;/w&gt;&lt;h&gt;250&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;210;380;210;380;230&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;934&lt;/x&gt;&lt;y&gt;350&lt;/y&gt;&lt;w&gt;50&lt;/w&gt;&lt;h&gt;330&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;30;10;30;310;10;310&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;734&lt;/x&gt;&lt;y&gt;350&lt;/y&gt;&lt;w&gt;130&lt;/w&gt;&lt;h&gt;260&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;110;10;110;180;30;180;30;240;10;240&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;914&lt;/x&gt;&lt;y&gt;350&lt;/y&gt;&lt;w&gt;70&lt;/w&gt;&lt;h&gt;260&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;50;10;50;240;10;240&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;0&lt;/x&gt;&lt;y&gt;70&lt;/y&gt;&lt;w&gt;340&lt;/w&gt;&lt;h&gt;160&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;ipcParameters
+Package::IpcCopyFile
+--
+- protocol_: protocolList
+- filepath_: const char*
+--
++ ipcParameters(in protocol: protocolList, in filepath: char*)
++ ipcParameters(in argc: int, in argv: char* const [])
++ getProtocol(): protocolList
++ getFilepath(): const char*
++ launch(): void
+
+&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;330&lt;/x&gt;&lt;y&gt;140&lt;/y&gt;&lt;w&gt;200&lt;/w&gt;&lt;h&gt;50&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=-
+m1=1
+m2=1
+determine which subclass &amp;gt;&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;20;180;20&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;</help_text><element><id>UMLClass</id><coordinates><x>510</x><y>50</y><w>270</w><h>230</h></coordinates><panel_attributes>/copyFilethroughIPC/
+Package::IpcCopyFile
+--
+- name_: std::string = "ipcCopyFile"
+- bufferSize_: size_t = 4096
+- file_: std::fstream
+- buffer_: std::vector&lt;char&gt;
+--
++ getName(): std::string
++ changeName(in name: std::string): std::string
++ getBufferSize(): size_t
++ changeBufferSize(in bufferSize: size_t): size_t
+/+ openFile(in filepath: std::string): bool/
++ closeFile(): void
+/+ syncFileWithBuffer(): bool/
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>70</x><y>310</y><w>270</w><h>100</h></coordinates><panel_attributes>Writer
+Package::IpcCopyFile
+--
+--
++ openFile(in filepath: std::string): bool
++ syncFileWithBuffer(): bool
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>200</x><y>270</y><w>370</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>350;10;350;30;10;30;10;40</additional_attributes></element><element><id>Relation</id><coordinates><x>440</x><y>270</y><w>130</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;30;10;30;40;30;40;40</additional_attributes></element><element><id>UMLClass</id><coordinates><x>350</x><y>310</y><w>270</w><h>100</h></coordinates><panel_attributes>Reader
+Package::IpcCopyFile
+--
+--
++ openFile(in filepath: std::string): bool
++ syncFileWithBuffer(): bool
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>50</y><w>340</w><h>160</h></coordinates><panel_attributes>ipcParameters
+Package::IpcCopyFile
+--
+- protocol_: protocolList
+- filepath_: const char*
+--
++ ipcParameters(in protocol: protocolList, in filepath: char*)
++ ipcParameters(in argc: int, in argv: char* const [])
++ getProtocol(): protocolList
++ getFilepath(): const char*
++ launch(): void
+
+</panel_attributes><additional_attributes></additional_attributes></element></diagram>
