@@ -20,23 +20,22 @@ Package::IpcCopyFile
 + getName(): std::string
 + changeName(in name: std::string): std::string
 + getBufferSize(): size_t
-+ changeBufferSize(in bufferSize: size_t): size_t
-/+ openFile(in filepath: std::string): bool/
+/+ openFile(in filepath: std::string): void/
 + closeFile(): void
-/+ syncFileWithBuffer(): bool/
+/+ syncFileWithBuffer(): void/
 
 </panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>70</x><y>330</y><w>270</w><h>100</h></coordinates><panel_attributes>Writer
 Package::IpcCopyFile
 --
 --
-+ openFile(in filepath: std::string): bool
-+ syncFileWithBuffer(): bool
++ openFile(in filepath: std::string): void
++ syncFileWithBuffer(): void
 </panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>200</x><y>290</y><w>370</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>350;10;350;30;10;30;10;40</additional_attributes></element><element><id>Relation</id><coordinates><x>440</x><y>290</y><w>130</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;30;10;30;40;30;40;40</additional_attributes></element><element><id>UMLClass</id><coordinates><x>350</x><y>330</y><w>270</w><h>100</h></coordinates><panel_attributes>Reader
 Package::IpcCopyFile
 --
 --
-+ openFile(in filepath: std::string): bool
-+ syncFileWithBuffer(): bool
++ openFile(in filepath: std::string): void
++ syncFileWithBuffer(): void
 </panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>680</x><y>330</y><w>100</w><h>30</h></coordinates><panel_attributes>Queue</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>790</x><y>330</y><w>100</w><h>30</h></coordinates><panel_attributes>Pipe</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>900</x><y>330</y><w>100</w><h>30</h></coordinates><panel_attributes>Shared memory</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>290</y><w>250</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;30;230;30;230;40</additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>290</y><w>140</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;30;120;30;120;40</additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>290</y><w>30</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;40</additional_attributes></element><element><id>UMLClass</id><coordinates><x>520</x><y>580</y><w>100</w><h>30</h></coordinates><panel_attributes>Queue SendFile
 </panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>650</x><y>580</y><w>100</w><h>30</h></coordinates><panel_attributes>Pipe SendFile
 </panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>790</x><y>580</y><w>140</w><h>30</h></coordinates><panel_attributes>Shared mem SendFile

@@ -29,13 +29,14 @@ struct option long_options[]=
 	  {0, 0, 0, 0}
 };
 
+////////////// ipcParameters class ///////////////////////
 ipcParameters::ipcParameters(int argc, char* const argv[])
 {
     filepath_ = NULL;
-    protocol_ = NONE;
+    protocol_ = protocolList::NONE;
 
     int opt=0;
-    while (protocol_ != HELP)
+    while (protocol_ != protocolList::HELP)
     {
         int option_index = 0;
         opt = getopt_long (argc, argv, ":",long_options,&option_index);
@@ -45,53 +46,53 @@ ipcParameters::ipcParameters(int argc, char* const argv[])
         switch (opt)
         {
         case 'h':
-            protocol_= HELP;
+            protocol_= protocolList::HELP;
             break;
         case 'q':
-            if (protocol_!= NONE)
+            if (protocol_!= protocolList::NONE)
             {
-                protocol_= TOOMUCHARG;
+                protocol_= protocolList::TOOMUCHARG;
                 optind = 0;
                 return;
             }
-            protocol_= QUEUE;
+            protocol_= protocolList::QUEUE;
             break;
         case 'p':
-            if (protocol_!= NONE)
+            if (protocol_!= protocolList::NONE)
             {
-                protocol_= TOOMUCHARG;
+                protocol_= protocolList::TOOMUCHARG;
                 optind = 0;
                 return;
             }
-            protocol_= PIPE;
+            protocol_= protocolList::PIPE;
             break;
         case 's':
             if (DEBUG_GETOPT) std::cout << "Shm choosen" << std::endl;
-            if (protocol_!= NONE)
+            if (protocol_!= protocolList::NONE)
             {
-                protocol_= TOOMUCHARG;
+                protocol_= protocolList::TOOMUCHARG;
                 optind = 0;
                 return;
             }
-            protocol_= SHM;
+            protocol_= protocolList::SHM;
             break;
         case 'f':
             if (optarg)
                 filepath_ = optarg;
             else
             {
-                protocol_= NOFILEOPT;
+                protocol_= protocolList::NOFILEOPT;
                 optind = 0;
                 return;
             }
             break;
         case '?':
-            protocol_= WRONGARG;
+            protocol_= protocolList::WRONGARG;
             optind = 0;
             return;
             break;
         case ':':
-            protocol_= NOFILEOPT;
+            protocol_= protocolList::NOFILEOPT;
             optind = 0;
             return;
             break;
@@ -101,9 +102,9 @@ ipcParameters::ipcParameters(int argc, char* const argv[])
     }
 
     optind = 0;
-    if (protocol_!= HELP && !filepath_ && protocol_!= NONE)
+    if (protocol_!= protocolList::HELP && !filepath_ && protocol_!= protocolList::NONE)
     {
-        protocol_= NOFILE;
+        protocol_= protocolList::NOFILE;
     }
 }
 
@@ -117,7 +118,7 @@ const char* ipcParameters::getFilePath() const
     return filepath_;
 }
 
-
+////////////// copyFilethroughIPC class ///////////////////////
 std::string copyFilethroughIPC::getName() const
 {
     return name_;
@@ -137,85 +138,77 @@ size_t copyFilethroughIPC::getBufferSize() const
     return bufferSize_;
 }
 
-size_t copyFilethroughIPC::changeBufferSize(size_t bufferSize)
-{
-    if (bufferSize > 0)
-        bufferSize_ = bufferSize;
-    else
-        std::cerr << "Error. Trying to change the size of the buffer to 0. Keep it unchanged." << std::endl;
-    return bufferSize_;
-}
-
-bool Reader::openFile(const std::string &filepath)
-{
-    if (!checkIfFileExists(filepath))
-    {
-        std::cerr << "Error. Trying to open a file for reading which does not exist."<< std::endl ;
-        return false;
-    }
-
-    file_.open(filepath, std::ios::in | std::ios::binary);
-    if (!file_.is_open())
-    {
-        std::cerr << "Error. Can't open the file for reading."<< std::endl;
-        return false;
-    }
-    return true;
-}
-
-bool Writer::openFile(const std::string &filepath)
-{
-    if (checkIfFileExists(filepath))
-        std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
-    file_.open(filepath, std::ios::out | std::ios::binary | std::ios::trunc);
-    return file_.is_open();
-}
-
 copyFilethroughIPC::~copyFilethroughIPC()
 {
     if (file_.is_open()) // useless
         file_.close();
 }
 
-bool Writer::syncFileWithBuffer()
+void copyFilethroughIPC::closeFile()
+{
+    if (file_.is_open())
+        file_.close();
+}
+
+
+////////////// Writer class ///////////////////////
+void Writer::openFile(const std::string &filepath)
+{
+    if (checkIfFileExists(filepath))
+        std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
+
+    file_.open(filepath, std::ios::out | std::ios::binary | std::ios::trunc);
+    if (!file_.is_open())
+    {
+        throw std::runtime_error("Error in std::fstream.open(). rdstate:" + file_.rdstate());
+    }
+}
+
+void Writer::syncFileWithBuffer()
 {
     if (!file_.is_open())
     {
-        std::cerr << "Error, trying to write to a file which is not opened." << std::endl;
-        return false;
+        throw std::runtime_error("syncFileWithBuffer(). Error, trying to write to a file which is not opened.");
     }
     
     file_.write(buffer_.data(), bufferSize_);
 
     auto state = file_.rdstate();
     if (state == std::ios_base::goodbit)
-        return true;
+        return;
 
     if (state == std::ios_base::failbit)
     {
-        std::cerr << "Failbit error. May be set if construction of sentry failed." << std::endl;
-        return false;
+        throw std::runtime_error("syncFileWithBuffer(). Failbit error. May be set if construction of sentry failed.");
     }
     if (state == std::ios_base::badbit)
     {
-        std::cerr 
-            << "Badbit error. Either an insertion on the stream failed,"
-            << " or some other error happened (such as when this function"
-            << " catches an exception thrown by an internal operation). "
-            << "When set, the integrity of the stream may have been affected."
-            << std::endl;
-        return false;
+        throw std::runtime_error("syncFileWithBuffer(). Badbit error.");
     }
-    std::cerr << "Unknown error in writing the file!" << std::endl;
-    return false;
+    throw std::runtime_error("syncFileWithBuffer(). Unknown error.");
 }
 
-bool Reader::syncFileWithBuffer()
+////////////// Reader class ///////////////////////
+void Reader::openFile(const std::string &filepath)
+{
+    if (!checkIfFileExists(filepath))
+    {
+        throw std::runtime_error("Error. Trying to open a file for reading which does not exist.");
+    }
+
+    file_.open(filepath, std::ios::in | std::ios::binary);
+    if (!file_.is_open())
+    {
+        throw std::runtime_error("Error in std::fstream.open(). rdstate:" + file_.rdstate());
+    }
+}
+
+
+void Reader::syncFileWithBuffer()
 {
     if (!file_.is_open())
     {
-        std::cerr << "Error, trying to read a file which is not opened." << std::endl;
-        return false;
+        throw std::runtime_error("syncFileWithBuffer(). Error, trying to read a file which is not opened.");
     }
     
     buffer_.resize(bufferSize_+1);
@@ -225,39 +218,28 @@ bool Reader::syncFileWithBuffer()
 
     auto state = file_.rdstate();
     if (state == std::ios_base::goodbit)
-        return true;
+        return;
     if (state == std::ios_base::eofbit+std::ios_base::failbit)
-        return true; // end of file
+        return; // end of file
     if (state == std::ios_base::eofbit)
     {
-        std::cerr << "Eofbit error. The input sequence has no characters available (as reported by rdbuf()->in_avail() returning -1)."
-        << std::endl;
-        return false;
+        throw std::runtime_error("syncFileWithBuffer(). Eofbit error.");
+        return;
     }
     if (state == std::ios_base::failbit)
     {
-        std::cerr << "Failbit error. The construction of sentry failed (such as when the stream state was not good before the call)."
-        << std::endl;
-        return false;
+        throw std::runtime_error("syncFileWithBuffer(). Failbit error.");
+        return;
     }
     if (state == std::ios_base::badbit)
     {
-        std::cerr 
-            << "Error on stream (such as when this function catches an exception thrown by an internal operation)."
-            << " When set, the integrity of the stream may have been affected."
-            << std::endl;
-        return false;
+        throw std::runtime_error("syncFileWithBuffer(). badbit error.");
+        return;
     }
-    std::cerr << "Unknown error in writing the file! State:" << state << std::endl;
-    return false;
-}
 
+    throw std::runtime_error("syncFileWithBuffer(). Unknown error.");
+    return;
 
-
-void copyFilethroughIPC::closeFile()
-{
-    if (file_.is_open())
-        file_.close();
 }
 
 

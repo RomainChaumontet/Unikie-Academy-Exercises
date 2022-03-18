@@ -1,5 +1,5 @@
 #!/usr/bin/sh
-
+set -x
 #ask for sudo et elevate privilege
 [ "$(whoami)" != "root" ] && exec sudo -- "$0" "$@"
 
@@ -61,7 +61,7 @@ if  [ $BAZEL_NEED_TO_BE_INSTALLED ] ||\
 fi
 chmod +x ./build_and_run_tests.sh 
 
-
+set +x
 
 
 

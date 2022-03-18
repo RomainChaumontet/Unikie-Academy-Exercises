@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 
-enum protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
+enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
 inline bool checkIfFileExists (const std::string &filepath);
 size_t returnFileSize(const std::string &filepath) ;
 
@@ -33,11 +33,10 @@ class copyFilethroughIPC
         std::string changeName(std::string name);
 
         size_t getBufferSize() const;
-        size_t changeBufferSize(size_t bufferSize);
 
-        virtual bool openFile(const std::string &filepath) = 0;
+        virtual void openFile(const std::string &filepath) = 0;
         void closeFile();
-        virtual bool syncFileWithBuffer() = 0;
+        virtual void syncFileWithBuffer() = 0;
 
         virtual ~copyFilethroughIPC();
 
@@ -48,18 +47,18 @@ class copyFilethroughIPC
         std::vector<char> buffer_;
 };
 
-class Writer : public copyFilethroughIPC
+class Writer : virtual public copyFilethroughIPC
 {
     public:
-        bool openFile(const std::string &filepath);
-        bool syncFileWithBuffer();
+        void openFile(const std::string &filepath);
+        void syncFileWithBuffer();
 };
 
-class Reader : public copyFilethroughIPC
+class Reader : virtual public copyFilethroughIPC
 {
     public:
-        bool openFile(const std::string &filepath);
-        bool syncFileWithBuffer();
+        void openFile(const std::string &filepath);
+        void syncFileWithBuffer();
 };
 
 #endif /* IPCCOPYFILE_H */

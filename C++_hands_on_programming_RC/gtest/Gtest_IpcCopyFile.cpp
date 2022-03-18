@@ -100,31 +100,14 @@ TEST(TestSimpleMethods, ChangeAndGetName)
     EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("Coucou"));
 }
 
-TEST(TestSimpleMethods, ChangeAndGetBufferSize)
+TEST(TestSimpleMethods, GetBufferSize)
 {
     Reader dummyCopyFileReader;
     EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(4096));
-    EXPECT_THAT(dummyCopyFileReader.changeBufferSize(9999),Eq(9999));
-    EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(9999));
-    {
-        CaptureStream stdcerr{std::cerr};
-        EXPECT_THAT(dummyCopyFileReader.changeBufferSize(0), Eq(9999)); //will not change the name
-        EXPECT_THAT(stdcerr.str(), StrEq("Error. Trying to change the size of the buffer to 0. Keep it unchanged.\n"));
-    }
-    EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(9999));
 
     Writer dummyCopyFileWriter;
     EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(4096));
-    EXPECT_THAT(dummyCopyFileWriter.changeBufferSize(9999),Eq(9999));
-    EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(9999));
-    {
-        CaptureStream stdcerr{std::cerr};
-        EXPECT_THAT(dummyCopyFileWriter.changeBufferSize(0), Eq(9999)); //will not change the name
-        EXPECT_THAT(stdcerr.str(), StrEq("Error. Trying to change the size of the buffer to 0. Keep it unchanged.\n"));
-    }
-    EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(9999));
 }
-
 
 TEST(FileManipulation, OpenFile)
 {
@@ -133,20 +116,18 @@ TEST(FileManipulation, OpenFile)
     Writer dummyCopyFileWriter;
     {
         std::string dummyFile = "IamTestingToOpenThisFile";
-        CaptureStream stdcerr{std::cerr};
-        EXPECT_THAT(dummyCopyFileReader.openFile(dummyFile.c_str()),IsFalse());
-        EXPECT_THAT(stdcerr.str(), StrEq("Error. Trying to open a file for reading which does not exist.\n"));
+        EXPECT_THROW(dummyCopyFileReader.openFile(dummyFile.c_str()),std::runtime_error);
     }
 
     std::string fileToOpenForWriting = "fileToOpenForWriting";
-    EXPECT_THAT(dummyCopyFileWriter.openFile(fileToOpenForWriting.c_str()), IsTrue());
-    EXPECT_THAT(dummyCopyFileReader.openFile(fileToOpenForWriting.c_str()),IsTrue());
+    EXPECT_NO_THROW(dummyCopyFileWriter.openFile(fileToOpenForWriting.c_str()));
+    EXPECT_NO_THROW(dummyCopyFileReader.openFile(fileToOpenForWriting.c_str()));
 
     
     {
         Writer openAnotherTime;
         CaptureStream stdcout{std::cout};
-        EXPECT_THAT(openAnotherTime.openFile(fileToOpenForWriting.c_str()),IsTrue());
+        EXPECT_NO_THROW(openAnotherTime.openFile(fileToOpenForWriting.c_str()));
         EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));
     }
 
@@ -156,11 +137,11 @@ TEST(FileManipulation, OpenFile)
         
         CreateRandomFile randomFile {"testfile.dat", 10, 1};
         Reader openRandomFile;
-        EXPECT_THAT(openRandomFile.openFile(randomFile.getFileName()),IsTrue());
+        EXPECT_NO_THROW(openRandomFile.openFile(randomFile.getFileName()));
         {
             Writer openRandomFileWriter;
             CaptureStream stdcout{std::cout};
-            EXPECT_THAT(openRandomFileWriter.openFile(randomFile.getFileName()),IsTrue());
+            EXPECT_NO_THROW(openRandomFileWriter.openFile(randomFile.getFileName()));
             EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));
         }
     }
@@ -174,65 +155,58 @@ TEST(FileManipulation, ReadAndWriteSimpleFiles)
     std::string data = "I expect these data will be writen in the file.\n";
     writingToAFile.modifyBufferToWrite(data);
 
-    { //Test writing while the file is not opened
-        CaptureStream stdcerr{std::cerr};
-        EXPECT_THAT(writingToAFile.syncFileWithBuffer(), IsFalse());
-        EXPECT_THAT(stdcerr.str(), StrEq("Error, trying to write to a file which is not opened.\n"));
-    }
-    { //Test reading while the file is not opened
-        CaptureStream stdcerr{std::cerr};
-        EXPECT_THAT(readingAFile.syncFileWithBuffer(), IsFalse());
-        EXPECT_THAT(stdcerr.str(), StrEq("Error, trying to read a file which is not opened.\n"));
-    }
+    //Test writing while the file is not opened
+    EXPECT_THROW(writingToAFile.syncFileWithBuffer(), std::runtime_error);
 
-    ASSERT_THAT(writingToAFile.openFile("TmpFile.txt"), IsTrue()); //file empty
-    EXPECT_THAT(writingToAFile.syncFileWithBuffer(),IsTrue());
+    //Test reading while the file is not opened
+    EXPECT_THROW(readingAFile.syncFileWithBuffer(), std::runtime_error);
+
+    ASSERT_NO_THROW(writingToAFile.openFile("TmpFile.txt")); //file empty
+    EXPECT_NO_THROW(writingToAFile.syncFileWithBuffer());
     writingToAFile.closeFile();
     
-    EXPECT_THAT(readingAFile.openFile("TmpFile.txt"), IsTrue());
-    EXPECT_THAT(readingAFile.syncFileWithBuffer(), IsTrue());
+    EXPECT_NO_THROW(readingAFile.openFile("TmpFile.txt"));
+    EXPECT_NO_THROW(readingAFile.syncFileWithBuffer());
     EXPECT_THAT(readingAFile.bufferForReading(), StrEq(data));
     readingAFile.closeFile();
     
     writingToAFile.modifyBufferToWrite("");
     {
-        CaptureStream stdcout{std::cout};
-        ASSERT_THAT(writingToAFile.openFile("TmpFile.txt"), IsTrue()); //file empty
+        CaptureStream stdcout{std::cout}; //don't want to see std::cout in the test log
+        ASSERT_NO_THROW(writingToAFile.openFile("TmpFile.txt")); //file empty
     }
-    EXPECT_THAT(writingToAFile.syncFileWithBuffer(),IsTrue());
+    EXPECT_NO_THROW(writingToAFile.syncFileWithBuffer());
     writingToAFile.closeFile();
 
-    EXPECT_THAT(readingAFile.openFile("TmpFile.txt"), IsTrue());
-    EXPECT_THAT(readingAFile.syncFileWithBuffer(), IsTrue());
+    EXPECT_NO_THROW(readingAFile.openFile("TmpFile.txt"));
+    EXPECT_NO_THROW(readingAFile.syncFileWithBuffer());
     EXPECT_THAT(readingAFile.bufferForReading(), StrEq(""));
     readingAFile.closeFile();
 
     remove("TmpFile.txt");
 }
 
+
 TEST(FileManipulation, ReadAndWriteComplexFiles)
 {
     std::string nameOfRandomFile = "testfile.dat";
-    CreateRandomFile randomFile {nameOfRandomFile.c_str(), 10, 1};
+    CreateRandomFile randomFile (nameOfRandomFile, 10, 1);
     size_t sizeOfOriginalFile = returnFileSize(nameOfRandomFile);
     std::string fileForWriting = "testfilecpy.dat";
     FileManipulationClassWriter writingToAFile;
     FileManipulationClassReader readingAFile;
 
     size_t dataRead = 0;
-    ASSERT_THAT(readingAFile.openFile(nameOfRandomFile.c_str()), IsTrue());
-    ASSERT_THAT(writingToAFile.openFile(fileForWriting.c_str()), IsTrue());
+    ASSERT_NO_THROW(readingAFile.openFile(nameOfRandomFile.c_str()));
+    ASSERT_NO_THROW(writingToAFile.openFile(fileForWriting.c_str()));
 
 
     while (dataRead < sizeOfOriginalFile)
     {
-        ASSERT_THAT(readingAFile.syncFileWithBuffer(),IsTrue());
-        //std::cout << "buffersize: " << readingAFile.getBufferSize() << std::endl;
+        ASSERT_NO_THROW(readingAFile.syncFileWithBuffer());
         dataRead += readingAFile.getBufferSize();
-        //std::cout << "size of file:" << sizeOfOriginalFile << ". Data already read:" << dataRead << std::endl;
-        writingToAFile.changeBufferSize(readingAFile.getBufferSize());
         writingToAFile.modifyBufferToWrite(readingAFile.getBufferRead());//copy buffer read to buffer write
-        ASSERT_THAT(writingToAFile.syncFileWithBuffer(),IsTrue());
+        ASSERT_NO_THROW(writingToAFile.syncFileWithBuffer());
     }
     writingToAFile.closeFile();
     readingAFile.closeFile();
