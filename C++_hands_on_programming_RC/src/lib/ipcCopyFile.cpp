@@ -13,7 +13,7 @@ inline bool checkIfFileExists(const std::string &filepath)
 size_t returnFileSize(const std::string &filepath)
 {
     if (checkIfFileExists(filepath) == 0)
-        return 0;
+        throw std::runtime_error("returnFileSize(). File does not exist.");
     struct stat buffer;
     stat(filepath.c_str(), &buffer);
     return buffer.st_size;
@@ -124,7 +124,7 @@ std::string copyFilethroughIPC::getName() const
     return name_;
 }
 
-std::string copyFilethroughIPC::changeName(std::string name)
+std::string copyFilethroughIPC::changeName(const std::string &name)
 {
     if (name.size() > 0)
         name_ = name;

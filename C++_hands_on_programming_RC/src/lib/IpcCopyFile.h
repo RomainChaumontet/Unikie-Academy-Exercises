@@ -14,7 +14,7 @@ size_t returnFileSize(const std::string &filepath) ;
 class ipcParameters
 {
     public:
-        ipcParameters(protocolList protocol, char* filepath):protocol_(protocol), filepath_(filepath){};
+        ipcParameters(protocolList protocol, const char* filepath):protocol_(protocol), filepath_(filepath){};
         ipcParameters(int argc, char* const argv[]); 
 
         protocolList getProtocol() const;
@@ -30,7 +30,7 @@ class copyFilethroughIPC
 {
     public:
         std::string getName() const;
-        std::string changeName(std::string name);
+        std::string changeName(const std::string &name);
 
         size_t getBufferSize() const;
 

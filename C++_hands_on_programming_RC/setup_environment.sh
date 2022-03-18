@@ -9,7 +9,7 @@ sudo timedatectl set-ntp on
 
 #Try to find Bazel
 BAZEL_NEED_TO_BE_INSTALLED=true
-if ! [ -x "$(command -v bazel git)" ]; then
+if ! [ -x "$(command -v bazel)" ]; then
     BAZEL_NEED_TO_BE_INSTALLED=true
 else
     BAZEL_NEED_TO_BE_INSTALLED=false
@@ -20,7 +20,7 @@ fi
 
 #Try to find g++
 GPLUSPLUS_NEED_TO_BE_INSTALLED=true
-if ! [ -x "$(command -v g++ git)" ]; then
+if ! [ -x "$(command -v g++)" ]; then
     GPLUSPLUS_NEED_TO_BE_INSTALLED=true
 else
     GPLUSPLUS_NEED_TO_BE_INSTALLED=false
@@ -29,29 +29,27 @@ fi
 
 #Try to find git
 GIT_NEED_TO_BE_INSTALLED=true
-if ! [ -x "$(command -v git git)" ]; then
-     GIT_NEED_TO_BE_INSTALLED=false
-else
+if ! [ -x "$(command -v git)" ]; then
      GIT_NEED_TO_BE_INSTALLED=true
+else
+     GIT_NEED_TO_BE_INSTALLED=false
 fi
 #echo $GIT_NEED_TO_BE_INSTALLED
 
 #install programs missing
-if  [ $BAZEL_NEED_TO_BE_INSTALLED ] ||\
-    [ $GPLUSPLUS_NEED_TO_BE_INSTALLED ] ||\
-    [ $GIT_NEED_TO_BE_INSTALLED ]]; then
-
+if  $BAZEL_NEED_TO_BE_INSTALLED || $GPLUSPLUS_NEED_TO_BE_INSTALLED || $GIT_NEED_TO_BE_INSTALLED
+then
     sudo apt update
-
-    if [ $GPLUSPLUS_NEED_TO_BE_INSTALLED ]; then
+    if $GPLUSPLUS_NEED_TO_BE_INSTALLED
+    then
         apt install g++
     fi
-
-    if [ $GIT_NEED_TO_BE_INSTALLED ]; then
+    if $GIT_NEED_TO_BE_INSTALLED
+    then
         apt install git
     fi
-
-    if [ $BAZEL_NEED_TO_BE_INSTALLED ]; then
+    if $BAZEL_NEED_TO_BE_INSTALLED
+    then
         sudo apt install apt-transport-https curl gnupg
         curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg
         sudo mv bazel.gpg /etc/apt/trusted.gpg.d/
@@ -59,6 +57,7 @@ if  [ $BAZEL_NEED_TO_BE_INSTALLED ] ||\
         sudo apt update && sudo apt install bazel
     fi
 fi
+
 chmod +x ./build_and_run_tests.sh 
 
 set +x
