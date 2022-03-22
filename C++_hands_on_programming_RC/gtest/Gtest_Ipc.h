@@ -105,13 +105,7 @@ class CreateRandomFile
     int blockSize_;
   
   public:
-    CreateRandomFile(const std::string &file_name, int nbOfBlocks, int blockSize): file_name_(file_name), nbOfBlocks_(nbOfBlocks), blockSize_(blockSize)
-    {
-      char buffer [100];
-      snprintf(buffer, 100, "/bin/dd if=/dev/urandom of=%s bs=%dM count=%d status=none", file_name_.c_str(), blockSize_, nbOfBlocks_);
-      std::system(const_cast<char*>(buffer)) ;
-    }
-    CreateRandomFile(const char* file_name, int nbOfBlocks, int blockSize): file_name_(std::string(file_name)), nbOfBlocks_(nbOfBlocks), blockSize_(blockSize)
+    CreateRandomFile(const std::string &file_name, int nbOfBlocks, int blockSize): file_name_(std::string(file_name)), nbOfBlocks_(nbOfBlocks), blockSize_(blockSize)
     {
       char buffer [100];
       snprintf(buffer, 100, "/bin/dd if=/dev/urandom of=%s bs=%dM count=%d status=none", file_name_.c_str(), blockSize_, nbOfBlocks_);

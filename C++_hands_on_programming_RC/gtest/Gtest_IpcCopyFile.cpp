@@ -82,7 +82,7 @@ TEST(FileManipulation, OpenFile)
     {
         
         CreateRandomFile randomFile {"testfile.dat", 10, 1};
-        Reader openRandomFile;
+        QueueSendFile openRandomFile;
         EXPECT_NO_THROW(openRandomFile.openFile(randomFile.getFileName()));
         {
             QueueReceiveFile openRandomFileWriter;

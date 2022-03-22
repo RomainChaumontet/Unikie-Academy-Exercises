@@ -150,7 +150,6 @@ void copyFilethroughIPC::closeFile()
         file_.close();
 }
 
-
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
@@ -200,7 +199,9 @@ void Writer::syncFileWithIPC(const std::string &filepath)
     }
 }
 
-bool Reader::syncFileWithBuffer()
+
+/////////////////// Reader Class
+void Reader::openFile(const std::string &filepath)
 {
     if (!checkIfFileExists(filepath))
     {
@@ -213,7 +214,6 @@ bool Reader::syncFileWithBuffer()
         throw std::runtime_error("Error in std::fstream.open(). rdstate:" + file_.rdstate());
     }
 }
-
 
 void Reader::syncFileWithBuffer()
 {
@@ -247,6 +247,7 @@ void Reader::syncFileWithBuffer()
         throw std::runtime_error("syncFileWithBuffer(). badbit error.");
         return;
     }
+}
 
 void Reader::syncFileWithIPC(const std::string &filepath)
 {
@@ -266,12 +267,6 @@ void Reader::syncFileWithIPC(const std::string &filepath)
     //send and empty message to tell that's all.
     syncFileWithBuffer();
     syncIPCAndBuffer();
-}
-
-void copyFilethroughIPC::closeFile()
-{
-    if (file_.is_open())
-        file_.close();
 }
 
 

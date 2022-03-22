@@ -8,7 +8,7 @@
 #include <vector>
 
 enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
-inline bool checkIfFileExists (const std::string &filepath);
+bool checkIfFileExists (const std::string &filepath);
 size_t returnFileSize(const std::string &filepath) ;
 
 
