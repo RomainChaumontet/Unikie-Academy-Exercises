@@ -38,7 +38,8 @@ $ ./build_and_run_tests.sh
 The binary and the test report will be in the folder `output`.
 
 # How to use the program
-For the moment, the programs are useless.
+You can use the program with the argument `--help` .
+
 # Design
 ## Current Design
 
