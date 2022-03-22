@@ -15,4 +15,4 @@ cp bazel-bin/src/ipc_receivefile/ipc_receivefile output
 cp bazel-testlogs/gtest/Gtest_ipc/test.log output
 
 bazel clean
-set -x
+set +x
