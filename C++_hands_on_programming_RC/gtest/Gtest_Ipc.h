@@ -3,9 +3,13 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "../src/lib/IpcCopyFile.h"
+#include "../src/lib/IpcQueue.h"
 #include <deque>
 #include <vector>
 #include <map>
+#include <mqueue.h>
+#include <fstream>
+#include <pthread.h>
 
 struct inputLineOpt{
   protocolList protocol;
@@ -13,6 +17,14 @@ struct inputLineOpt{
   std::vector<const char*> arguments;
 };
 
+bool compareFiles(const std::string& fileName1, const std::string& fileName2); // https://stackoverflow.com/questions/6163611/compare-two-files
+
+std::vector<char> getRandomData(ssize_t size);
+
+
+//Wrap function into thread to be able to test.
+void *strip_void_star(void *arg);
+void start_pthread(pthread_t *thread, void (*myFunction)(void));
 
 //This class is just here to fake Command Line Opt
 class FakeCmdLineOpt
@@ -98,6 +110,14 @@ class CreateRandomFile
       char buffer [100];
       snprintf(buffer, 100, "/bin/dd if=/dev/urandom of=%s bs=%dM count=%d status=none", file_name_.c_str(), blockSize_, nbOfBlocks_);
       std::system(const_cast<char*>(buffer)) ;
+
+
+      ssize_t randomSize = rand() % 4096;
+      std::vector<char> data = getRandomData(randomSize);
+
+      std::fstream file;
+      file.open(file_name.c_str(), std::ios::binary | std::fstream::in | std::fstream::out | std::fstream::app);
+      file.write(&data[0], randomSize);
     }
 
     ~CreateRandomFile()
@@ -108,4 +128,58 @@ class CreateRandomFile
     const char* getFileName() const {return file_name_.c_str();}
 };
 
+
+class FileManipulationClassReader : public QueueSendFile
+{
+    public:
+        void modifyBufferToWrite(const std::string &data)
+        {
+            bufferSize_ = data.size();
+            buffer_ = std::vector<char> (data.begin(), data.end());
+            return;
+        }
+        void modifyBufferToWrite(const std::vector<char> &data)
+        {
+            bufferSize_ = data.size();
+            buffer_ = data;
+            return;
+        }
+
+        std::string bufferForReading() const
+        {
+            return std::string (buffer_.begin(), buffer_.end());
+        }
+
+        std::vector<char> getBufferRead() const
+        {
+            return buffer_;
+        }
+};
+
+class FileManipulationClassWriter : public QueueReceiveFile
+{
+  public:
+        void modifyBufferToWrite(const std::string &data)
+        {
+            bufferSize_ = data.size();
+            buffer_ = std::vector<char> (data.begin(), data.end());
+            return;
+        }
+        void modifyBufferToWrite(const std::vector<char> &data)
+        {
+            bufferSize_ = data.size();
+            buffer_ = data;
+            return;
+        }
+
+        std::string bufferForReading() const
+        {
+            return std::string (buffer_.begin(), buffer_.end());
+        }
+
+        std::vector<char> getBufferRead() const
+        {
+            return buffer_;
+        }
+};
 #endif /*GTEST_IPC_H */

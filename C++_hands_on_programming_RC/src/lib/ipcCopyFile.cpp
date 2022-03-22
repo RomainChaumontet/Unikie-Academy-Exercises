@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sys/stat.h>
 
-inline bool checkIfFileExists(const std::string &filepath)
+bool checkIfFileExists(const std::string &filepath)
 {
     struct stat buffer;
     return (stat(filepath.c_str(), &buffer) == 0);
@@ -210,6 +210,18 @@ bool Writer::syncFileWithBuffer()
     return false;
 }
 
+void Writer::syncFileWithIPC(const std::string &filepath)
+{
+    openFile(filepath);
+    openIPC();
+
+    while (getBufferSize() > 0)
+    {
+        syncIPCAndBuffer();
+        syncFileWithBuffer();
+    }
+}
+
 bool Reader::syncFileWithBuffer()
 {
     if (!file_.is_open())
@@ -217,8 +229,8 @@ bool Reader::syncFileWithBuffer()
         std::cerr << "Error, trying to read a file which is not opened." << std::endl;
         return false;
     }
-    
-    buffer_.resize(bufferSize_+1);
+
+    std::vector<char>(bufferSize_).swap(buffer_);
     file_.read(&buffer_[0],bufferSize_);
     bufferSize_ = file_.gcount();
     buffer_.resize(bufferSize_);
@@ -252,7 +264,25 @@ bool Reader::syncFileWithBuffer()
     return false;
 }
 
+void Reader::syncFileWithIPC(const std::string &filepath)
+{
+    openFile(filepath);
+    openIPC();
+    ssize_t fileSize = returnFileSize(filepath);
+    ssize_t datasent = 0;
 
+
+    while (datasent < fileSize)
+    {
+        syncFileWithBuffer();
+        syncIPCAndBuffer();
+        datasent += getBufferSize();
+    }
+
+    //send and empty message to tell that's all.
+    syncFileWithBuffer();
+    syncIPCAndBuffer();
+}
 
 void copyFilethroughIPC::closeFile()
 {

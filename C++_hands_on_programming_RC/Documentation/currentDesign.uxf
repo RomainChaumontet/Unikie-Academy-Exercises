@@ -58,35 +58,63 @@ Package::IpcCopyFile
 &lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;330&lt;/x&gt;&lt;y&gt;140&lt;/y&gt;&lt;w&gt;200&lt;/w&gt;&lt;h&gt;50&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=-
 m1=1
 m2=1
-determine which subclass &amp;gt;&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;20;180;20&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;</help_text><element><id>UMLClass</id><coordinates><x>510</x><y>50</y><w>270</w><h>230</h></coordinates><panel_attributes>/copyFilethroughIPC/
+determine which subclass &amp;gt;&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;20;180;20&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;</help_text><element><id>UMLClass</id><coordinates><x>510</x><y>10</y><w>270</w><h>260</h></coordinates><panel_attributes>/copyFilethroughIPC/
 Package::IpcCopyFile
 --
-- name_: std::string = "ipcCopyFile"
-- bufferSize_: size_t = 4096
-- file_: std::fstream
-- buffer_: std::vector&lt;char&gt;
+# name_: std::string = "ipcCopyFile"
+# bufferSize_: size_t = 4096
+# file_: std::fstream
+# buffer_: std::vector&lt;char&gt;
 --
 + getName(): std::string
 + changeName(in name: std::string): std::string
 + getBufferSize(): size_t
 + changeBufferSize(in bufferSize: size_t): size_t
-/+ openFile(in filepath: std::string): bool/
+/+ openFile(iin &amp;filepath: const std::string): bool/
 + closeFile(): void
 /+ syncFileWithBuffer(): bool/
+/+ openIPC(): void/
+/+ syncIPCAndBuffer(): void/
+/+ syncFileWithIPC(in &amp;filepath: const std::string) /
 
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>70</x><y>310</y><w>270</w><h>100</h></coordinates><panel_attributes>Writer
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>10</x><y>310</y><w>300</w><h>100</h></coordinates><panel_attributes>/Writer/
+Package::IpcCopyFile
+--
+--
++ openFile(in &amp;filepath: const std::string): bool
++ syncFileWithBuffer(): bool
++ syncFileWithIPC(in &amp;filepath: const std::string): void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>200</x><y>260</y><w>370</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>350;10;350;40;10;40;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>440</x><y>260</y><w>130</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;40;10;40;40;40;40;50</additional_attributes></element><element><id>UMLClass</id><coordinates><x>320</x><y>310</y><w>300</w><h>100</h></coordinates><panel_attributes>/Reader/
 Package::IpcCopyFile
 --
 --
 + openFile(in filepath: std::string): bool
 + syncFileWithBuffer(): bool
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>200</x><y>270</y><w>370</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>350;10;350;30;10;30;10;40</additional_attributes></element><element><id>Relation</id><coordinates><x>440</x><y>270</y><w>130</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;30;10;30;40;30;40;40</additional_attributes></element><element><id>UMLClass</id><coordinates><x>350</x><y>310</y><w>270</w><h>100</h></coordinates><panel_attributes>Reader
++ syncFileWithIPC(in &amp;filepath: const std::string): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>630</x><y>310</y><w>230</w><h>180</h></coordinates><panel_attributes>/Queue/
+Package::IpcCopyFile
+--
+# queuePriority_: unsigned int  = 5
+# queueFd_: mqd_t  = -1
+# queueName_: std::string = "/" + name_
+# queueAttrs_: struct mq_attr 
+# mq_maxmsg_: long = 10
+# mq_msgsize_: long = bufferSize_
+--
++ /~Queue()/
++ getQueueDescriptor(): mqd_t</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>260</y><w>30</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>UMLClass</id><coordinates><x>280</x><y>500</y><w>170</w><h>90</h></coordinates><panel_attributes>QueueSendFile
 Package::IpcCopyFile
 --
 --
-+ openFile(in filepath: std::string): bool
-+ syncFileWithBuffer(): bool
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>50</y><w>340</w><h>160</h></coordinates><panel_attributes>ipcParameters
++ ~QueueSendFile(): void
++ openIPC(): void
++ syncIPCAndBuffer(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>280</x><y>620</y><w>170</w><h>110</h></coordinates><panel_attributes>QueueReceiveFile
+Package::IpcCopyFile
+--
+# maxAttempt_: int = 60
+--
++ ~QueueReceiveFile(): void
++ openIPC(): void
++ syncIPCAndBuffer(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>434</x><y>480</y><w>320</w><h>100</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>300;10;300;30;50;30;50;80;10;80</additional_attributes></element><element><id>Relation</id><coordinates><x>434</x><y>480</y><w>320</w><h>220</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>300;10;300;30;50;30;50;200;10;200</additional_attributes></element><element><id>Relation</id><coordinates><x>354</x><y>400</y><w>130</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;60;10;60;10;100</additional_attributes></element><element><id>Relation</id><coordinates><x>184</x><y>400</y><w>200</w><h>240</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;210;180;210;180;220</additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>50</y><w>340</w><h>160</h></coordinates><panel_attributes>ipcParameters
 Package::IpcCopyFile
 --
 - protocol_: protocolList
