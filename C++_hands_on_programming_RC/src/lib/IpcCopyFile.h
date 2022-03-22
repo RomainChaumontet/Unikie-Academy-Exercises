@@ -7,15 +7,15 @@
 #include <fstream>
 #include <vector>
 
-enum protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
-bool checkIfFileExists (const std::string &filepath);
+enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
+inline bool checkIfFileExists (const std::string &filepath);
 size_t returnFileSize(const std::string &filepath) ;
 
 
 class ipcParameters
 {
     public:
-        ipcParameters(protocolList protocol, char* filepath):protocol_(protocol), filepath_(filepath){};
+        ipcParameters(protocolList protocol, const char* filepath):protocol_(protocol), filepath_(filepath){};
         ipcParameters(int argc, char* const argv[]); 
 
         protocolList getProtocol() const;
@@ -31,14 +31,13 @@ class copyFilethroughIPC
 {
     public:
         std::string getName() const;
-        std::string changeName(std::string name);
+        std::string changeName(const std::string &name);
 
         size_t getBufferSize() const;
-        size_t changeBufferSize(size_t bufferSize);
 
-        virtual bool openFile(const std::string &filepath) = 0;
+        virtual void openFile(const std::string &filepath) = 0;
         void closeFile();
-        virtual bool syncFileWithBuffer() = 0;
+        virtual void syncFileWithBuffer() = 0;
         virtual void openIPC() =0;
         virtual void syncIPCAndBuffer() =0;
         virtual void syncFileWithIPC(const std::string &filepath) = 0;
@@ -55,16 +54,16 @@ class copyFilethroughIPC
 class Writer : virtual public copyFilethroughIPC
 {
     public:
-        bool openFile(const std::string &filepath);
-        bool syncFileWithBuffer();
+        void openFile(const std::string &filepath);
+        void syncFileWithBuffer();
         void syncFileWithIPC(const std::string &filepath);
 };
 
 class Reader : virtual public copyFilethroughIPC
 {
     public:
-        bool openFile(const std::string &filepath);
-        bool syncFileWithBuffer();
+        void openFile(const std::string &filepath);
+        void syncFileWithBuffer();
         void syncFileWithIPC(const std::string &filepath);
 };
 

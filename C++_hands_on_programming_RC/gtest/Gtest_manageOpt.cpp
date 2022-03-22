@@ -9,121 +9,121 @@ std::map<std::string, inputLineOpt> inputMap =
 {
   {"OK_Help",
         inputLineOpt {
-          HELP,
+          protocolList::HELP,
           NULL,
           std::vector<const char*> {"--help"}
           }},
   {"OK_Queue_File_NameOfFile",
         inputLineOpt {
-          QUEUE,
+          protocolList::QUEUE,
           "nameOfFile",
           std::vector<const char*> {"--queue", "--file","nameOfFile"}
           }},
   {"OK_Pipe_File_NameOfFile",
       inputLineOpt {
-        PIPE,
+        protocolList::PIPE,
         "nameOfFile",
         std::vector<const char*> {"--pipe", "--file","nameOfFile"}
         }},
   {"OK_Shm_File_NameOfFile",
         inputLineOpt {
-          SHM,
+          protocolList::SHM,
           "nameOfFile",
           std::vector<const char*> {"--shm", "--file","nameOfFile"}
           }},
   {"OK_File_NameOfFile_Queue",
         inputLineOpt {
-          QUEUE,
+          protocolList::QUEUE,
           "nameOfFile",
           std::vector<const char*> {"--file", "nameOfFile","--queue"}
           }},
   {"OK_File_NameOfFile_Pipe",
         inputLineOpt {
-          PIPE,
+          protocolList::PIPE,
           "nameOfFile",
           std::vector<const char*> {"--file", "nameOfFile","--pipe"}
           }},
   {"OK_File_NameOfFile_Shm",
         inputLineOpt {
-          SHM,
+          protocolList::SHM,
           "nameOfFile",
           std::vector<const char*> {"--file", "nameOfFile","--shm"}
           }},
   {"NOK_",
         inputLineOpt {
-          NONE,
+          protocolList::NONE,
           NULL,
           std::vector<const char*> {""}
           }},
   {"NOK_hqasjbta",
         inputLineOpt {
-          WRONGARG,
+          protocolList::WRONGARG,
           NULL,
           std::vector<const char*> {"-hqasjbta"}
           }},
   {"NOK_randomArgument",
         inputLineOpt {
-          WRONGARG,
+          protocolList::WRONGARG,
           NULL,
           std::vector<const char*> {"--randomArgument"}
           }},
   {"NOK_queue",
         inputLineOpt {
-          NOFILE,
+          protocolList::NOFILE,
           NULL,
           std::vector<const char*> {"--queue"}
           }},
   {"NOK_shm",
         inputLineOpt {
-          NOFILE,
+          protocolList::NOFILE,
           NULL,
           std::vector<const char*> {"--shm"}
           }},
   {"NOK_pipe",
         inputLineOpt {
-          NOFILE,
+          protocolList::NOFILE,
           NULL,
           std::vector<const char*> {"--pipe"}
           }},
   {"NOK_file",
         inputLineOpt {
-          NOFILEOPT,
+          protocolList::NOFILEOPT,
           NULL,
           std::vector<const char*> {"--file"}
           }},
   {"NOK_file_nameOfFile",
         inputLineOpt {
-          NONE,
+          protocolList::NONE,
           "nameOfFile.extension",
           std::vector<const char*> {"--file", "nameOfFile.extension"}
           }},
   {"NOK_queue_file",
         inputLineOpt {
-          NOFILEOPT,
+          protocolList::NOFILEOPT,
           NULL,
           std::vector<const char*> {"--queue","--file"}
           }},
   {"NOK_pipe_file",
         inputLineOpt {
-          NOFILEOPT,
+          protocolList::NOFILEOPT,
           NULL,
           std::vector<const char*> {"--pipe","--file"}
           }},
   {"NOK_shm_file",
         inputLineOpt {
-          NOFILEOPT,
+          protocolList::NOFILEOPT,
           NULL,
           std::vector<const char*> {"--shm","--file"}
           }},
   {"NOK_pipe_file_nameOfFile_shm",
         inputLineOpt {
-          TOOMUCHARG,
+          protocolList::TOOMUCHARG,
           "nameOfFile",
           std::vector<const char*> {"--pipe","--file","nameOfFile","--shm"}
           }},
   {"NOK_queue_file_nameOfFile_pipe",
         inputLineOpt {
-          TOOMUCHARG,
+          protocolList::TOOMUCHARG,
           "nameOfFile",
           std::vector<const char*> {"--queue","--file","nameOfFile","--pipe"}
           }}

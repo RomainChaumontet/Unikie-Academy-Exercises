@@ -8,11 +8,13 @@ C++_hands_on_programming_RC/bazel-testlogs
 C++_hands_on_programming_RC/.vscode/launch.json
 C_hands_on_programming_2/ipc_receivefile
 C_hands_on_programming_2/ipc_sendfile
-.vscode/launch.json
-.vscode/settings.json
 C++_hands_on_programming_RC/output/ipc_receivefile
 C++_hands_on_programming_RC/output/ipc_sendfile
+.gitignore
+.vscode/launch.json
+.gitignore
 C++_hands_on_programming_RC/output/test.log
+.vscode/settings.json
 C++_hands_on_programming_RC/build_and_run_tests without cleaning.sh
-C++_hands_on_programming_RC/build_and_run_tests_without_cleaning.sh
-TmpFile.txt
+C_hands_on_programming_2/ipc_sendfile
+C_hands_on_programming_2/ipc_receivefile

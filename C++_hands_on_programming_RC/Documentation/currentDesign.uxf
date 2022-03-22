@@ -58,7 +58,7 @@ Package::IpcCopyFile
 &lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;330&lt;/x&gt;&lt;y&gt;140&lt;/y&gt;&lt;w&gt;200&lt;/w&gt;&lt;h&gt;50&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=-
 m1=1
 m2=1
-determine which subclass &amp;gt;&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;20;180;20&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;</help_text><element><id>UMLClass</id><coordinates><x>510</x><y>10</y><w>270</w><h>260</h></coordinates><panel_attributes>/copyFilethroughIPC/
+determine which subclass &amp;gt;&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;20;180;20&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;</help_text><element><id>UMLClass</id><coordinates><x>510</x><y>0</y><w>270</w><h>230</h></coordinates><panel_attributes>/copyFilethroughIPC/
 Package::IpcCopyFile
 --
 # name_: std::string = "ipcCopyFile"
