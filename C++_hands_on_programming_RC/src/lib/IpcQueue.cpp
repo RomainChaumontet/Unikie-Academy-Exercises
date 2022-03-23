@@ -18,10 +18,16 @@ QueueSendFile::~QueueSendFile()
     }
 }
 
-void QueueSendFile::openIPC()
+QueueSendFile::QueueSendFile()
 {
+    if (queueFd_ != -1)
+    {
+        throw std::runtime_error(
+            "Error, trying to open a queue which is already opened by this program./n"
+        );
+    }
     queueAttrs_.mq_maxmsg = mq_maxmsg_;
-    queueAttrs_.mq_msgsize = bufferSize_;
+    queueAttrs_.mq_msgsize = mq_msgsize_;
     
     mq_unlink(queueName_.c_str());
 
@@ -39,7 +45,7 @@ void QueueSendFile::syncIPCAndBuffer()
 {
     if (    mq_send(
                 queueFd_,
-                &buffer_[0],
+                buffer_.data(),
                 bufferSize_,
                 queuePriority_
                 )
@@ -61,10 +67,17 @@ QueueReceiveFile::~QueueReceiveFile()
     mq_unlink(queueName_.c_str());
 }
 
-void QueueReceiveFile::openIPC()
+
+
+QueueReceiveFile::QueueReceiveFile(int maxAttempt)
 {
     int attempt = 0;
-
+    if (queueFd_ != -1)
+    {
+        throw std::runtime_error(
+            "Error, trying to open a queue which is already opened by this program./n"
+        );
+    }
     do
     {
         queueFd_ = mq_open(queueName_.c_str(), O_RDONLY);
@@ -82,15 +95,14 @@ void QueueReceiveFile::openIPC()
             sleep(1);
         }
     }
-    while (queueFd_ == -1 && errno == ENOENT && ++attempt < maxAttempt_);
+    while (queueFd_ == -1 && errno == ENOENT && ++attempt < maxAttempt);
     
-    if (attempt == maxAttempt_)
+    if (attempt == maxAttempt)
     {
         throw std::runtime_error(
                 "Error, the queue was not opened by another process"
                 );
     }
-
 }
 
 
@@ -104,7 +116,7 @@ void QueueReceiveFile::syncIPCAndBuffer()
     }
     std::vector<char> (mq_msgsize_).swap(buffer_);
     ssize_t amountOfData;
-    amountOfData = mq_receive(queueFd_,&buffer_[0], mq_msgsize_, &queuePriority_);
+    amountOfData = mq_receive(queueFd_,buffer_.data(), mq_msgsize_, &queuePriority_);
     if (amountOfData == -1)
     {
         throw std::runtime_error(

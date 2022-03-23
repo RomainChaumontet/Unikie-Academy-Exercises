@@ -40,10 +40,6 @@ class QueueTestSendFile : public QueueSendFile
 class QueueTestReceiveFile : public QueueReceiveFile
 {
     public:
-        void changeMaxAttempt(int input)
-        {
-            maxAttempt_ = input;
-        }
 
         std::vector<char> getBuffer()
         {
@@ -55,10 +51,9 @@ TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
 {
     std::string queueName;
     {
+        ASSERT_NO_THROW(QueueSendFile myQueueObject);
         QueueSendFile myQueueObject;
         queueName = "/" + myQueueObject.getName();
-
-        ASSERT_NO_THROW(myQueueObject.openIPC());
         mqd_t queueTest = mq_open(queueName.c_str(),O_RDONLY);
         EXPECT_THAT(queueTest, Ne(-1)); //The queue exists
         mq_close(queueTest);
@@ -75,18 +70,20 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
 {
     //Without messages on it
     std::string queueName;
-    QueueSendFile myQueueObject;
-    queueName = "/" + myQueueObject.getName();
+    {
+        
+        queueName = "/ipcCopyFile";
 
-    mqd_t queueTest = mq_open(
-        queueName.c_str(),
-            O_CREAT | O_WRONLY,
-            S_IRWXG |S_IRWXU,NULL); //queue is open
-    ASSERT_THAT(queueTest, Ne(-1));
+        mqd_t queueTest = mq_open(
+            queueName.c_str(),
+                O_CREAT | O_WRONLY,
+                S_IRWXG |S_IRWXU,NULL); //queue is open
+        ASSERT_THAT(queueTest, Ne(-1));
 
-    EXPECT_NO_THROW(myQueueObject.openIPC());
-    mq_close(queueTest);
-    mq_unlink(queueName.c_str());
+        EXPECT_NO_THROW(QueueSendFile myQueueObject;);
+        mq_close(queueTest);
+        mq_unlink(queueName.c_str());
+    }
 
 
     //With messages on it
@@ -94,7 +91,7 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
     queueAttrs.mq_maxmsg = 10;
     queueAttrs.mq_msgsize = 4096;
 
-    queueTest = mq_open(
+    mqd_t queueTest = mq_open(
         queueName.c_str(),
             O_CREAT | O_WRONLY,
             S_IRWXG |S_IRWXU,NULL); //queue is open
@@ -106,7 +103,8 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
     ASSERT_THAT(status, Ne(-1));
     ASSERT_THAT(queueAttrs.mq_curmsgs,Eq(1));
 
-    EXPECT_NO_THROW(myQueueObject.openIPC());
+    EXPECT_NO_THROW(QueueSendFile myQueueObject);
+    QueueSendFile myQueueObject;
     status = mq_getattr(myQueueObject.getQueueDescriptor(), &queueAttrs);
     ASSERT_THAT(status, Ne(-1));
     ASSERT_THAT(queueAttrs.mq_curmsgs,Eq(0));
@@ -122,8 +120,7 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
     
 TEST(SyncBuffAndQueue, SendQueue)
 {
-    QueueTestSendFile MyQueueSend;
-    std::string queueName = "/" + MyQueueSend.getName();
+    std::string queueName = "/ipcCopyFile";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
     std::vector<char> buffer;
@@ -132,7 +129,8 @@ TEST(SyncBuffAndQueue, SendQueue)
     unsigned int prio = 5;
 
     //Open the queue
-    ASSERT_NO_THROW(MyQueueSend.openIPC());
+    ASSERT_NO_THROW(QueueTestSendFile MyQueueSend);
+    QueueTestSendFile MyQueueSend;
     queueTest = mq_open(queueName.c_str(), O_RDONLY);
     ASSERT_THAT(queueTest, Ne(-1));
     MyQueueSend.modifyBuffer(message);
@@ -144,7 +142,7 @@ TEST(SyncBuffAndQueue, SendQueue)
 
     //Check the message
     buffer.resize(queueAttrs.mq_msgsize);
-    msgSize = mq_receive(queueTest, &buffer[0], queueAttrs.mq_msgsize, &prio);
+    msgSize = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
     ASSERT_THAT(msgSize, Eq(message.size()));
     buffer.resize(msgSize);
     EXPECT_THAT(std::string (buffer.begin(), buffer.end()), StrEq(message));
@@ -164,10 +162,10 @@ TEST(SyncBuffAndQueue, SendQueue)
     EXPECT_THAT(queueAttrs.mq_curmsgs, Eq(1)); //one msg in the queue
     //Check the message
     buffer.resize(queueAttrs.mq_msgsize);
-    size_t msgSize2 = mq_receive(queueTest, &buffer[0], queueAttrs.mq_msgsize, &prio);
+    size_t msgSize2 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
     ASSERT_THAT(msgSize2, Eq(4096));
     buffer.resize(msgSize2);
-    EXPECT_THAT(&buffer[0], StrEq(&randomData[0]));
+    EXPECT_THAT(buffer.data(), StrEq(randomData.data()));
 
     //Check if there is no other message
     EXPECT_THAT(mq_getattr(queueTest, &queueAttrs), Eq(0));
@@ -184,10 +182,10 @@ TEST(SyncBuffAndQueue, SendQueue)
     EXPECT_THAT(queueAttrs.mq_curmsgs, Eq(1)); //one msg in the queue
     //Check the message
     buffer.resize(queueAttrs.mq_msgsize);
-    msgSize2 = mq_receive(queueTest, &buffer[0], queueAttrs.mq_msgsize, &prio);
+    msgSize2 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
     ASSERT_THAT(msgSize2, Eq(randomSize));
     buffer.resize(msgSize2);
-    EXPECT_THAT(&buffer[0], StrEq(&randomData2[0]));
+    EXPECT_THAT(buffer.data(), StrEq(randomData2.data()));
 
     mq_close(queueTest);
     mq_unlink(queueName.c_str());
@@ -197,7 +195,7 @@ TEST(SyncBuffAndQueue, ExceedMaxMsg)
 {
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadExceedMaxMsgSend);
-    usleep(50);
+    usleep(100);
     start_pthread(&mThreadID2,ThreadExceedMaxMsgReceive);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
@@ -206,7 +204,6 @@ TEST(SyncBuffAndQueue, ExceedMaxMsg)
 void ThreadExceedMaxMsgSend(void)
 {
     QueueTestSendFile MyQueueSend;
-    ASSERT_NO_THROW(MyQueueSend.openIPC());
     std::string message = "This is a test.";
     struct mq_attr queueAttrs;
 
@@ -226,8 +223,7 @@ void ThreadExceedMaxMsgSend(void)
 
 void ThreadExceedMaxMsgReceive(void)
 {
-    QueueTestSendFile MyQueue;
-    std::string queueName = "/" + MyQueue.getName();
+    std::string queueName = "/ipcCopyFile";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
     std::vector<char> buffer;
@@ -243,17 +239,17 @@ void ThreadExceedMaxMsgReceive(void)
 
     //get one msg, expect 10 in the queue
     buffer.resize(queueAttrs.mq_msgsize);
-    msgSize = mq_receive(queueTest, &buffer[0], queueAttrs.mq_msgsize, &prio);
+    msgSize = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
     EXPECT_THAT(msgSize, Ne(-1));
     buffer.resize(msgSize);
     EXPECT_THAT(mq_getattr(queueTest, &queueAttrs), Eq(0));
     EXPECT_THAT(queueAttrs.mq_curmsgs, Eq(10));
 
-    usleep(50);
+    usleep(100);
     for (int i=10; i>0 ; i--)
     {
         buffer.resize(queueAttrs.mq_msgsize);
-        msgSize = mq_receive(queueTest, &buffer[0], queueAttrs.mq_msgsize, &prio);
+        msgSize = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
         EXPECT_THAT(msgSize, Ne(-1));
         buffer.resize(msgSize);
         EXPECT_THAT(mq_getattr(queueTest, &queueAttrs), Eq(0));
@@ -276,7 +272,6 @@ TEST(SyncBuffAndQueue, ReadSendQueueSimpleMessage)
     writingToAFile.closeFile();
 
     EXPECT_NO_THROW(myQueueSend.openFile(filename));
-    EXPECT_NO_THROW(myQueueSend.openIPC());
     EXPECT_NO_THROW(myQueueSend.syncFileWithBuffer());
     EXPECT_NO_THROW(myQueueSend.syncIPCAndBuffer());
 
@@ -295,7 +290,7 @@ TEST(SyncBuffAndQueue, ReadSendQueueSimpleMessage)
     EXPECT_THAT(queueAttrs.mq_curmsgs, Eq(1));
 
     buffer.resize(queueAttrs.mq_msgsize);
-    msgSize = mq_receive(queueTest, &buffer[0], queueAttrs.mq_msgsize, &prio);
+    msgSize = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
     ASSERT_THAT(msgSize, Eq(myQueueSend.getBufferSize()));
     buffer.resize(msgSize);
     EXPECT_THAT(std::string (buffer.begin(), buffer.end()), StrEq(data));
@@ -325,7 +320,6 @@ TEST(SyncBuffAndQueue, ReadSendQueueComplexMessage)
     ssize_t datasent = 0;
 
     ASSERT_NO_THROW(myQueueSend.openFile(fileinput));
-    ASSERT_NO_THROW(myQueueSend.openIPC());
     ASSERT_NO_THROW(writingToAFile.openFile(fileoutput));
     queueTest = mq_open(queueName.c_str(), O_RDONLY);
     ASSERT_THAT(queueTest, Ne(-1));
@@ -339,7 +333,7 @@ TEST(SyncBuffAndQueue, ReadSendQueueComplexMessage)
 
         buffer.clear();
         buffer.resize(queueAttrs.mq_msgsize);
-        msgSize = mq_receive(queueTest, &buffer[0], queueAttrs.mq_msgsize, &prio);
+        msgSize = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
         ASSERT_THAT(msgSize, Eq(myQueueSend.getBufferSize()));
         buffer.resize(msgSize);
         writingToAFile.modifyBufferToWrite(buffer);
@@ -363,12 +357,11 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
     std::string queueName;
     mqd_t queueTest;
     {
-        QueueReceiveFile myQueueObject;
-        queueName = "/" + myQueueObject.getName();
+        queueName = "/ipcCopyFile";
         queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY,S_IRWXG |S_IRWXU,NULL);
         ASSERT_THAT(queueTest, Ne(-1));
 
-        EXPECT_NO_THROW(myQueueObject.openIPC());
+        EXPECT_NO_THROW(QueueReceiveFile myQueueObject);
 
         mq_close(queueTest);
     }
@@ -379,10 +372,8 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
     EXPECT_THAT(errno, Eq(2)); //ENOENT
 
     {
-        QueueTestReceiveFile myQueueObject;
-        myQueueObject.changeMaxAttempt(1);
         CaptureStream stdcout{std::cout};
-        EXPECT_THROW(myQueueObject.openIPC(),std::runtime_error);
+        EXPECT_THROW(QueueReceiveFile myQueueObject{1},std::runtime_error);
         EXPECT_THAT(stdcout.str(),StrEq("Waiting to the ipcsendfile.\n"));
     }
 
@@ -391,21 +382,16 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
 
 TEST(SyncBuffAndQueue, ReceiveQueue)
 {
-    QueueTestReceiveFile myQueueObj;
     mqd_t queueTest;
-    std::string queueName = "/" + myQueueObj.getName();
+    std::string queueName = "/ipcCopyFile";
     struct mq_attr queueAttrs;
     queueAttrs.mq_msgsize = 4096;
     queueAttrs.mq_maxmsg = 10;
 
-    //Trying to sync before opening
-    EXPECT_THROW(myQueueObj.syncIPCAndBuffer(), std::runtime_error);
-
-
     //open
     queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY,S_IRWXG |S_IRWXU,&queueAttrs);
     ASSERT_THAT(queueTest, Ne(-1));
-    EXPECT_NO_THROW(myQueueObj.openIPC());
+    QueueTestReceiveFile myQueueObj;
 
     // Text message
     std::string message = "This is a test.";
@@ -417,16 +403,15 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     //binary message
     ssize_t randomSize = rand() % 4096;
     std::vector<char> randomData = getRandomData(randomSize);
-    mq_send(queueTest, &randomData[0], randomSize, 5);
+    mq_send(queueTest, randomData.data(), randomSize, 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
-    EXPECT_THAT(&myQueueObj.getBuffer()[0], StrEq(&randomData[0]));
+    EXPECT_THAT(myQueueObj.getBuffer().data(), StrEq(randomData.data()));
 
     mq_close(queueTest);
 }
 
 TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
 {
-    QueueReceiveFile myQueueObj;
     FileManipulationClassReader Reader;
 
     //files param
@@ -438,7 +423,7 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
     //the sender param
     mqd_t queueTest;
     struct mq_attr queueAttrs;
-    std::string queueName = "/" + myQueueObj.getName();
+    std::string queueName = "/ipcCopyFile";
     queueAttrs.mq_maxmsg = 10;
     queueAttrs.mq_msgsize = 4096;
     std::vector<char> buffer;
@@ -446,11 +431,11 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
     ssize_t datasent = 0;
 
     //Opening
-    ASSERT_NO_THROW(myQueueObj.openFile(fileoutput));
     ASSERT_NO_THROW(Reader.openFile(fileinput));
     queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY, S_IRWXG |S_IRWXU,&queueAttrs);
     ASSERT_THAT(queueTest, Ne(-1));
-    ASSERT_NO_THROW(myQueueObj.openIPC());
+    QueueReceiveFile myQueueObj;
+    ASSERT_NO_THROW(myQueueObj.openFile(fileoutput));
 
     //Loop
     while (datasent < fileSize)
@@ -458,7 +443,7 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
         std::vector<char> (4096).swap(buffer);
         ASSERT_NO_THROW(Reader.syncFileWithBuffer());
         buffer = Reader.getBufferRead();
-        mq_send(queueTest, &buffer[0], buffer.size(), 5);
+        mq_send(queueTest, buffer.data(), buffer.size(), 5);
         datasent += buffer.size();
         ASSERT_NO_THROW(myQueueObj.syncIPCAndBuffer());
         ASSERT_NO_THROW(myQueueObj.syncFileWithBuffer());
@@ -477,7 +462,6 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
 void ThreadQueueSendManual(void)
 {
     QueueSendFile myQueueSend;
-    ASSERT_NO_THROW(myQueueSend.openIPC());
     ASSERT_THAT(checkIfFileExists("input.dat"), IsTrue());
     ASSERT_NO_THROW(myQueueSend.openFile("input.dat"));
     ssize_t fileSize = returnFileSize("input.dat");
@@ -498,7 +482,6 @@ void ThreadQueueReceiveManual(void)
 {
     QueueReceiveFile myQueueReceive;
     ASSERT_NO_THROW(myQueueReceive.openFile("output.dat"));
-    ASSERT_NO_THROW(myQueueReceive.openIPC());
 
     while (myQueueReceive.getBufferSize() > 0)
     {
@@ -530,13 +513,13 @@ TEST(QueueSendAndReceive, ManualLoop)
 void ThreadQueueSendAuto(void)
 {
     QueueSendFile myQueueSend;
-    EXPECT_NO_THROW(myQueueSend.syncFileWithIPC("input.dat"));
+    ASSERT_NO_THROW(myQueueSend.syncFileWithIPC("input.dat"));
 }
 
 void ThreadQueueReceiveAuto(void)
 {
     QueueReceiveFile myQueueReceive;
-    EXPECT_NO_THROW(myQueueReceive.syncFileWithIPC("output.dat"));
+    ASSERT_NO_THROW(myQueueReceive.syncFileWithIPC("output.dat"));
 }
 TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 {
@@ -558,4 +541,3 @@ TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 
     remove(fileoutput.c_str());
 }
-

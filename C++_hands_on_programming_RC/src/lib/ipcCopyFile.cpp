@@ -190,7 +190,6 @@ void Writer::syncFileWithBuffer()
 void Writer::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
-    openIPC();
 
     while (getBufferSize() > 0)
     {
@@ -223,7 +222,7 @@ void Reader::syncFileWithBuffer()
     }
 
     std::vector<char>(bufferSize_).swap(buffer_);
-    file_.read(&buffer_[0],bufferSize_);
+    file_.read(buffer_.data(),bufferSize_);
     bufferSize_ = file_.gcount();
     buffer_.resize(bufferSize_);
 
@@ -252,7 +251,6 @@ void Reader::syncFileWithBuffer()
 void Reader::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
-    openIPC();
     ssize_t fileSize = returnFileSize(filepath);
     ssize_t datasent = 0;
 

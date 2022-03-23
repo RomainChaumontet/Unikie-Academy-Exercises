@@ -16,15 +16,15 @@ using ::testing::IsFalse;
 
 TEST(Constructor, ProtocolName)
 {
-    QueueSendFile dummyCopyFileReader;
-    QueueReceiveFile dummyCopyFileWriter;
+    FileManipulationClassReader dummyCopyFileReader;
+    FileManipulationClassWriter dummyCopyFileWriter;
     EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("ipcCopyFile"));
     EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("ipcCopyFile"));
 }
 
 TEST(TestSimpleMethods, ChangeAndGetName)
 {
-    QueueSendFile dummyCopyFileReader;
+    FileManipulationClassReader dummyCopyFileReader;
     EXPECT_THAT(dummyCopyFileReader.changeName("Coucou"), StrEq("Coucou"));
     EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("Coucou"));
     {
@@ -35,7 +35,7 @@ TEST(TestSimpleMethods, ChangeAndGetName)
     EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("Coucou"));
 
 
-    QueueReceiveFile dummyCopyFileWriter;
+    FileManipulationClassWriter dummyCopyFileWriter;
     EXPECT_THAT(dummyCopyFileWriter.changeName("Coucou"), StrEq("Coucou"));
     EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("Coucou"));
     {
@@ -48,18 +48,18 @@ TEST(TestSimpleMethods, ChangeAndGetName)
 
 TEST(TestSimpleMethods, GetBufferSize)
 {
-    QueueSendFile dummyCopyFileReader;
+    FileManipulationClassReader dummyCopyFileReader;
     EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(4096));
 
-    QueueReceiveFile dummyCopyFileWriter;
+    FileManipulationClassWriter dummyCopyFileWriter;
     EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(4096));
 }
 
 TEST(FileManipulation, OpenFile)
 {
     
-    QueueSendFile dummyCopyFileReader;
-    QueueReceiveFile dummyCopyFileWriter;
+    FileManipulationClassReader dummyCopyFileReader;
+    FileManipulationClassWriter dummyCopyFileWriter;
     {
         std::string dummyFile = "IamTestingToOpenThisFile";
         EXPECT_THROW(dummyCopyFileReader.openFile(dummyFile.c_str()),std::runtime_error);
@@ -71,7 +71,7 @@ TEST(FileManipulation, OpenFile)
 
     
     {
-        QueueReceiveFile openAnotherTime;
+        FileManipulationClassWriter openAnotherTime;
         CaptureStream stdcout{std::cout};
         EXPECT_NO_THROW(openAnotherTime.openFile(fileToOpenForWriting.c_str()));
         EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));
@@ -82,10 +82,10 @@ TEST(FileManipulation, OpenFile)
     {
         
         CreateRandomFile randomFile {"testfile.dat", 10, 1};
-        QueueSendFile openRandomFile;
+        FileManipulationClassReader openRandomFile;
         EXPECT_NO_THROW(openRandomFile.openFile(randomFile.getFileName()));
         {
-            QueueReceiveFile openRandomFileWriter;
+            FileManipulationClassWriter openRandomFileWriter;
             CaptureStream stdcout{std::cout};
             EXPECT_NO_THROW(openRandomFileWriter.openFile(randomFile.getFileName()));
             EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));

@@ -38,7 +38,7 @@ std::vector<char> getRandomData(ssize_t size)
   else
   {
       retval.resize(size);
-      ssize_t result = read(randomDatafromUrandom, &retval[0], size);
+      ssize_t result = read(randomDatafromUrandom, retval.data(), size);
       if (result < 0)
       {
         throw std::runtime_error("error when getting random data.");

@@ -38,7 +38,6 @@ class copyFilethroughIPC
         virtual void openFile(const std::string &filepath) = 0;
         void closeFile();
         virtual void syncFileWithBuffer() = 0;
-        virtual void openIPC() =0;
         virtual void syncIPCAndBuffer() =0;
         virtual void syncFileWithIPC(const std::string &filepath) = 0;
 

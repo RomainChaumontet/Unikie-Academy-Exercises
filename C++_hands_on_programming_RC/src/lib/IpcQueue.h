@@ -24,18 +24,16 @@ class QueueSendFile : public Queue, public Reader
 {
     public:
         ~QueueSendFile();
-        void openIPC();
+        QueueSendFile();
         void syncIPCAndBuffer();
 
 };
 class QueueReceiveFile : public Queue, public Writer
 {
-    protected:
-        int maxAttempt_ = 60;
-
     public:
         ~QueueReceiveFile();
-        void openIPC();
+        QueueReceiveFile(int maxAttempt);
+        QueueReceiveFile():QueueReceiveFile(60){};
         void syncIPCAndBuffer();
 
 };

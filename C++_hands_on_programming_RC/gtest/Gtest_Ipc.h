@@ -116,7 +116,7 @@ class CreateRandomFile
 
       std::fstream file;
       file.open(file_name.c_str(), std::ios::binary | std::fstream::in | std::fstream::out | std::fstream::app);
-      file.write(&data[0], randomSize);
+      file.write(data.data(), randomSize);
 
     }
 
@@ -129,7 +129,7 @@ class CreateRandomFile
 };
 
 
-class FileManipulationClassReader : public QueueSendFile
+class FileManipulationClassReader : public Reader
 {
     public:
         void modifyBufferToWrite(const std::string &data)
@@ -144,7 +144,7 @@ class FileManipulationClassReader : public QueueSendFile
             buffer_ = data;
             return;
         }
-
+        
         std::string bufferForReading() const
         {
             return std::string (buffer_.begin(), buffer_.end());
@@ -154,9 +154,11 @@ class FileManipulationClassReader : public QueueSendFile
         {
             return buffer_;
         }
+
+        void syncIPCAndBuffer(){}
 };
 
-class FileManipulationClassWriter : public QueueReceiveFile
+class FileManipulationClassWriter : public Writer
 {
   public:
         void modifyBufferToWrite(const std::string &data)
@@ -181,5 +183,7 @@ class FileManipulationClassWriter : public QueueReceiveFile
         {
             return buffer_;
         }
+        
+        void syncIPCAndBuffer(){}
 };
 #endif /*GTEST_IPC_H */
