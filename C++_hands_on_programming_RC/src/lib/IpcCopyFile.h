@@ -48,6 +48,7 @@ class copyFilethroughIPC
         size_t bufferSize_ = 4096;
         std::fstream file_;
         std::vector<char> buffer_;
+        bool continueGettingData_ = true;
 };
 
 class Writer : virtual public copyFilethroughIPC

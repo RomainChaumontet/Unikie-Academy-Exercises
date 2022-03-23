@@ -24,7 +24,6 @@ Package::IpcCopyFile
 /+ openFile(iin &amp;filepath: const std::string): bool/
 + closeFile(): void
 /+ syncFileWithBuffer(): bool/
-/+ openIPC(): void/
 /+ syncIPCAndBuffer(): void/
 /+ syncFileWithIPC(in &amp;filepath: const std::string) /
 
@@ -52,24 +51,40 @@ Package::IpcCopyFile
 # mq_msgsize_: long = bufferSize_
 --
 + /~Queue()/
-+ getQueueDescriptor(): mqd_t</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>860</x><y>300</y><w>100</w><h>30</h></coordinates><panel_attributes>Pipe</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>960</x><y>300</y><w>100</w><h>30</h></coordinates><panel_attributes>Shared memory</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>250</y><w>310</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;40;290;40;290;50</additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>250</y><w>210</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;40;190;40;190;50</additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>250</y><w>30</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>UMLClass</id><coordinates><x>280</x><y>490</y><w>170</w><h>90</h></coordinates><panel_attributes>QueueSendFile
++ getQueueDescriptor(): mqd_t</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>870</x><y>300</y><w>210</w><h>180</h></coordinates><panel_attributes>/Pipe/
+Package::IpcCopyFile
+--
+# pipeFile_ std::fstream
+--
++ /~Pipe = 0/</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1090</x><y>300</y><w>210</w><h>180</h></coordinates><panel_attributes>Shared memory</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>250</y><w>490</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;40;470;40;470;50</additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>250</y><w>270</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;40;250;40;250;50</additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>250</y><w>30</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>UMLClass</id><coordinates><x>580</x><y>520</y><w>170</w><h>90</h></coordinates><panel_attributes>QueueSendFile
 Package::IpcCopyFile
 --
 --
 + ~QueueSendFile(): void
-+ openIPC(): void
-+ syncIPCAndBuffer(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>650</x><y>550</y><w>100</w><h>30</h></coordinates><panel_attributes>Pipe SendFile
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>790</x><y>550</y><w>140</w><h>30</h></coordinates><panel_attributes>Shared mem SendFile
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>280</x><y>610</y><w>170</w><h>110</h></coordinates><panel_attributes>QueueReceiveFile
++ QueueSendFile()
++ syncIPCAndBuffer(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>840</x><y>520</y><w>220</w><h>90</h></coordinates><panel_attributes>PipeSendFile
 Package::IpcCopyFile
 --
-# maxAttempt_: int = 60
+--
++ PipeSendFile()
++ ~PipeSendFile
++ syncIPCAndBuffer(): void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1130</x><y>550</y><w>140</w><h>30</h></coordinates><panel_attributes>Shared mem SendFile
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>580</x><y>650</y><w>170</w><h>110</h></coordinates><panel_attributes>QueueReceiveFile
+Package::IpcCopyFile
+--
 --
 + ~QueueReceiveFile(): void
-+ openIPC(): void
-+ syncIPCAndBuffer(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>650</x><y>620</y><w>100</w><h>30</h></coordinates><panel_attributes>Pipe ReceiveFile
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>810</x><y>620</y><w>140</w><h>30</h></coordinates><panel_attributes>Shared mem ReceiveFile
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>434</x><y>470</y><w>320</w><h>100</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>300;10;300;30;50;30;50;80;10;80</additional_attributes></element><element><id>Relation</id><coordinates><x>434</x><y>470</y><w>320</w><h>220</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>300;10;300;30;50;30;50;200;10;200</additional_attributes></element><element><id>Relation</id><coordinates><x>354</x><y>390</y><w>130</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;60;10;60;10;100</additional_attributes></element><element><id>Relation</id><coordinates><x>454</x><y>390</y><w>270</w><h>180</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;140;250;140;250;160</additional_attributes></element><element><id>Relation</id><coordinates><x>454</x><y>390</y><w>420</w><h>180</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;140;400;140;400;160</additional_attributes></element><element><id>Relation</id><coordinates><x>734</x><y>320</y><w>200</w><h>330</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>180;10;180;180;30;180;30;310;10;310</additional_attributes></element><element><id>Relation</id><coordinates><x>184</x><y>390</y><w>710</w><h>250</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;210;690;210;690;230</additional_attributes></element><element><id>Relation</id><coordinates><x>184</x><y>390</y><w>530</w><h>250</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;210;510;210;510;230</additional_attributes></element><element><id>Relation</id><coordinates><x>184</x><y>390</y><w>200</w><h>240</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;210;180;210;180;220</additional_attributes></element><element><id>Relation</id><coordinates><x>934</x><y>320</y><w>110</w><h>330</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>90;10;90;310;10;310</additional_attributes></element><element><id>Relation</id><coordinates><x>734</x><y>320</y><w>200</w><h>260</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>180;10;180;180;30;180;30;240;10;240</additional_attributes></element><element><id>Relation</id><coordinates><x>914</x><y>320</y><w>130</w><h>260</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;240;10;240</additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>40</y><w>340</w><h>160</h></coordinates><panel_attributes>ipcParameters
++ QueueReceiveFile(in maxAttempt: int)
++ QueueReceiveFile()
++ syncIPCAndBuffer(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>860</x><y>650</y><w>200</w><h>100</h></coordinates><panel_attributes>PipeReceiveFile
+Package::IpcCopyFile
+--
+--
++ PipeReceiveFile()
++ ~PipeReceiveFile
++ syncIPCAndBuffer(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1130</x><y>650</y><w>140</w><h>30</h></coordinates><panel_attributes>Shared mem ReceiveFile
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>734</x><y>470</y><w>90</w><h>130</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>70;10;70;110;10;110</additional_attributes></element><element><id>Relation</id><coordinates><x>734</x><y>470</y><w>90</w><h>260</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>70;10;70;240;10;240</additional_attributes></element><element><id>Relation</id><coordinates><x>454</x><y>390</y><w>230</w><h>150</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;120;210;120;210;130</additional_attributes></element><element><id>Relation</id><coordinates><x>454</x><y>390</y><w>510</w><h>150</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;120;490;120;490;130</additional_attributes></element><element><id>Relation</id><coordinates><x>454</x><y>390</y><w>760</w><h>180</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;120;740;120;740;160</additional_attributes></element><element><id>Relation</id><coordinates><x>1044</x><y>470</y><w>50</w><h>240</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>30;10;30;220;10;220</additional_attributes></element><element><id>Relation</id><coordinates><x>184</x><y>390</y><w>1030</w><h>280</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;250;1010;250;1010;260</additional_attributes></element><element><id>Relation</id><coordinates><x>184</x><y>390</y><w>800</w><h>280</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;250;780;250;780;260</additional_attributes></element><element><id>Relation</id><coordinates><x>184</x><y>390</y><w>500</w><h>280</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;250;480;250;480;260</additional_attributes></element><element><id>Relation</id><coordinates><x>1254</x><y>470</y><w>50</w><h>210</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>30;10;30;190;10;190</additional_attributes></element><element><id>Relation</id><coordinates><x>1044</x><y>470</y><w>50</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>30;10;30;90;10;90</additional_attributes></element><element><id>Relation</id><coordinates><x>1254</x><y>470</y><w>50</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>30;10;30;90;10;90</additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>40</y><w>340</w><h>160</h></coordinates><panel_attributes>ipcParameters
 Package::IpcCopyFile
 --
 - protocol_: protocolList

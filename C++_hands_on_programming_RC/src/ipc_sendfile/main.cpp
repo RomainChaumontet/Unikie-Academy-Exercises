@@ -1,5 +1,7 @@
 #include <iostream>
 #include "../lib/IpcCopyFile.h"
+#include "../lib/IpcQueue.h"
+#include "../lib/IpcPipe.h"
 
 
 int main(int argc, char* const argv[])
@@ -47,7 +49,17 @@ int main(int argc, char* const argv[])
                 return 0;
             }
             case protocolList::QUEUE:
+            {
+                QueueSendFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
             case protocolList::PIPE:
+            {
+                PipeSendFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
             case protocolList::SHM:
             {
                 std::cout << "Protocol not implemented. Abord"<<std::endl;

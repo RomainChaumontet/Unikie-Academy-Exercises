@@ -1,5 +1,7 @@
 #include <iostream>
 #include "../lib/IpcCopyFile.h"
+#include "../lib/IpcQueue.h"
+#include "../lib/IpcPipe.h"
 
 int main(int argc, char* const argv[])
 {
@@ -40,13 +42,24 @@ int main(int argc, char* const argv[])
                 std::cout << "To launch it, you need to provide the IPC protocol and the path of the file." <<std::endl<<std::endl;
                 std::cout << "Available protocols are at this time:" <<std::endl;
                 std::cout << "      --queue" <<std::endl<<std::endl;
+                std::cout << "      --pipe" <<std::endl<<std::endl;
                 std::cout << "Examples:" <<std::endl;
                 std::cout << "      --queue --file myFile" <<std::endl;
                 std::cout << "      --file myFile --queue" <<std::endl;
                 return 0;
             }
             case protocolList::QUEUE:
+            {
+                QueueReceiveFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
             case protocolList::PIPE:
+            {
+                PipeReceiveFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
             case protocolList::SHM:
             {
                 std::cout << "Protocol not implemented. Abord"<<std::endl;

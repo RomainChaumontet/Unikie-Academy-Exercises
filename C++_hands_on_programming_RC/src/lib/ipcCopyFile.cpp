@@ -182,16 +182,16 @@ void Writer::syncFileWithBuffer()
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("syncFileWithBuffer(). Badbit error.");
+        throw std::runtime_error("Writer syncFileWithBuffer(). Badbit error.");
     }
-    throw std::runtime_error("syncFileWithBuffer(). Unknown error.");
+    throw std::runtime_error("Writer syncFileWithBuffer(). Unknown error.");
 }
 
 void Writer::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
 
-    while (getBufferSize() > 0)
+    while (bufferSize_ > 0)
     {
         syncIPCAndBuffer();
         syncFileWithBuffer();
@@ -243,7 +243,7 @@ void Reader::syncFileWithBuffer()
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("syncFileWithBuffer(). badbit error.");
+        throw std::runtime_error("Reader syncFileWithBuffer(). badbit error.");
         return;
     }
 }

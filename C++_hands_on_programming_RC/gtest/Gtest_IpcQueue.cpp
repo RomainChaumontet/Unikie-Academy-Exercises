@@ -405,7 +405,8 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     std::vector<char> randomData = getRandomData(randomSize);
     mq_send(queueTest, randomData.data(), randomSize, 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
-    EXPECT_THAT(myQueueObj.getBuffer().data(), StrEq(randomData.data()));
+    myQueueObj.getBuffer().swap(output);
+    EXPECT_THAT(output.data(), StrEq(randomData.data()));
 
     mq_close(queueTest);
 }
@@ -498,7 +499,6 @@ TEST(QueueSendAndReceive, ManualLoop)
 
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadQueueSendManual);
-    usleep(50);
     start_pthread(&mThreadID2,ThreadQueueReceiveManual);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
@@ -530,7 +530,6 @@ TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadQueueSendAuto);
-    usleep(50);
     start_pthread(&mThreadID2,ThreadQueueReceiveAuto);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 

@@ -17,7 +17,7 @@ This programs have the aim to take a file, and copy it. To do it, the program ip
 
 The IPC methods implemented are:
 - [x] Queue message passing
-- [ ] Pipe
+- [x] Pipe
 - [ ] Shared memory 
 
 # Setup environment, build and test
