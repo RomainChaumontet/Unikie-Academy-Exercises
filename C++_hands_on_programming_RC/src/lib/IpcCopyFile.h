@@ -1,5 +1,6 @@
 #ifndef IPCCOPYFILE_H
 #define IPCCOPYFILE_H
+
 #define DEBUG_GETOPT false
 #include <string>
 #include <iostream>
@@ -7,7 +8,7 @@
 #include <vector>
 
 enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
-inline bool checkIfFileExists (const std::string &filepath);
+bool checkIfFileExists (const std::string &filepath);
 size_t returnFileSize(const std::string &filepath) ;
 
 
@@ -37,6 +38,8 @@ class copyFilethroughIPC
         virtual void openFile(const std::string &filepath) = 0;
         void closeFile();
         virtual void syncFileWithBuffer() = 0;
+        virtual void syncIPCAndBuffer() =0;
+        virtual void syncFileWithIPC(const std::string &filepath) = 0;
 
         virtual ~copyFilethroughIPC();
 
@@ -52,6 +55,7 @@ class Writer : virtual public copyFilethroughIPC
     public:
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
+        void syncFileWithIPC(const std::string &filepath);
 };
 
 class Reader : virtual public copyFilethroughIPC
@@ -59,6 +63,7 @@ class Reader : virtual public copyFilethroughIPC
     public:
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
+        void syncFileWithIPC(const std::string &filepath);
 };
 
 #endif /* IPCCOPYFILE_H */

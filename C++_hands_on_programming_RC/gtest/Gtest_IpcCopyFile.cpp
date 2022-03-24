@@ -14,71 +14,17 @@ using ::testing::IsFalse;
 
 
 
-class FileManipulationClassReader : public Reader
-{
-    public:
-        void modifyBufferToWrite(const std::string &data)
-        {
-            bufferSize_ = data.size();
-            buffer_ = std::vector<char> (data.begin(), data.end());
-            return;
-        }
-        void modifyBufferToWrite(const std::vector<char> &data)
-        {
-            bufferSize_ = data.size();
-            buffer_ = data;
-            return;
-        }
-
-        std::string bufferForReading() const
-        {
-            return std::string (buffer_.begin(), buffer_.end());
-        }
-
-        std::vector<char> getBufferRead() const
-        {
-            return buffer_;
-        }
-};
-
-class FileManipulationClassWriter : public Writer
-{
-  public:
-        void modifyBufferToWrite(const std::string &data)
-        {
-            bufferSize_ = data.size();
-            buffer_ = std::vector<char> (data.begin(), data.end());
-            return;
-        }
-        void modifyBufferToWrite(const std::vector<char> &data)
-        {
-            bufferSize_ = data.size();
-            buffer_ = data;
-            return;
-        }
-
-        std::string bufferForReading() const
-        {
-            return std::string (buffer_.begin(), buffer_.end());
-        }
-
-        std::vector<char> getBufferRead() const
-        {
-            return buffer_;
-        }
-};
-
 TEST(Constructor, ProtocolName)
 {
-    Reader dummyCopyFileReader;
-    Writer dummyCopyFileWriter;
+    FileManipulationClassReader dummyCopyFileReader;
+    FileManipulationClassWriter dummyCopyFileWriter;
     EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("ipcCopyFile"));
     EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("ipcCopyFile"));
 }
 
 TEST(TestSimpleMethods, ChangeAndGetName)
 {
-    Reader dummyCopyFileReader;
+    FileManipulationClassReader dummyCopyFileReader;
     EXPECT_THAT(dummyCopyFileReader.changeName("Coucou"), StrEq("Coucou"));
     EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("Coucou"));
     {
@@ -89,7 +35,7 @@ TEST(TestSimpleMethods, ChangeAndGetName)
     EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("Coucou"));
 
 
-    Writer dummyCopyFileWriter;
+    FileManipulationClassWriter dummyCopyFileWriter;
     EXPECT_THAT(dummyCopyFileWriter.changeName("Coucou"), StrEq("Coucou"));
     EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("Coucou"));
     {
@@ -102,18 +48,18 @@ TEST(TestSimpleMethods, ChangeAndGetName)
 
 TEST(TestSimpleMethods, GetBufferSize)
 {
-    Reader dummyCopyFileReader;
+    FileManipulationClassReader dummyCopyFileReader;
     EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(4096));
 
-    Writer dummyCopyFileWriter;
+    FileManipulationClassWriter dummyCopyFileWriter;
     EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(4096));
 }
 
 TEST(FileManipulation, OpenFile)
 {
     
-    Reader dummyCopyFileReader;
-    Writer dummyCopyFileWriter;
+    FileManipulationClassReader dummyCopyFileReader;
+    FileManipulationClassWriter dummyCopyFileWriter;
     {
         std::string dummyFile = "IamTestingToOpenThisFile";
         EXPECT_THROW(dummyCopyFileReader.openFile(dummyFile.c_str()),std::runtime_error);
@@ -125,7 +71,7 @@ TEST(FileManipulation, OpenFile)
 
     
     {
-        Writer openAnotherTime;
+        FileManipulationClassWriter openAnotherTime;
         CaptureStream stdcout{std::cout};
         EXPECT_NO_THROW(openAnotherTime.openFile(fileToOpenForWriting.c_str()));
         EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));
@@ -136,10 +82,10 @@ TEST(FileManipulation, OpenFile)
     {
         
         CreateRandomFile randomFile {"testfile.dat", 10, 1};
-        Reader openRandomFile;
+        FileManipulationClassReader openRandomFile;
         EXPECT_NO_THROW(openRandomFile.openFile(randomFile.getFileName()));
         {
-            Writer openRandomFileWriter;
+            FileManipulationClassWriter openRandomFileWriter;
             CaptureStream stdcout{std::cout};
             EXPECT_NO_THROW(openRandomFileWriter.openFile(randomFile.getFileName()));
             EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));
@@ -211,7 +157,7 @@ TEST(FileManipulation, ReadAndWriteComplexFiles)
     writingToAFile.closeFile();
     readingAFile.closeFile();
 
-    ASSERT_THAT(sizeOfOriginalFile, Eq(returnFileSize(fileForWriting.c_str())));
+    ASSERT_THAT(compareFiles(nameOfRandomFile, fileForWriting), IsTrue());
 
     remove(nameOfRandomFile.c_str());
     remove(fileForWriting.c_str());

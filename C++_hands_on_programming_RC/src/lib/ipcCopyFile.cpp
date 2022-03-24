@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sys/stat.h>
 
-inline bool checkIfFileExists(const std::string &filepath)
+bool checkIfFileExists(const std::string &filepath)
 {
     struct stat buffer;
     return (stat(filepath.c_str(), &buffer) == 0);
@@ -150,7 +150,6 @@ void copyFilethroughIPC::closeFile()
         file_.close();
 }
 
-
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
@@ -188,7 +187,19 @@ void Writer::syncFileWithBuffer()
     throw std::runtime_error("syncFileWithBuffer(). Unknown error.");
 }
 
-////////////// Reader class ///////////////////////
+void Writer::syncFileWithIPC(const std::string &filepath)
+{
+    openFile(filepath);
+
+    while (getBufferSize() > 0)
+    {
+        syncIPCAndBuffer();
+        syncFileWithBuffer();
+    }
+}
+
+
+/////////////////// Reader Class
 void Reader::openFile(const std::string &filepath)
 {
     if (!checkIfFileExists(filepath))
@@ -203,16 +214,15 @@ void Reader::openFile(const std::string &filepath)
     }
 }
 
-
 void Reader::syncFileWithBuffer()
 {
     if (!file_.is_open())
     {
         throw std::runtime_error("syncFileWithBuffer(). Error, trying to read a file which is not opened.");
     }
-    
-    buffer_.resize(bufferSize_+1);
-    file_.read(&buffer_[0],bufferSize_);
+
+    std::vector<char>(bufferSize_).swap(buffer_);
+    file_.read(buffer_.data(),bufferSize_);
     bufferSize_ = file_.gcount();
     buffer_.resize(bufferSize_);
 
@@ -236,10 +246,25 @@ void Reader::syncFileWithBuffer()
         throw std::runtime_error("syncFileWithBuffer(). badbit error.");
         return;
     }
+}
 
-    throw std::runtime_error("syncFileWithBuffer(). Unknown error.");
-    return;
+void Reader::syncFileWithIPC(const std::string &filepath)
+{
+    openFile(filepath);
+    ssize_t fileSize = returnFileSize(filepath);
+    ssize_t datasent = 0;
 
+
+    while (datasent < fileSize)
+    {
+        syncFileWithBuffer();
+        syncIPCAndBuffer();
+        datasent += getBufferSize();
+    }
+
+    //send and empty message to tell that's all.
+    syncFileWithBuffer();
+    syncIPCAndBuffer();
 }
 
 

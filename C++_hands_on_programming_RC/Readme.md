@@ -9,14 +9,14 @@
 - [File structure](#file-structure)
   - [Program sources](#program-sources)
   - [Test sources](#test-sources)
-- [Test explainations](#test-explainations)
+- [Test explanations](#test-explanations)
 
 # Introduction
 
 This programs have the aim to take a file, and copy it. To do it, the program ipc_sendfile read the file and send the data of the file to the program ipc_receivefile which will write the data to a new file. The exchange is doing by IPC.
 
 The IPC methods implemented are:
-- [ ] Queue message passing
+- [x] Queue message passing
 - [ ] Pipe
 - [ ] Shared memory 
 
@@ -38,7 +38,7 @@ $ ./build_and_run_tests.sh
 The binary and the test report will be in the folder `output`.
 
 # How to use the program
-You can use the program with the argument `--help` .
+You can use the program with the argument `--help` and command `--queue --file myFile` .
 
 # Design
 ## Current Design
@@ -61,7 +61,7 @@ Thoses files use the library write in the `/lib` folder.
 `Gtest_manageOpt.cpp` is a file which provides tests for the class IpcParameters.
 `Gtest_IpcCopyFile.cpp` is a file which provides tests for the class copyFilethroughIPC.
 
-# Test explainations
+# Test explanations
 
 Some information can be found on the [Test explanation](/C++_hands_on_programming_RC/Documentation/Tests/TestsExplanation.md)
 
