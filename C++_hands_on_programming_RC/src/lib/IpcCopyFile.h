@@ -56,7 +56,7 @@ class Writer : virtual public copyFilethroughIPC
     public:
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
-        void syncFileWithIPC(const std::string &filepath);
+        virtual void syncFileWithIPC(const std::string &filepath);
 };
 
 class Reader : virtual public copyFilethroughIPC
@@ -64,7 +64,7 @@ class Reader : virtual public copyFilethroughIPC
     public:
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
-        void syncFileWithIPC(const std::string &filepath);
+        virtual void syncFileWithIPC(const std::string &filepath);
 };
 
 #endif /* IPCCOPYFILE_H */

@@ -2,6 +2,7 @@
 #include "../lib/IpcCopyFile.h"
 #include "../lib/IpcQueue.h"
 #include "../lib/IpcPipe.h"
+#include "../lib/IpcShm.h"
 
 
 int main(int argc, char* const argv[])
@@ -62,7 +63,8 @@ int main(int argc, char* const argv[])
             }
             case protocolList::SHM:
             {
-                std::cout << "Protocol not implemented. Abord"<<std::endl;
+                ShmSendFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             default:

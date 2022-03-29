@@ -157,6 +157,9 @@ void Writer::openFile(const std::string &filepath)
         std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
 
     file_.open(filepath, std::ios::out | std::ios::binary | std::ios::trunc);
+    file_.close();
+
+    file_.open(filepath, std::ios::out | std::ios::binary | std::ios::ate);
     if (!file_.is_open())
     {
         throw std::runtime_error("Error in std::fstream.open(). rdstate:" + file_.rdstate());

@@ -19,6 +19,7 @@ using ::testing::Lt;
 using ::testing::StrEq;
 using ::testing::IsTrue;
 using ::testing::IsFalse;
+using ::testing::StartsWith;
 
 
 std::vector<char> randomData = getRandomData(rand() % 4096);
@@ -259,7 +260,7 @@ void ThreadPipeReceiveFileConstructor(void)
 {
     CaptureStream stdcout{std::cout};
     ASSERT_NO_THROW(PipeReceiveFile myPipe);
-    EXPECT_THAT(stdcout.str(), StrEq("Waiting for ipc_sendfile.\n"));
+    EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_sendfile.\n"));
 }
 
 void ThreadPipeReceiveFileonstructor2(void)
