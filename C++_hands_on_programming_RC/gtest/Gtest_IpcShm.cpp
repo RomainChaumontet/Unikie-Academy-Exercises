@@ -23,7 +23,7 @@ using ::testing::IsTrue;
 using ::testing::IsFalse;
 using ::testing::StartsWith;
 
-const std::string ipcName = "ShmNameUsed";
+const std::string ipcName = "CopyDataThroughSharedMemory";
 const std::string semRName =  "myReceiverSemaphore";
 const std::string semSName =  "mySenderSemaphore";
 std::string shmfileName1 = "shminput.dat";
@@ -139,7 +139,7 @@ void IpcShmSendFilesyncFileWithIPC2(void)
         ASSERT_THAT(1, Ne(2));
     }
     ShmData shmem;
-    shmem.main = (ShmData_Header*)bufferPtr;
+    shmem.main = reinterpret_cast<ShmData_Header*>(bufferPtr);
 
     close(fd);
     while (!shmem.main->init_flag)
@@ -149,7 +149,7 @@ void IpcShmSendFilesyncFileWithIPC2(void)
             return;
     }
 
-    shmem.data = (char*)((char*)bufferPtr+sizeof(ShmData_Header));
+    shmem.data = static_cast<char *>(static_cast<char *>(bufferPtr)+sizeof(ShmData_Header));
 
     fd = open(shmfileName2.c_str(), O_WRONLY | O_CREAT, 0660, NULL);
     

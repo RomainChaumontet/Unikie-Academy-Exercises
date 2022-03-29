@@ -9,7 +9,7 @@
 class ShmData_Header
 {
     public:
-        volatile unsigned init_flag;
+        unsigned init_flag;
         int data_size;
 };
 
@@ -27,6 +27,7 @@ class Shm : public virtual copyFilethroughIPC
         virtual ~Shm();
 
     protected:
+        std::string name_ = "CopyDataThroughSharedMemory";
         int shmFileDescriptor_ = -1;
         ShmData shm_;
         std::string semSName_ = "mySenderSemaphore";

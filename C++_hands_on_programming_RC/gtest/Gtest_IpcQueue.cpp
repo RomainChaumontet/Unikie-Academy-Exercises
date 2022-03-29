@@ -53,7 +53,7 @@ TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
     {
         ASSERT_NO_THROW(QueueSendFile myQueueObject);
         QueueSendFile myQueueObject;
-        queueName = "/" + myQueueObject.getName();
+        queueName = "/CopyDataThroughQueue";
         mqd_t queueTest = mq_open(queueName.c_str(),O_RDONLY);
         EXPECT_THAT(queueTest, Ne(-1)); //The queue exists
         mq_close(queueTest);
@@ -72,7 +72,7 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
     std::string queueName;
     {
         
-        queueName = "/ipcCopyFile";
+        queueName = "/CopyDataThroughQueue";
 
         mqd_t queueTest = mq_open(
             queueName.c_str(),
@@ -120,7 +120,7 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
     
 TEST(SyncBuffAndQueue, SendQueue)
 {
-    std::string queueName = "/ipcCopyFile";
+    std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
     std::vector<char> buffer;
@@ -223,7 +223,7 @@ void ThreadExceedMaxMsgSend(void)
 
 void ThreadExceedMaxMsgReceive(void)
 {
-    std::string queueName = "/ipcCopyFile";
+    std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
     std::vector<char> buffer;
@@ -276,7 +276,7 @@ TEST(SyncBuffAndQueue, ReadSendQueueSimpleMessage)
     EXPECT_NO_THROW(myQueueSend.syncIPCAndBuffer());
 
 
-    std::string queueName = "/" + myQueueSend.getName();
+    std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
     std::vector<char> buffer;
@@ -310,7 +310,7 @@ TEST(SyncBuffAndQueue, ReadSendQueueComplexMessage)
     CreateRandomFile randomFile {fileinput,5, 1};
     ASSERT_THAT(checkIfFileExists(fileinput), IsTrue());
     std::string fileoutput = "output.dat";
-    std::string queueName = "/" + myQueueSend.getName();
+    std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
     std::vector<char> buffer;
@@ -357,7 +357,7 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
     std::string queueName;
     mqd_t queueTest;
     {
-        queueName = "/ipcCopyFile";
+        queueName = "/CopyDataThroughQueue";
         queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY,S_IRWXG |S_IRWXU,NULL);
         ASSERT_THAT(queueTest, Ne(-1));
 
@@ -383,7 +383,7 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
 TEST(SyncBuffAndQueue, ReceiveQueue)
 {
     mqd_t queueTest;
-    std::string queueName = "/ipcCopyFile";
+    std::string queueName = "/CopyDataThroughQueue";
     struct mq_attr queueAttrs;
     queueAttrs.mq_msgsize = 4096;
     queueAttrs.mq_maxmsg = 10;
@@ -424,7 +424,7 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
     //the sender param
     mqd_t queueTest;
     struct mq_attr queueAttrs;
-    std::string queueName = "/ipcCopyFile";
+    std::string queueName = "/CopyDataThroughQueue";
     queueAttrs.mq_maxmsg = 10;
     queueAttrs.mq_msgsize = 4096;
     std::vector<char> buffer;

@@ -14,7 +14,6 @@ Shm::~Shm(){}
 
 ShmSendFile::ShmSendFile()
 {
-    changeName("ShmNameUsed");
     //Opening shared memory
     shm_unlink(name_.c_str());
 
@@ -32,8 +31,8 @@ ShmSendFile::ShmSendFile()
         throw std::runtime_error("Error when setting the size of the shared memory.");
     }
 
-    bufferPtr = (char*)mmap(NULL, shmSize_,PROT_READ | PROT_WRITE, MAP_SHARED, shmFileDescriptor_, 0);
-    if (bufferPtr == (char*)MAP_FAILED)
+    bufferPtr = static_cast<char *> (mmap(NULL, shmSize_,PROT_READ | PROT_WRITE, MAP_SHARED, shmFileDescriptor_, 0));
+    if (bufferPtr == static_cast<char *>(MAP_FAILED))
     {
         throw std::runtime_error(
             "ShmSendFile(). Error when mapping the memory. Errno"
@@ -41,8 +40,8 @@ ShmSendFile::ShmSendFile()
         );
     }
 
-    shm_.main = (ShmData_Header*)bufferPtr;
-    shm_.data = (char*)(bufferPtr+sizeof(ShmData_Header));
+    shm_.main = reinterpret_cast<ShmData_Header*>(bufferPtr);
+    shm_.data = static_cast<char *>(bufferPtr+sizeof(ShmData_Header));
     shm_.main->data_size = 0;
     shm_.main->init_flag = 1;
 
@@ -184,7 +183,6 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
 //////////////////// ShmReceiveFile ///////////////
 ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
 {
-    changeName("ShmNameUsed");
     int tryNumber = 0;
     //Connecting to the semaphore
     senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_RDWR);
@@ -224,7 +222,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
             );
     }
 
-    bufferPtr = (char*)mmap(NULL, shmSize_, PROT_READ | PROT_WRITE, MAP_SHARED, shmFileDescriptor_, 0);
+    bufferPtr = static_cast<char *>(mmap(NULL, shmSize_, PROT_READ | PROT_WRITE, MAP_SHARED, shmFileDescriptor_, 0));
     if (bufferPtr == (char*)MAP_FAILED)
     {
         throw std::runtime_error(
@@ -233,8 +231,8 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
         );
     }
 
-    shm_.main = (ShmData_Header*)bufferPtr;
-    shm_.data = (char*)(bufferPtr+sizeof(ShmData_Header));
+    shm_.main = reinterpret_cast<ShmData_Header*>(bufferPtr);
+    shm_.data = static_cast<char *>(bufferPtr+sizeof(ShmData_Header));
 
     close(shmFileDescriptor_);
 }

@@ -13,39 +13,6 @@ using ::testing::IsTrue;
 using ::testing::IsFalse;
 
 
-
-TEST(Constructor, ProtocolName)
-{
-    FileManipulationClassReader dummyCopyFileReader;
-    FileManipulationClassWriter dummyCopyFileWriter;
-    EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("ipcCopyFile"));
-    EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("ipcCopyFile"));
-}
-
-TEST(TestSimpleMethods, ChangeAndGetName)
-{
-    FileManipulationClassReader dummyCopyFileReader;
-    EXPECT_THAT(dummyCopyFileReader.changeName("Coucou"), StrEq("Coucou"));
-    EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("Coucou"));
-    {
-        CaptureStream stdcerr{std::cerr};
-        EXPECT_THAT(dummyCopyFileReader.changeName(""), StrEq("Coucou")); //will not change the name
-        EXPECT_THAT(stdcerr.str(), StrEq("Error. Trying to change the name of protocol exchange to null. Keep it unchanged.\n"));
-    }
-    EXPECT_THAT(dummyCopyFileReader.getName(), StrEq("Coucou"));
-
-
-    FileManipulationClassWriter dummyCopyFileWriter;
-    EXPECT_THAT(dummyCopyFileWriter.changeName("Coucou"), StrEq("Coucou"));
-    EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("Coucou"));
-    {
-        CaptureStream stdcerr{std::cerr};
-        EXPECT_THAT(dummyCopyFileWriter.changeName(""), StrEq("Coucou")); //will not change the name
-        EXPECT_THAT(stdcerr.str(), StrEq("Error. Trying to change the name of protocol exchange to null. Keep it unchanged.\n"));
-    } 
-    EXPECT_THAT(dummyCopyFileWriter.getName(), StrEq("Coucou"));
-}
-
 TEST(TestSimpleMethods, GetBufferSize)
 {
     FileManipulationClassReader dummyCopyFileReader;

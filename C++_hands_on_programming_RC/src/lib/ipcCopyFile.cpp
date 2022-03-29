@@ -119,19 +119,6 @@ const char* ipcParameters::getFilePath() const
 }
 
 ////////////// copyFilethroughIPC class ///////////////////////
-std::string copyFilethroughIPC::getName() const
-{
-    return name_;
-}
-
-std::string copyFilethroughIPC::changeName(const std::string &name)
-{
-    if (name.size() > 0)
-        name_ = name;
-    else
-        std::cerr << "Error. Trying to change the name of protocol exchange to null. Keep it unchanged." << std::endl;
-    return name_;
-}
 
 size_t copyFilethroughIPC::getBufferSize() const
 {
@@ -157,9 +144,6 @@ void Writer::openFile(const std::string &filepath)
         std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
 
     file_.open(filepath, std::ios::out | std::ios::binary | std::ios::trunc);
-    file_.close();
-
-    file_.open(filepath, std::ios::out | std::ios::binary | std::ios::ate);
     if (!file_.is_open())
     {
         throw std::runtime_error("Error in std::fstream.open(). rdstate:" + file_.rdstate());
