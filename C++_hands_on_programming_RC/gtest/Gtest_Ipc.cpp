@@ -12,9 +12,11 @@ bool compareFiles(const std::string& fileName1, const std::string& fileName2) //
     return false; //file problem
   }
 
-  if (f1.tellg() != f2.tellg()) {
+  if (returnFileSize(fileName1) != returnFileSize(fileName2)) {
 
     std::cout << "size mismatch" <<std::endl;
+    std::cout << "First file size: " << returnFileSize(fileName1);
+    std::cout << ". Second file size: " << returnFileSize(fileName2) <<std::endl;
     return false; //size mismatch
   }
 

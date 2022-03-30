@@ -6,6 +6,7 @@ class Pipe : public virtual copyFilethroughIPC
 {
     protected:
         std::fstream pipeFile_;
+        std::string name_ = "CopyDataThroughPipe";
     public:
         virtual ~Pipe() = 0;
 

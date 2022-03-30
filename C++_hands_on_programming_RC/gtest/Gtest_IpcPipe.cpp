@@ -19,6 +19,7 @@ using ::testing::Lt;
 using ::testing::StrEq;
 using ::testing::IsTrue;
 using ::testing::IsFalse;
+using ::testing::StartsWith;
 
 
 std::vector<char> randomData = getRandomData(rand() % 4096);
@@ -61,12 +62,12 @@ void ThreadPipeSendFileConstructor(void)
 
 void ThreadPipeSendFileonstructor2(void)
 {
-    while(!checkIfFileExists("ipcCopyFile"))
+    while(!checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
     std::fstream connect2Pipe;
-    connect2Pipe.open("ipcCopyFile",std::ios::in | std::ios::binary);
+    connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
     ASSERT_THAT(connect2Pipe.is_open(), IsTrue);
     connect2Pipe.close();
 }
@@ -78,7 +79,7 @@ TEST(PipeSendFile,ConstructorAndDestructor)
     start_pthread(&mThreadID2,ThreadPipeSendFileonstructor2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
@@ -96,12 +97,12 @@ void ThreadPipeSendFilesyncIPCAndBufferTextData(void)
 
 void ThreadPipeSendFilesyncIPCAndBufferTextData2(void)
 {
-    while(!checkIfFileExists("ipcCopyFile"))
+    while(!checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
     std::fstream connect2Pipe;
-    connect2Pipe.open("ipcCopyFile",std::ios::in | std::ios::binary);
+    connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
     ASSERT_THAT(connect2Pipe.is_open(), IsTrue);
     std::vector<char> buffer(4096);
     connect2Pipe.read(buffer.data(), 4096);
@@ -119,7 +120,7 @@ TEST(PipeSendFile, syncIPCAndBufferTextData)
     start_pthread(&mThreadID2,ThreadPipeSendFilesyncIPCAndBufferTextData2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
@@ -135,12 +136,12 @@ void ThreadPipeSendFilesyncIPCAndBufferBinaryData(void)
 
 void ThreadPipeSendFilesyncIPCAndBufferBinaryData2(void)
 {
-    while(!checkIfFileExists("ipcCopyFile"))
+    while(!checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
     std::fstream connect2Pipe;
-    connect2Pipe.open("ipcCopyFile",std::ios::in | std::ios::binary);
+    connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
     ASSERT_THAT(connect2Pipe.is_open(), IsTrue);
     std::vector<char> buffer(4096);
     connect2Pipe.read(buffer.data(), 4096);
@@ -158,7 +159,7 @@ TEST(PipeSendFile, syncIPCAndBufferBinaryData)
     start_pthread(&mThreadID2,ThreadPipeSendFilesyncIPCAndBufferBinaryData2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 ///////////////////// Test PipeSendFiles sending multiple binary data //////////////////////
@@ -174,12 +175,12 @@ void ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData(void)
 
 void ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData2(void)
 {
-    while(!checkIfFileExists("ipcCopyFile"))
+    while(!checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
     std::fstream connect2Pipe;
-    connect2Pipe.open("ipcCopyFile",std::ios::in | std::ios::binary);
+    connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
     ASSERT_THAT(connect2Pipe.is_open(), IsTrue);
     std::vector<char> buffer;
 
@@ -201,7 +202,7 @@ TEST(PipeSendFile, syncIPCAndBufferMultipleBinaryData)
     start_pthread(&mThreadID2,ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 ///////////////////// Test PipeSendFiles read and send a file //////////////////////
@@ -214,7 +215,7 @@ void ThreadReadAndSend(void)
 void ThreadReadAndSend2(void)
 {
 
-    while(!checkIfFileExists("ipcCopyFile"))
+    while(!checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
@@ -222,7 +223,7 @@ void ThreadReadAndSend2(void)
     FileManipulationClassWriter Receiver;
     ASSERT_NO_THROW(Receiver.openFile("output_pipe.dat"));
     std::fstream connect2Pipe;
-    connect2Pipe.open("ipcCopyFile",std::ios::in | std::ios::binary);
+    connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
     ASSERT_THAT(connect2Pipe.is_open(), IsTrue);
     std::vector<char> buffer;
 
@@ -234,7 +235,7 @@ void ThreadReadAndSend2(void)
         Receiver.modifyBufferToWrite(buffer);
         Receiver.syncFileWithBuffer();
     }
-    while ((connect2Pipe.gcount() > 0) ||  checkIfFileExists("ipcCopyFile"));
+    while ((connect2Pipe.gcount() > 0) ||  checkIfFileExists("CopyDataThroughPipe"));
      
    
     connect2Pipe.close();
@@ -248,7 +249,7 @@ TEST(PipeSendFile, ReadAndSend)
     start_pthread(&mThreadID2,ThreadReadAndSend2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
     ASSERT_THAT(compareFiles("input_pipe.dat","output_pipe.dat"), IsTrue());
     remove("output_pipe.dat");
 }
@@ -259,20 +260,20 @@ void ThreadPipeReceiveFileConstructor(void)
 {
     CaptureStream stdcout{std::cout};
     ASSERT_NO_THROW(PipeReceiveFile myPipe);
-    EXPECT_THAT(stdcout.str(), StrEq("Waiting for ipc_sendfile.\n"));
+    EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_sendfile.\n"));
 }
 
 void ThreadPipeReceiveFileonstructor2(void)
 {
     std::fstream create2Pipe;
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 
-    ASSERT_THAT(mkfifo("ipcCopyFile",S_IRWXU | S_IRWXG), Ne(-1));
+    ASSERT_THAT(mkfifo("CopyDataThroughPipe",S_IRWXU | S_IRWXG), Ne(-1));
 
-    create2Pipe.open("ipcCopyFile",std::ios::out | std::ios::binary);
+    create2Pipe.open("CopyDataThroughPipe",std::ios::out | std::ios::binary);
     ASSERT_THAT(create2Pipe.is_open(), IsTrue);
     create2Pipe.close();
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeReceiveFile,ConstructorAndDestructor)
@@ -283,7 +284,7 @@ TEST(PipeReceiveFile,ConstructorAndDestructor)
     start_pthread(&mThreadID2,ThreadPipeReceiveFileonstructor2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 ///////////////////// Test PipeReceiveFiles Receiving Text Data//////////////////////
@@ -300,16 +301,16 @@ void ThreadPipeReceiveText(void)
 void ThreadPipeReceiveText2(void)
 {
     std::fstream create2Pipe;
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 
-    ASSERT_THAT(mkfifo("ipcCopyFile",S_IRWXU | S_IRWXG), Ne(-1));
+    ASSERT_THAT(mkfifo("CopyDataThroughPipe",S_IRWXU | S_IRWXG), Ne(-1));
 
-    create2Pipe.open("ipcCopyFile",std::ios::out | std::ios::binary);
+    create2Pipe.open("CopyDataThroughPipe",std::ios::out | std::ios::binary);
     ASSERT_THAT(create2Pipe.is_open(), IsTrue);
 
     create2Pipe.write("This is a test.", strlen("This is a test."));
     create2Pipe.close();
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeReceiveFile,PipeReceiveText)
@@ -319,7 +320,7 @@ TEST(PipeReceiveFile,PipeReceiveText)
     start_pthread(&mThreadID1,ThreadPipeReceiveText);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
@@ -337,16 +338,16 @@ void ThreadPipeReceiveBinary(void)
 void ThreadPipeReceiveBinary2(void)
 {
     std::fstream create2Pipe;
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 
-    ASSERT_THAT(mkfifo("ipcCopyFile",S_IRWXU | S_IRWXG), Ne(-1));
+    ASSERT_THAT(mkfifo("CopyDataThroughPipe",S_IRWXU | S_IRWXG), Ne(-1));
 
-    create2Pipe.open("ipcCopyFile",std::ios::out | std::ios::binary);
+    create2Pipe.open("CopyDataThroughPipe",std::ios::out | std::ios::binary);
     ASSERT_THAT(create2Pipe.is_open(), IsTrue);
 
     create2Pipe.write(randomData.data(), randomData.size());
     create2Pipe.close();
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeReceiveFile,PipeReceiveBinary)
@@ -356,7 +357,7 @@ TEST(PipeReceiveFile,PipeReceiveBinary)
     start_pthread(&mThreadID1,ThreadPipeReceiveBinary);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
@@ -372,11 +373,11 @@ void ThreadPipeReceiveReceiveAndWrite2(void)
 {
     FileManipulationClassReader myReader;
     std::fstream create2Pipe;
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 
-    ASSERT_THAT(mkfifo("ipcCopyFile",S_IRWXU | S_IRWXG), Ne(-1));
+    ASSERT_THAT(mkfifo("CopyDataThroughPipe",S_IRWXU | S_IRWXG), Ne(-1));
 
-    create2Pipe.open("ipcCopyFile",std::ios::out | std::ios::binary);
+    create2Pipe.open("CopyDataThroughPipe",std::ios::out | std::ios::binary);
     ASSERT_THAT(create2Pipe.is_open(), IsTrue);
 
     int filesize = returnFileSize("input_pipe.dat");
@@ -390,7 +391,7 @@ void ThreadPipeReceiveReceiveAndWrite2(void)
         datasent += myReader.getBufferSize();
     }
     create2Pipe.close();
-    unlink("ipcCopyFile");
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeReceiveFile,PipeReceiveReceiveAndWrite)
@@ -401,7 +402,7 @@ TEST(PipeReceiveFile,PipeReceiveReceiveAndWrite)
     start_pthread(&mThreadID1,ThreadPipeReceiveReceiveAndWrite);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
     EXPECT_THAT(compareFiles("input_pipe.dat","output_pipe.dat"), IsTrue);
     remove("output_pipe.dat");
 }
@@ -429,7 +430,7 @@ TEST(PipeTest,FullImplementation)
     start_pthread(&mThreadID1,ThreadPipeReceiveFile);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("ipcCopyFile"),IsFalse());
+    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
     EXPECT_THAT(compareFiles("input_pipe.dat","output_pipe.dat"), IsTrue);
     remove("output_pipe.dat");
 }

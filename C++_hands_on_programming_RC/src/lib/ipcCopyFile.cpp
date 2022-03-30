@@ -119,19 +119,6 @@ const char* ipcParameters::getFilePath() const
 }
 
 ////////////// copyFilethroughIPC class ///////////////////////
-std::string copyFilethroughIPC::getName() const
-{
-    return name_;
-}
-
-std::string copyFilethroughIPC::changeName(const std::string &name)
-{
-    if (name.size() > 0)
-        name_ = name;
-    else
-        std::cerr << "Error. Trying to change the name of protocol exchange to null. Keep it unchanged." << std::endl;
-    return name_;
-}
 
 size_t copyFilethroughIPC::getBufferSize() const
 {

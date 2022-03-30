@@ -30,9 +30,6 @@ class ipcParameters
 class copyFilethroughIPC
 {
     public:
-        std::string getName() const;
-        std::string changeName(const std::string &name);
-
         size_t getBufferSize() const;
 
         virtual void openFile(const std::string &filepath) = 0;
@@ -44,7 +41,6 @@ class copyFilethroughIPC
         virtual ~copyFilethroughIPC();
 
     protected:
-        std::string name_ = "ipcCopyFile";
         size_t bufferSize_ = 4096;
         std::fstream file_;
         std::vector<char> buffer_;
@@ -56,7 +52,7 @@ class Writer : virtual public copyFilethroughIPC
     public:
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
-        void syncFileWithIPC(const std::string &filepath);
+        virtual void syncFileWithIPC(const std::string &filepath);
 };
 
 class Reader : virtual public copyFilethroughIPC
@@ -64,7 +60,7 @@ class Reader : virtual public copyFilethroughIPC
     public:
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
-        void syncFileWithIPC(const std::string &filepath);
+        virtual void syncFileWithIPC(const std::string &filepath);
 };
 
 #endif /* IPCCOPYFILE_H */
