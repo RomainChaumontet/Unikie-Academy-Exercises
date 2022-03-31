@@ -307,20 +307,22 @@ int receiverMain(int argc, char* const argv[])
             }
             case protocolList::QUEUE:
             {
-                QueueReceiveFile mySendFile;
-                mySendFile.syncFileWithIPC(parameters.getFilePath());
+        
+                QueueReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::PIPE:
             {
-                PipeReceiveFile mySendFile;
-                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                
+                PipeReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::SHM:
             {
-                ShmReceiveFile mySendFile;
-                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                ShmReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             default:
@@ -383,18 +385,33 @@ int senderMain(int argc, char* const argv[])
             }
             case protocolList::QUEUE:
             {
+                if (!checkIfFileExists(parameters.getFilePath()))
+                {
+                    std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+                    return 0;
+                }
                 QueueSendFile mySendFile;
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::PIPE:
             {
+                if (!checkIfFileExists(parameters.getFilePath()))
+                {
+                    std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+                    return 0;
+                }
                 PipeSendFile mySendFile;
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::SHM:
             {
+                if (!checkIfFileExists(parameters.getFilePath()))
+                {
+                    std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+                    return 0;
+                }
                 ShmSendFile mySendFile;
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
