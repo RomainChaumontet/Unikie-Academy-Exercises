@@ -5,6 +5,15 @@
 #include <vector>
 #include <map>
 
+
+using ::testing::Eq;
+using ::testing::Ne;
+using ::testing::Lt;
+using ::testing::StrEq;
+using ::testing::IsTrue;
+using ::testing::IsFalse;
+using ::testing::StartsWith;
+
 std::map<std::string, inputLineOpt> inputMap =
 {
   {"OK_Help",
@@ -129,6 +138,14 @@ std::map<std::string, inputLineOpt> inputMap =
           }}
 };
 
+std::map<protocolList, std::string> statements=
+{
+  {protocolList::NONE, "No protocol provided. Use --help option to display available commands. Bye!\n"},
+  {protocolList::TOOMUCHARG, "Too many arguments are provided. Abord.\n"},
+  {protocolList::WRONGARG, "Wrong arguments are provided. Use --help to know which ones you can use. Abord.\n"},
+  {protocolList::NOFILE, "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>.\n"},
+  {protocolList::NOFILEOPT, "Name of the file is missing. Abord.\n"}
+};
 
 class FakeCmdLineOptTest : public ::testing::TestWithParam<std::pair<const std::string, inputLineOpt>> {};
 
@@ -152,6 +169,27 @@ TEST_P(FakeCmdLineOptTest, ipcCopyFileClassCreator) // Test the process from com
   ipcParameters testOptions(FakeOpt.argc(), FakeOpt.argv());
   EXPECT_EQ(inputStruct.protocol, testOptions.getProtocol());
   EXPECT_STREQ(inputStruct.filepath, testOptions.getFilePath());
+}
+
+TEST_P(FakeCmdLineOptTest, MainTest) // Test the main() function with wrong use of arguments
+{
+  auto inputStruct = GetParam().second;
+  FakeCmdLineOpt FakeOpt(inputStruct.arguments.begin(),inputStruct.arguments.end());
+  std::set<protocolList> correctProtocol {protocolList::HELP, protocolList::QUEUE, protocolList::PIPE, protocolList::SHM};
+  if (correctProtocol.find(inputStruct.protocol) == correctProtocol.end())
+  {
+    {
+      CaptureStream stdcout(std::cout);
+      EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+      EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
+    }
+
+    {
+      CaptureStream stdcout(std::cout);
+      EXPECT_THAT(receiverMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+      EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
+    }
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
