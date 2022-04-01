@@ -91,7 +91,7 @@ PipeReceiveFile::PipeReceiveFile()
     while (!checkIfFileExists(name_) && count++ < 60)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
-        usleep(500);
+        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
     }
 
     if (pipeFile_.is_open())
