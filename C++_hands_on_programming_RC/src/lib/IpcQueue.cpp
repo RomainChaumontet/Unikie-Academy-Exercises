@@ -18,8 +18,9 @@ QueueSendFile::~QueueSendFile()
     }
 }
 
-QueueSendFile::QueueSendFile()
+QueueSendFile::QueueSendFile(int maxAttempt)
 {
+    maxAttempt_ = maxAttempt;
     if (queueFd_ != -1)
     {
         throw std::runtime_error(
@@ -43,14 +44,22 @@ QueueSendFile::QueueSendFile()
 
 void QueueSendFile::syncIPCAndBuffer()
 {
-    if (    mq_send(
+    struct timespec waitingtime;
+    waitingtime.tv_sec += maxAttempt_;
+    
+    if (    mq_timedsend(
                 queueFd_,
                 buffer_.data(),
                 bufferSize_,
-                queuePriority_
+                queuePriority_,
+                &waitingtime
                 )
             == -1)
-    {
+    {   
+        if (errno = ETIMEDOUT)
+        {
+            throw std::runtime_error("Error, can't connect to the other program.");
+        }
         throw std::runtime_error(
             "Error executing command mq_send. Errno:"
             + std::string(strerror(errno))
@@ -78,6 +87,7 @@ QueueReceiveFile::QueueReceiveFile(int maxAttempt)
             "Error, trying to open a queue which is already opened by this program./n"
         );
     }
+
     do
     {
         queueFd_ = mq_open(name_.c_str(), O_RDONLY);
@@ -92,15 +102,15 @@ QueueReceiveFile::QueueReceiveFile(int maxAttempt)
         else if (queueFd_ == -1 && errno == ENOENT)
         {
             std::cout << "Waiting to the ipcsendfile." << std::endl;
-            sleep(1);
+            usleep(500);
         }
     }
-    while (queueFd_ == -1 && errno == ENOENT && ++attempt < maxAttempt);
+    while (queueFd_ == -1 && errno == ENOENT && ++attempt < maxAttempt*2);
     
     if (attempt == maxAttempt)
     {
         throw std::runtime_error(
-                "Error, the queue was not opened by another process"
+                "Error, can't connect to the other program."
                 );
     }
 }

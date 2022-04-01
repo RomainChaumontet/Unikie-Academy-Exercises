@@ -91,7 +91,7 @@ PipeReceiveFile::PipeReceiveFile()
     while (!checkIfFileExists(name_) && count++ < 60)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
-        usleep(500);
+        usleep(500000);
     }
 
     if (pipeFile_.is_open())

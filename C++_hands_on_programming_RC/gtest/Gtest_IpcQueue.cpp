@@ -14,6 +14,7 @@ using ::testing::Ne;
 using ::testing::StrEq;
 using ::testing::IsTrue;
 using ::testing::IsFalse;
+using ::testing::StartsWith;
 
 void ThreadExceedMaxMsgSend(void);  
 void ThreadExceedMaxMsgReceive(void); 
@@ -374,7 +375,7 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
     {
         CaptureStream stdcout{std::cout};
         EXPECT_THROW(QueueReceiveFile myQueueObject{1},std::runtime_error);
-        EXPECT_THAT(stdcout.str(),StrEq("Waiting to the ipcsendfile.\n"));
+        EXPECT_THAT(stdcout.str(),StartsWith("Waiting to the ipcsendfile.\n"));
     }
 
     mq_close(queueTest);

@@ -2,7 +2,8 @@
 - [Summary](#summary)
 - [Program misuse](#program-misuse)
   - [Incorrect arguments](#incorrect-arguments)
-  - [Giving a file to copy that does not exists](#giving-a-file-to-copy-that-does-not-exists)
+  - [Giving a file to copy that does not exist](#giving-a-file-to-copy-that-does-not-exist)
+  - [Giving different protocols between the two programs](#giving-different-protocols-between-the-two-programs)
 
 # Program misuse
 ## Incorrect arguments
@@ -18,7 +19,12 @@ If the user gives not enough arguments, too many arguments (like `--pipe --shm`)
 
 The test case for this handling error is named `MainTest` and is in [Gtest_manageOpt.cpp](../gtest/Gtest_manageOpt.cpp).
 
-## Giving a file to copy that does not exists
-If the user gives a path of a file that does no exist, the program will end with the value 0 and print the statement : `Error, the file specified does not exist. Abord.`.
+## Giving a file to copy that does not exist
+If the user gives a path of a file that does not exist, the program will end with the value 0 and print the statement: `Error, the file specified does not exist. Abord.`.
 
 The test case for this handling error is named `MainTest` and is in [Gtest_manageOpt.cpp](../gtest/Gtest_manageOpt.cpp).
+
+## Giving different protocols between the two programs
+If the user doesn't give the same protocol to the two programs or he launches only one. They will try to connect between them for 60 seconds. After, the programs will end with the value 1 and print the statement: `Error, can't connect to the other program.`.
+
+The test case for this handling error is named `No other program` and is in [Gtest_manageOpt.cpp](../gtest/Gtest_manageOpt.cpp).
