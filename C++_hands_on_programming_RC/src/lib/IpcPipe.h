@@ -25,7 +25,8 @@ class PipeSendFile : public Pipe, public Reader
 class PipeReceiveFile : public Pipe, public Writer
 {
     public:
-        PipeReceiveFile();
+        PipeReceiveFile(int maxAttempt);
+        PipeReceiveFile():PipeReceiveFile(60){};
         ~PipeReceiveFile();
         void syncIPCAndBuffer();
 

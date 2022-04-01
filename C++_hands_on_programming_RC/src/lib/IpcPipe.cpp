@@ -85,13 +85,14 @@ PipeReceiveFile::~PipeReceiveFile()
     }
 }
 
-PipeReceiveFile::PipeReceiveFile()
+PipeReceiveFile::PipeReceiveFile(int maxAttempt)
 {
+    maxAttempt_ = maxAttempt;
     int count = 0;
-    while (!checkIfFileExists(name_) && count++ < 60)
+    while (!checkIfFileExists(name_) && count++ < maxAttempt)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
-        usleep(500000);
+        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
     }
 
     if (pipeFile_.is_open())
@@ -100,7 +101,6 @@ PipeReceiveFile::PipeReceiveFile()
             "Error, trying to open a pipe that is already opened."
         );
     }
-
     pipeFile_.open(name_, std::ios::in | std::ios::binary);
     if (!pipeFile_.is_open())
     {

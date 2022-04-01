@@ -187,7 +187,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     while (senderSemaphorePtr_ == SEM_FAILED) //the semaphore is not opened
     {
         std::cout << "Waiting for ipc_senfile." << std::endl;
-        usleep(500);
+        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
         if (++tryNumber > maxAttempt)
         {
             throw std::runtime_error(
@@ -201,7 +201,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     while (receiverSemaphorePtr_ == SEM_FAILED) //the semaphore is not opened
     {
         std::cout << "Waiting for ipc_senfile." << std::endl;
-        usleep(500000);
+        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
         if (++tryNumber > maxAttempt*2)
         {
             throw std::runtime_error(
