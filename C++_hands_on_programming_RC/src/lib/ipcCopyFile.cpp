@@ -82,6 +82,7 @@ ipcParameters::ipcParameters(int argc, char* const argv[])
         case 'f':
             if (optarg)
                 filepath_ = optarg;
+
             else
             {
                 protocol_= protocolList::NOFILEOPT;
@@ -344,6 +345,17 @@ int senderMain(int argc, char* const argv[])
     try
     {
         ipcParameters parameters {argc, argv};
+        if (
+            (
+                parameters.getProtocol() == protocolList::SHM
+                || parameters.getProtocol() == protocolList::QUEUE
+                || parameters.getProtocol() == protocolList::PIPE
+            )
+            && !checkIfFileExists(parameters.getFilePath()))
+        {
+            std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+            return 0;
+        }
         switch (parameters.getProtocol())
         {
             case protocolList::NONE:
@@ -385,33 +397,18 @@ int senderMain(int argc, char* const argv[])
             }
             case protocolList::QUEUE:
             {
-                if (!checkIfFileExists(parameters.getFilePath()))
-                {
-                    std::cout << "Error, the file specified does not exist. Abord." << std::endl;
-                    return 0;
-                }
                 QueueSendFile mySendFile;
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::PIPE:
             {
-                if (!checkIfFileExists(parameters.getFilePath()))
-                {
-                    std::cout << "Error, the file specified does not exist. Abord." << std::endl;
-                    return 0;
-                }
                 PipeSendFile mySendFile;
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::SHM:
             {
-                if (!checkIfFileExists(parameters.getFilePath()))
-                {
-                    std::cout << "Error, the file specified does not exist. Abord." << std::endl;
-                    return 0;
-                }
                 ShmSendFile mySendFile;
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
