@@ -45,7 +45,7 @@ QueueSendFile::QueueSendFile(int maxAttempt)
 void QueueSendFile::syncIPCAndBuffer()
 {
     struct timespec waitingtime;
-    waitingtime.tv_sec += maxAttempt_;
+    waitingtime.tv_sec = maxAttempt_;
     
     if (    mq_timedsend(
                 queueFd_,
@@ -56,7 +56,7 @@ void QueueSendFile::syncIPCAndBuffer()
                 )
             == -1)
     {   
-        if (errno = ETIMEDOUT)
+        if (errno == ETIMEDOUT)
         {
             throw std::runtime_error("Error, can't connect to the other program.");
         }

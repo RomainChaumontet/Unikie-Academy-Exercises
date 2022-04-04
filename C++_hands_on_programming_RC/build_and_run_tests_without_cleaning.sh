@@ -1,10 +1,10 @@
 #!/usr/bin/sh
-bazel clean
+#bazel clean
 
 bazel build //src/ipc_receivefile:ipc_receivefile 
 bazel build //src/ipc_sendfile:ipc_sendfile 
 
-bazel test //gtest:Gtest_ipc 
+bazel test //gtest:Gtest_pipe
 rm -r -f output
 
 

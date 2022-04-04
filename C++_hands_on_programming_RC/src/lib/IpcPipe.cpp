@@ -5,6 +5,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <future>
+#include <thread>
+#include <chrono>
+
+
+using namespace std::chrono_literals;
 
 Pipe::~Pipe(){};
 
@@ -39,12 +45,35 @@ PipeSendFile::PipeSendFile()
         );
     }
 
-    pipeFile_.open(name_, std::ios::out | std::ios::binary);
-    if (!pipeFile_.is_open())
+    auto future = std::make_unique<std::future<bool>>(std::async(std::launch::async, [&](){
+        pipeFile_.open(name_, std::ios::out | std::ios::binary);
+        return !pipeFile_.is_open();
+    }));
+
+    std::future_status status;
+    status = future->wait_for(2s);
+    switch(status)
     {
-        throw std::runtime_error(
-            "Error when trying to connect to the pipe. rdstate:" + file_.rdstate());
+        case std::future_status::deferred:
+        {
+            future.release(); //the destructor of async shall not be called. It is an intentional memory leak but as the program will end, it's ok.
+            throw std::runtime_error("Inconsistencies : got deferred status while using std::async\n");
+            break;
+        }
+        case std::future_status::timeout:
+        {
+            future.release(); //the destructor of async shall not be called. It is an intentional memory leak but as the program will end, it's ok.
+            throw std::runtime_error("Error, can't connect to the other program.");
+            break;
+        }
+        case std::future_status::ready:
+        {
+            if (future->get()==false)
+                throw std::runtime_error("Error opening the pipe. rdstate:" + file_.rdstate());
+            break;
+        }   
     }
+
 }
 
 
