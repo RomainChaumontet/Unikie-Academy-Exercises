@@ -176,7 +176,9 @@ TEST_P(FakeCmdLineOptTest, MainTest) // Test the main() function with wrong use 
   auto inputStruct = GetParam().second;
   FakeCmdLineOpt FakeOpt(inputStruct.arguments.begin(),inputStruct.arguments.end());
   std::set<protocolList> correctProtocol {protocolList::HELP, protocolList::QUEUE, protocolList::PIPE, protocolList::SHM};
-  if (correctProtocol.find(inputStruct.protocol) == correctProtocol.end())
+  if (inputStruct.protocol==protocolList::HELP)
+  {}
+  else if (correctProtocol.find(inputStruct.protocol) == correctProtocol.end()) //Error in the arguments provided
   {
     {
       CaptureStream stdcout(std::cout);
@@ -190,12 +192,19 @@ TEST_P(FakeCmdLineOptTest, MainTest) // Test the main() function with wrong use 
       EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
     }
   }
+  else //correct arguments, but the file does not exist
+  {
+    CaptureStream stdcout(std::cout);
+    EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+    EXPECT_THAT(stdcout.str(), StrEq("Error, the file specified does not exist. Abord.\n"));
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
-  SelectionOfVariousInputLineCommandOptions,
+  TestVariousArguments,
   FakeCmdLineOptTest,
   ::testing::ValuesIn(inputMap),
   [](const ::testing::TestParamInfo<FakeCmdLineOptTest::ParamType> &info) {
     return info.param.first;
 });
+

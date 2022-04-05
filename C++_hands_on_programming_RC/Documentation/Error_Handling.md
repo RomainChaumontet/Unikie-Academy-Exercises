@@ -2,6 +2,7 @@
 - [Summary](#summary)
 - [Program misuse](#program-misuse)
   - [Incorrect arguments](#incorrect-arguments)
+  - [Giving a file to copy that does not exists](#giving-a-file-to-copy-that-does-not-exists)
 
 # Program misuse
 ## Incorrect arguments
@@ -17,4 +18,7 @@ If the user gives not enough arguments, too many arguments (like `--pipe --shm`)
 
 The test case for this handling error is named `MainTest` and is in [Gtest_manageOpt.cpp](../gtest/Gtest_manageOpt.cpp).
 
+## Giving a file to copy that does not exists
+If the user gives a path of a file that does no exist, the program will end with the value 0 and print the statement : `Error, the file specified does not exist. Abord.`.
 
+The test case for this handling error is named `MainTest` and is in [Gtest_manageOpt.cpp](../gtest/Gtest_manageOpt.cpp).

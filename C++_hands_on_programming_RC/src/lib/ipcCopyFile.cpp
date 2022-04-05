@@ -82,6 +82,7 @@ ipcParameters::ipcParameters(int argc, char* const argv[])
         case 'f':
             if (optarg)
                 filepath_ = optarg;
+
             else
             {
                 protocol_= protocolList::NOFILEOPT;
@@ -307,20 +308,22 @@ int receiverMain(int argc, char* const argv[])
             }
             case protocolList::QUEUE:
             {
-                QueueReceiveFile mySendFile;
-                mySendFile.syncFileWithIPC(parameters.getFilePath());
+        
+                QueueReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::PIPE:
             {
-                PipeReceiveFile mySendFile;
-                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                
+                PipeReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::SHM:
             {
-                ShmReceiveFile mySendFile;
-                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                ShmReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             default:
@@ -342,6 +345,17 @@ int senderMain(int argc, char* const argv[])
     try
     {
         ipcParameters parameters {argc, argv};
+        if (
+            (
+                parameters.getProtocol() == protocolList::SHM
+                || parameters.getProtocol() == protocolList::QUEUE
+                || parameters.getProtocol() == protocolList::PIPE
+            )
+            && !checkIfFileExists(parameters.getFilePath()))
+        {
+            std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+            return 0;
+        }
         switch (parameters.getProtocol())
         {
             case protocolList::NONE:
