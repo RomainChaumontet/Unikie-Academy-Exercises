@@ -83,6 +83,12 @@ TEST(PipeSendFile,ConstructorAndDestructor)
 }
 
 
+///////////////////////// Test PipeSendFiles only program launched ///////////////
+TEST(NoOtherProgram,PipeSendFile)
+{
+    EXPECT_THROW(PipeSendFile myPipe(1), std::runtime_error);
+}
+
 
 ///////////////////// Test PipeSendFiles sending text data //////////////////////
 
@@ -103,7 +109,7 @@ void ThreadPipeSendFilesyncIPCAndBufferTextData2(void)
     }
     std::fstream connect2Pipe;
     connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
-    ASSERT_THAT(connect2Pipe.is_open(), IsTrue);
+    EXPECT_THAT(connect2Pipe.is_open(), IsTrue);
     std::vector<char> buffer(4096);
     connect2Pipe.read(buffer.data(), 4096);
     buffer.resize(connect2Pipe.gcount());
@@ -111,10 +117,14 @@ void ThreadPipeSendFilesyncIPCAndBufferTextData2(void)
     EXPECT_THAT(std::string (buffer.begin(), buffer.end()), StrEq("This is a test."));
 
     connect2Pipe.close();
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeSendFile, syncIPCAndBufferTextData)
 {
+    
+    remove("CopyDataThroughPipe");
+    usleep(500);
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadPipeSendFilesyncIPCAndBufferTextData);
     start_pthread(&mThreadID2,ThreadPipeSendFilesyncIPCAndBufferTextData2);
@@ -150,6 +160,7 @@ void ThreadPipeSendFilesyncIPCAndBufferBinaryData2(void)
     EXPECT_THAT(std::string (buffer.begin(), buffer.end()), StrEq(std::string (randomData.begin(), randomData.end())));
 
     connect2Pipe.close();
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeSendFile, syncIPCAndBufferBinaryData)
@@ -193,6 +204,7 @@ void ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData2(void)
     }
    
     connect2Pipe.close();
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeSendFile, syncIPCAndBufferMultipleBinaryData)
@@ -214,12 +226,11 @@ void ThreadReadAndSend(void)
 
 void ThreadReadAndSend2(void)
 {
-
     while(!checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
-
+    
     FileManipulationClassWriter Receiver;
     ASSERT_NO_THROW(Receiver.openFile("output_pipe.dat"));
     std::fstream connect2Pipe;
@@ -239,16 +250,18 @@ void ThreadReadAndSend2(void)
      
    
     connect2Pipe.close();
+
+    unlink("CopyDataThroughPipe");
 }
 
 TEST(PipeSendFile, ReadAndSend)
 {
     CreateRandomFile Randomfile("input_pipe.dat",5,1);
-    pthread_t mThreadID1, mThreadID2;
-    start_pthread(&mThreadID1,ThreadReadAndSend);
-    start_pthread(&mThreadID2,ThreadReadAndSend2);
-    ::pthread_join(mThreadID1, nullptr);
-    ::pthread_join(mThreadID2, nullptr); 
+    pthread_t mThreadID3, mThreadID4;
+    start_pthread(&mThreadID3,ThreadReadAndSend);
+    start_pthread(&mThreadID4,ThreadReadAndSend2);
+    ::pthread_join(mThreadID3, nullptr);
+    ::pthread_join(mThreadID4, nullptr); 
     ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
     ASSERT_THAT(compareFiles("input_pipe.dat","output_pipe.dat"), IsTrue());
     remove("output_pipe.dat");
@@ -286,7 +299,11 @@ TEST(PipeReceiveFile,ConstructorAndDestructor)
     ::pthread_join(mThreadID2, nullptr); 
     ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
-
+///////////////////////// Test PipeReceiveFiles only program launched ///////////////
+TEST(NoOtherProgram,PipeReceiveFile)
+{
+    EXPECT_THROW(PipeReceiveFile myPipe(1), std::runtime_error);
+}
 ///////////////////// Test PipeReceiveFiles Receiving Text Data//////////////////////
 void ThreadPipeReceiveText(void)
 {

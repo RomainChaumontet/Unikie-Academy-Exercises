@@ -16,7 +16,8 @@ class Pipe : public virtual copyFilethroughIPC
 class PipeSendFile : public Pipe, public Reader
 {
     public:
-        PipeSendFile();
+        PipeSendFile(int maxAttempt);
+        PipeSendFile():PipeSendFile(30){};
         ~PipeSendFile();
         void syncIPCAndBuffer();
 

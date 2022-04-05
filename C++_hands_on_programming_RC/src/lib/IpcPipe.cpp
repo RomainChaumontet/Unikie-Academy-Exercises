@@ -8,9 +8,41 @@
 #include <future>
 #include <thread>
 #include <chrono>
+#include <pthread.h>
+#include <signal.h>
 
 
 using namespace std::chrono_literals;
+struct ThreadInfo
+{
+    pthread_t thread1;
+    pthread_t timer;
+    std::fstream* pipFilePtr;
+    std::string pipeName;
+    int waitingTime;
+};
+
+void* TimerThread(void* arg)
+{
+    ThreadInfo* info = static_cast<ThreadInfo*>(arg);
+    int attempt = 0;
+    while (attempt++ < info->waitingTime*2)
+    {
+        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
+    }
+    pthread_cancel(info->thread1);
+
+    return nullptr;
+}
+
+void* OpenThread(void* arg)
+{
+    ThreadInfo* info = static_cast<ThreadInfo*>(arg);
+    info->pipFilePtr->open(info->pipeName,std::ios::out | std::ios::binary);
+    std::cout << "Pipe is opened in both sides." << std::endl;
+    pthread_cancel(info->timer);
+    return nullptr;
+}
 
 Pipe::~Pipe(){};
 
@@ -26,8 +58,9 @@ PipeSendFile::~PipeSendFile()
     }
 }
 
-PipeSendFile::PipeSendFile()
+PipeSendFile::PipeSendFile(int maxAttempt)
 {
+    maxAttempt_ = maxAttempt;   
     if (pipeFile_.is_open())
     {
         throw std::runtime_error(
@@ -45,35 +78,31 @@ PipeSendFile::PipeSendFile()
         );
     }
 
-    auto future = std::make_unique<std::future<bool>>(std::async(std::launch::async, [&](){
-        pipeFile_.open(name_, std::ios::out | std::ios::binary);
-        return !pipeFile_.is_open();
-    }));
+    ThreadInfo* info =  new ThreadInfo;
+    info->pipeName = name_;
+    info->pipFilePtr = &pipeFile_;
+    info->waitingTime = maxAttempt_;
 
-    std::future_status status;
-    status = future->wait_for(2s);
-    switch(status)
+    ::pthread_create(&info->thread1, nullptr,&OpenThread, (void*)info);
+    ::pthread_create(&info->timer, nullptr,&TimerThread, (void*)info);
+    
+    ::pthread_join(info->timer, nullptr);
+    void* retval;
+    ::pthread_join(info->thread1, &retval); 
+    if (retval == PTHREAD_CANCELED)
     {
-        case std::future_status::deferred:
-        {
-            future.release(); //the destructor of async shall not be called. It is an intentional memory leak but as the program will end, it's ok.
-            throw std::runtime_error("Inconsistencies : got deferred status while using std::async\n");
-            break;
-        }
-        case std::future_status::timeout:
-        {
-            future.release(); //the destructor of async shall not be called. It is an intentional memory leak but as the program will end, it's ok.
-            throw std::runtime_error("Error, can't connect to the other program.");
-            break;
-        }
-        case std::future_status::ready:
-        {
-            if (future->get()==false)
-                throw std::runtime_error("Error opening the pipe. rdstate:" + file_.rdstate());
-            break;
-        }   
+        unlink(name_.c_str());
+        throw std::runtime_error("Error, can't connect to the other program.\n" );
+
+    }
+    if (!pipeFile_.is_open())
+    {
+        throw std::runtime_error(
+            "Error opening the pipe.\n"
+        );
     }
 
+    delete(info);
 }
 
 
@@ -122,6 +151,11 @@ PipeReceiveFile::PipeReceiveFile(int maxAttempt)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
         nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
+    }
+
+    if (count >= maxAttempt)
+    {
+        throw std::runtime_error("Error, can't connect to the other program.\n" );
     }
 
     if (pipeFile_.is_open())

@@ -48,27 +48,32 @@ class QueueTestReceiveFile : public QueueReceiveFile
         };
 };
 
-TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
+TEST(NoOtherProgram, SendQueueAlone)
 {
-    std::string queueName;
-    {
-        ASSERT_NO_THROW(QueueSendFile myQueueObject);
-        QueueSendFile myQueueObject;
-        queueName = "/CopyDataThroughQueue";
-        mqd_t queueTest = mq_open(queueName.c_str(),O_RDONLY);
-        EXPECT_THAT(queueTest, Ne(-1)); //The queue exists
-        mq_close(queueTest);
-    } // Queue should not be opened anywhere (destructor)
+    ASSERT_THROW(QueueSendFile myQueueObject(1),std::runtime_error);
+}
+TEST(NoOtherProgram, ReceiveQueueAlone)
+{
+    QueueReceiveFile myQueueObject(1);
+    ASSERT_THROW(myQueueObject.syncIPCAndBuffer(),std::runtime_error);
+}
 
-    mq_unlink(queueName.c_str()); //should destroy the queue
+TEST(BasicQueueCmd, OpenCloseQueue)
+{
+    std::string queueName = "/CopyDataThroughQueue";
+    {
+        QueueReceiveFile myRQueue;
+        ASSERT_NO_THROW(QueueSendFile myQueueObject);
+    } // Queue should not be opened anywhere (destructor)
 
     mqd_t queueTest = mq_open(queueName.c_str(),O_RDONLY);
     EXPECT_THAT(queueTest, Eq(-1)); //The queue does not exist -> error
     EXPECT_THAT(errno,Eq(2)); //The error is the queue does not exist.
 }
 
-TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
+TEST(BasicQueueCmd, QueueAlreadyOpened)
 {
+    
     //Without messages on it
     std::string queueName;
     {
@@ -81,7 +86,7 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
                 S_IRWXG |S_IRWXU,NULL); //queue is open
         ASSERT_THAT(queueTest, Ne(-1));
 
-        EXPECT_NO_THROW(QueueSendFile myQueueObject;);
+        EXPECT_NO_THROW(QueueReceiveFile myQueueObject;);
         mq_close(queueTest);
         mq_unlink(queueName.c_str());
     }
@@ -104,8 +109,8 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
     ASSERT_THAT(status, Ne(-1));
     ASSERT_THAT(queueAttrs.mq_curmsgs,Eq(1));
 
-    EXPECT_NO_THROW(QueueSendFile myQueueObject);
-    QueueSendFile myQueueObject;
+    EXPECT_NO_THROW(QueueReceiveFile myQueueObject);
+    QueueReceiveFile myQueueObject;
     status = mq_getattr(myQueueObject.getQueueDescriptor(), &queueAttrs);
     ASSERT_THAT(status, Ne(-1));
     ASSERT_THAT(queueAttrs.mq_curmsgs,Eq(0));
@@ -121,6 +126,7 @@ TEST(BasicQueueCmd, SendQueueQueueAlreadyOpened)
     
 TEST(SyncBuffAndQueue, SendQueue)
 {
+    QueueReceiveFile myRQueue; // just to create the queue
     std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
@@ -130,7 +136,6 @@ TEST(SyncBuffAndQueue, SendQueue)
     unsigned int prio = 5;
 
     //Open the queue
-    ASSERT_NO_THROW(QueueTestSendFile MyQueueSend);
     QueueTestSendFile MyQueueSend;
     queueTest = mq_open(queueName.c_str(), O_RDONLY);
     ASSERT_THAT(queueTest, Ne(-1));
@@ -195,8 +200,10 @@ TEST(SyncBuffAndQueue, SendQueue)
 TEST(SyncBuffAndQueue, ExceedMaxMsg)
 {
     pthread_t mThreadID1, mThreadID2;
+
+    QueueReceiveFile myRQueue; // just to create the queue
     start_pthread(&mThreadID1,ThreadExceedMaxMsgSend);
-    usleep(100);
+    usleep(500);
     start_pthread(&mThreadID2,ThreadExceedMaxMsgReceive);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
@@ -224,6 +231,7 @@ void ThreadExceedMaxMsgSend(void)
 
 void ThreadExceedMaxMsgReceive(void)
 {
+    
     std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
@@ -263,6 +271,7 @@ void ThreadExceedMaxMsgReceive(void)
 
 TEST(SyncBuffAndQueue, ReadSendQueueSimpleMessage)
 {
+    QueueReceiveFile myRQueue; // just to create the queue
     FileManipulationClassWriter writingToAFile;
     QueueSendFile myQueueSend;
     std::string data = "I expect these data will be send in the Queue.\n";
@@ -305,6 +314,7 @@ TEST(SyncBuffAndQueue, ReadSendQueueSimpleMessage)
 
 TEST(SyncBuffAndQueue, ReadSendQueueComplexMessage)
 {
+    QueueReceiveFile myRQueue; // just to create the queue
     QueueSendFile myQueueSend;
     FileManipulationClassWriter writingToAFile;
     std::string fileinput = "input.dat";
@@ -353,7 +363,7 @@ TEST(SyncBuffAndQueue, ReadSendQueueComplexMessage)
     remove(fileoutput.c_str());
 }
 
-TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
+TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
 {
     std::string queueName;
     mqd_t queueTest;
@@ -362,7 +372,7 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
         queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY,S_IRWXG |S_IRWXU,NULL);
         ASSERT_THAT(queueTest, Ne(-1));
 
-        EXPECT_NO_THROW(QueueReceiveFile myQueueObject);
+        EXPECT_NO_THROW(QueueSendFile myQueueObject);
 
         mq_close(queueTest);
     }
@@ -374,8 +384,8 @@ TEST(BasicQueueCmd, ReceiveQueueOpenCloseQueue)
 
     {
         CaptureStream stdcout{std::cout};
-        EXPECT_THROW(QueueReceiveFile myQueueObject{1},std::runtime_error);
-        EXPECT_THAT(stdcout.str(),StartsWith("Waiting to the ipcsendfile.\n"));
+        EXPECT_THROW(QueueSendFile myQueueObject{1},std::runtime_error);
+        EXPECT_THAT(stdcout.str(),StartsWith("Waiting to the ipc_receivefile.\n"));
     }
 
     mq_close(queueTest);
@@ -385,14 +395,11 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 {
     mqd_t queueTest;
     std::string queueName = "/CopyDataThroughQueue";
-    struct mq_attr queueAttrs;
-    queueAttrs.mq_msgsize = 4096;
-    queueAttrs.mq_maxmsg = 10;
 
-    //open
-    queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY,S_IRWXG |S_IRWXU,&queueAttrs);
-    ASSERT_THAT(queueTest, Ne(-1));
     QueueTestReceiveFile myQueueObj;
+    //open
+    queueTest = mq_open(queueName.c_str(), O_WRONLY);
+    ASSERT_THAT(queueTest, Ne(-1));
 
     // Text message
     std::string message = "This is a test.";
@@ -424,19 +431,16 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
 
     //the sender param
     mqd_t queueTest;
-    struct mq_attr queueAttrs;
     std::string queueName = "/CopyDataThroughQueue";
-    queueAttrs.mq_maxmsg = 10;
-    queueAttrs.mq_msgsize = 4096;
     std::vector<char> buffer;
     ssize_t fileSize = returnFileSize(fileinput);
     ssize_t datasent = 0;
 
     //Opening
     ASSERT_NO_THROW(Reader.openFile(fileinput));
-    queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY, S_IRWXG |S_IRWXU,&queueAttrs);
-    ASSERT_THAT(queueTest, Ne(-1));
     QueueReceiveFile myQueueObj;
+    queueTest = mq_open(queueName.c_str(),O_WRONLY);
+    ASSERT_THAT(queueTest, Ne(-1));
     ASSERT_NO_THROW(myQueueObj.openFile(fileoutput));
 
     //Loop

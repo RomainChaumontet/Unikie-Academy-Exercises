@@ -329,10 +329,10 @@ int receiverMain(int argc, char* const argv[])
                 break;
         }
     }
-    catch (std::exception &e)
+    catch (const std::exception &e)
     {
-        std::cout << "caught :" << e.what() << std::endl;
-        return 0;
+        std::cout << e.what() << std::endl;
+        return -1;
     }
     
     return 1;
@@ -420,10 +420,10 @@ int senderMain(int argc, char* const argv[])
                 break;
         }
     }
-    catch (std::exception &e)
+    catch (const std::exception &e)
     {
-        std::cout << "caught :" << e.what() << std::endl;
-        return 0;
+        std::cout << e.what() << std::endl;
+        return -1;
     }
     
 

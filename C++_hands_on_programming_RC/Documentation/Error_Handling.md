@@ -27,4 +27,4 @@ The test case for this handling error is named `MainTest` and is in [Gtest_manag
 ## Giving different protocols between the two programs
 If the user doesn't give the same protocol to the two programs or he launches only one. They will try to connect between them for 60 seconds. After, the programs will end with the value 1 and print the statement: `Error, can't connect to the other program.`.
 
-The test case for this handling error is named `No other program` and is in [Gtest_manageOpt.cpp](../gtest/Gtest_manageOpt.cpp).
+The test case for this handling error is named `NoOtherProgram` and is in the Gtest file corresponding to each protocol.

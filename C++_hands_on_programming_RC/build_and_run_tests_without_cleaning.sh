@@ -4,7 +4,7 @@
 bazel build //src/ipc_receivefile:ipc_receivefile 
 bazel build //src/ipc_sendfile:ipc_sendfile 
 
-bazel test //gtest:Gtest_pipe
+bazel test //gtest:Gtest_ipc
 rm -r -f output
 
 
