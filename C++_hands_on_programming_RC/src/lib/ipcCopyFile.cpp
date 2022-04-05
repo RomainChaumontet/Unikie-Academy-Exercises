@@ -274,12 +274,12 @@ int receiverMain(int argc, char* const argv[])
             }
             case protocolList::TOOMUCHARG:
             {                   
-                std::cout << "Too many arguments are provided. Abord." <<std::endl;
+                std::cout << "Too many arguments are provided. Abort." <<std::endl;
                 return 0;
             }
             case protocolList::WRONGARG:
             {
-                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abord." << std::endl;
+                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abort." << std::endl;
                 return 0;
             }
             case protocolList::NOFILE:
@@ -289,7 +289,7 @@ int receiverMain(int argc, char* const argv[])
             }
             case protocolList::NOFILEOPT:
             {
-                std::cout << "Name of the file is missing. Abord." << std::endl;
+                std::cout << "Name of the file is missing. Abort." << std::endl;
                 return 0;
             }
             case protocolList::HELP:
@@ -351,12 +351,12 @@ int senderMain(int argc, char* const argv[])
             }
             case protocolList::TOOMUCHARG:
             {                   
-                std::cout << "Too many arguments are provided. Abord." <<std::endl;
+                std::cout << "Too many arguments are provided. Abort." <<std::endl;
                 return 0;
             }
             case protocolList::WRONGARG:
             {
-                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abord." << std::endl;
+                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abort." << std::endl;
                 return 0;
             }
             case protocolList::NOFILE:
@@ -366,7 +366,7 @@ int senderMain(int argc, char* const argv[])
             }
             case protocolList::NOFILEOPT:
             {
-                std::cout << "Name of the file is missing. Abord." << std::endl;
+                std::cout << "Name of the file is missing. Abort." << std::endl;
                 return 0;
             }
             case protocolList::HELP:
