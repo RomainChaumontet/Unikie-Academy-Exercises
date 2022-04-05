@@ -151,8 +151,6 @@ PipeReceiveFile::PipeReceiveFile(int maxAttempt)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
         nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
-    }
-
     if (count >= maxAttempt)
     {
         throw std::runtime_error("Error, can't connect to the other program.\n" );
