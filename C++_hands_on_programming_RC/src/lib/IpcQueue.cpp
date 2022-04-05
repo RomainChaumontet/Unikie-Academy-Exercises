@@ -29,9 +29,9 @@ QueueSendFile::QueueSendFile()
     queueAttrs_.mq_maxmsg = mq_maxmsg_;
     queueAttrs_.mq_msgsize = mq_msgsize_;
     
-    mq_unlink(queueName_.c_str());
+    mq_unlink(name_.c_str());
 
-    queueFd_ = mq_open(queueName_.c_str(), O_WRONLY | O_CREAT | O_EXCL,S_IRWXG |S_IRWXU, &queueAttrs_);
+    queueFd_ = mq_open(name_.c_str(), O_WRONLY | O_CREAT | O_EXCL,S_IRWXG |S_IRWXU, &queueAttrs_);
     if (queueFd_ == -1)
     {
         throw std::runtime_error(
@@ -64,7 +64,7 @@ QueueReceiveFile::~QueueReceiveFile()
     {
         mq_close(queueFd_);   
     }
-    mq_unlink(queueName_.c_str());
+    mq_unlink(name_.c_str());
 }
 
 
@@ -80,7 +80,7 @@ QueueReceiveFile::QueueReceiveFile(int maxAttempt)
     }
     do
     {
-        queueFd_ = mq_open(queueName_.c_str(), O_RDONLY);
+        queueFd_ = mq_open(name_.c_str(), O_RDONLY);
         if (queueFd_ == -1 && errno != ENOENT)
         {
             
