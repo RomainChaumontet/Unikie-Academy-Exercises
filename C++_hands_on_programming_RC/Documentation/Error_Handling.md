@@ -4,6 +4,12 @@
   - [Incorrect arguments](#incorrect-arguments)
   - [Giving a file to copy that does not exist](#giving-a-file-to-copy-that-does-not-exist)
   - [Giving different protocols between the two programs](#giving-different-protocols-between-the-two-programs)
+  - [Killing a program while running](#killing-a-program-while-running)
+  - [Case if the IPC channel already exists](#case-if-the-ipc-channel-already-exists)
+  - [Case if an argument is given after the protocol name](#case-if-an-argument-is-given-after-the-protocol-name)
+- [Hardware-related issues](#hardware-related-issues)
+  - [Not enough space in the disk](#not-enough-space-in-the-disk)
+  - [Not enough RAM](#not-enough-ram)
 
 # Program misuse
 ## Incorrect arguments
@@ -28,3 +34,14 @@ The test case for this handling error is named `MainTest` and is in [Gtest_manag
 If the user doesn't give the same protocol to the two programs or he launches only one. They will try to connect between them for 60 seconds. After, the programs will end with the value 1 and print the statement: `Error, can't connect to the other program.`.
 
 The test case for this handling error is named `NoOtherProgram` and is in the Gtest file corresponding to each protocol.
+
+## Killing a program while running
+
+## Case if the IPC channel already exists
+
+## Case if an argument is given after the protocol name
+
+# Hardware-related issues
+## Not enough space in the disk
+
+## Not enough RAM
