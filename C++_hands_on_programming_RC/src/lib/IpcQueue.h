@@ -9,7 +9,7 @@ class Queue : public virtual copyFilethroughIPC
     protected:
         unsigned int queuePriority_ = 5;
         mqd_t queueFd_ = -1;
-        std::string queueName_ = "/" + name_;
+        std::string name_ = "/CopyDataThroughQueue";
         struct mq_attr queueAttrs_;
         long mq_maxmsg_ = 10;
         long mq_msgsize_ = bufferSize_;
