@@ -6,6 +6,7 @@
 - [Gtest_manageOpt](#gtest_manageopt)
 - [Gtest_IpcCopyFile](#gtest_ipccopyfile)
 - [Gtest_IpcQueue](#gtest_ipcqueue)
+- [Gtest_IpcShm](#gtest_ipcshm)
 
 # FakeCmdLineOpt
 
@@ -36,6 +37,12 @@ The only exception is the function `syncFileWithIPC` which is tested depending o
 # Gtest_IpcQueue
 
 This file aims to implement tests cases for the class defined in `IpcQueue.h` and `IpcQueue.cpp`.
+
+# Gtest_IpcShm
+
+This file aims to implement tests cases for the class defined in `IpcShm.h` and `IpcShm.cpp`.
+
+
 
 
 

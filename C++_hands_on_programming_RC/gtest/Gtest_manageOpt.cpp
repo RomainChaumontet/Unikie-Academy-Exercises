@@ -5,6 +5,15 @@
 #include <vector>
 #include <map>
 
+
+using ::testing::Eq;
+using ::testing::Ne;
+using ::testing::Lt;
+using ::testing::StrEq;
+using ::testing::IsTrue;
+using ::testing::IsFalse;
+using ::testing::StartsWith;
+
 std::map<std::string, inputLineOpt> inputMap =
 {
   {"OK_Help",
@@ -129,6 +138,14 @@ std::map<std::string, inputLineOpt> inputMap =
           }}
 };
 
+std::map<protocolList, std::string> statements=
+{
+  {protocolList::NONE, "No protocol provided. Use --help option to display available commands. Bye!\n"},
+  {protocolList::TOOMUCHARG, "Too many arguments are provided. Abort.\n"},
+  {protocolList::WRONGARG, "Wrong arguments are provided. Use --help to know which ones you can use. Abort.\n"},
+  {protocolList::NOFILE, "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>.\n"},
+  {protocolList::NOFILEOPT, "Name of the file is missing. Abort.\n"}
+};
 
 class FakeCmdLineOptTest : public ::testing::TestWithParam<std::pair<const std::string, inputLineOpt>> {};
 
@@ -154,10 +171,40 @@ TEST_P(FakeCmdLineOptTest, ipcCopyFileClassCreator) // Test the process from com
   EXPECT_STREQ(inputStruct.filepath, testOptions.getFilePath());
 }
 
+TEST_P(FakeCmdLineOptTest, MainTest) // Test the main() function with wrong use of arguments
+{
+  auto inputStruct = GetParam().second;
+  FakeCmdLineOpt FakeOpt(inputStruct.arguments.begin(),inputStruct.arguments.end());
+  std::set<protocolList> correctProtocol {protocolList::HELP, protocolList::QUEUE, protocolList::PIPE, protocolList::SHM};
+  if (inputStruct.protocol==protocolList::HELP)
+  {}
+  else if (correctProtocol.find(inputStruct.protocol) == correctProtocol.end()) //Error in the arguments provided
+  {
+    {
+      CaptureStream stdcout(std::cout);
+      EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+      EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
+    }
+
+    {
+      CaptureStream stdcout(std::cout);
+      EXPECT_THAT(receiverMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+      EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
+    }
+  }
+  else //correct arguments, but the file does not exist
+  {
+    CaptureStream stdcout(std::cout);
+    EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+    EXPECT_THAT(stdcout.str(), StrEq("Error, the file specified does not exist. Abord.\n"));
+  }
+}
+
 INSTANTIATE_TEST_SUITE_P(
-  SelectionOfVariousInputLineCommandOptions,
+  TestVariousArguments,
   FakeCmdLineOptTest,
   ::testing::ValuesIn(inputMap),
   [](const ::testing::TestParamInfo<FakeCmdLineOptTest::ParamType> &info) {
     return info.param.first;
 });
+

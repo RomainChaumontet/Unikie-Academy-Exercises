@@ -18,3 +18,6 @@ C++_hands_on_programming_RC/output/test.log
 C++_hands_on_programming_RC/build_and_run_tests without cleaning.sh
 C_hands_on_programming_2/ipc_sendfile
 C_hands_on_programming_2/ipc_receivefile
+.vscode/task.json
+.vscode/tasks.json
+.vscode
