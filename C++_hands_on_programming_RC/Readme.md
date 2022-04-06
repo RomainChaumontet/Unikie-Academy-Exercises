@@ -7,10 +7,11 @@
 - [File structure](#file-structure)
   - [Program sources](#program-sources)
 - [Test explanations](#test-explanations)
+- [Error handling](#error-handling)
 
 # Introduction
 
-This programs have the aim to take a file, and copy it. To do it, the program ipc_sendfile read the file and send the data of the file to the program ipc_receivefile which will write the data to a new file. The exchange is doing by IPC.
+These programs have the aim to take a file and copy it. To do it, the program ipc_sendfile read the file and sends the data of the file to the program ipc_receivefile which will write the data to a new file. The exchange is done by IPC.
 
 The IPC methods implemented are:
 - [x] Queue message passing
@@ -47,9 +48,11 @@ The program sources are in `/src` folder. The test sources are in the `/gtest` f
 ## Program sources
 There are 2 main.cpp files : `src/ipc_receivefile/main.cpp` and `src/ipc_sendfile/main.cpp`.
 
-Thoses files use the library write in the `/lib` folder.
+Those files use the library written in the `/lib` folder.
 
 # Test explanations
 
-Some information can be found on the [Test explanation](/C++_hands_on_programming_RC/Documentation/Tests/TestsExplanation.md)
+Some information can be found in the [Test explanation](/C++_hands_on_programming_RC/Documentation/Tests/TestsExplanation.md)
 
+# Error handling
+This program can handle errors specified in the file [Error Handling](/C++_hands_on_programming_RC/Documentation/Error_Handling.md)

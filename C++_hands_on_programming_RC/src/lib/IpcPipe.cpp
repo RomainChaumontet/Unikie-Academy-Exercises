@@ -5,6 +5,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <thread>
+
+
+using namespace std::chrono_literals;
 
 Pipe::~Pipe(){};
 
@@ -91,7 +95,7 @@ PipeReceiveFile::PipeReceiveFile()
     while (!checkIfFileExists(name_) && count++ < 60)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
-        usleep(500);
+        std::this_thread::sleep_for (500ms);
     }
 
     if (pipeFile_.is_open())

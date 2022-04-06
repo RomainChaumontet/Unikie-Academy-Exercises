@@ -2,7 +2,10 @@
 #include <string.h>
 #include <mqueue.h>
 #include <unistd.h>
+#include <thread>
+#include <chrono>
 
+using namespace std::chrono_literals;
 Queue::~Queue(){}
 
 mqd_t Queue::getQueueDescriptor()
@@ -92,7 +95,7 @@ QueueReceiveFile::QueueReceiveFile(int maxAttempt)
         else if (queueFd_ == -1 && errno == ENOENT)
         {
             std::cout << "Waiting to the ipcsendfile." << std::endl;
-            sleep(1);
+            std::this_thread::sleep_for (500ms);
         }
     }
     while (queueFd_ == -1 && errno == ENOENT && ++attempt < maxAttempt);

@@ -3,6 +3,12 @@
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
+#include "../lib/IpcQueue.h"
+#include "../lib/IpcPipe.h"
+#include "../lib/IpcShm.h"
+#include <chrono>
+#include <thread>
+
 
 bool checkIfFileExists(const std::string &filepath)
 {
@@ -79,6 +85,7 @@ ipcParameters::ipcParameters(int argc, char* const argv[])
         case 'f':
             if (optarg)
                 filepath_ = optarg;
+
             else
             {
                 protocol_= protocolList::NOFILEOPT;
@@ -255,3 +262,170 @@ void Reader::syncFileWithIPC(const std::string &filepath)
 }
 
 
+
+
+int receiverMain(int argc, char* const argv[])
+{
+    try
+    {
+        ipcParameters parameters {argc, argv};
+        switch (parameters.getProtocol())
+        {
+            case protocolList::NONE:
+            {
+                std::cout << "No protocol provided. Use --help option to display available commands. Bye!" << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::TOOMUCHARG:
+            {                   
+                std::cout << "Too many arguments are provided. Use --help option to display available commands. Abort." <<std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::WRONGARG:
+            {
+                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abort." << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::NOFILE:
+            {
+                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>. Use --help option to display available commands." << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::NOFILEOPT:
+            {
+                std::cout << "Name of the file is missing. Use --help option to display available commands. Abort." << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::HELP:
+            {
+                std::cout << "Welcome to this incredible program!" <<std::endl; 
+                std::cout << "It can do magic: copy a file in a completely ineffective way." <<std::endl;
+                std::cout << "To launch it, you need to provide the IPC protocol and the path of the file." <<std::endl<<std::endl;
+                std::cout << "Available protocols are at this time:" <<std::endl;
+                std::cout << "      --queue" <<std::endl<<std::endl;
+                std::cout << "      --pipe" <<std::endl<<std::endl;
+                std::cout << "Examples:" <<std::endl;
+                std::cout << "      --queue --file myFile" <<std::endl;
+                std::cout << "      --file myFile --queue" <<std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::QUEUE:
+            {
+        
+                QueueReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
+            case protocolList::PIPE:
+            {
+                
+                PipeReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
+            case protocolList::SHM:
+            {
+                ShmReceiveFile myReceiveFile;
+                myReceiveFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    catch (std::exception &e)
+    {
+        std::cout << "caught :" << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    
+    return EXIT_SUCCESS;
+}
+
+
+int senderMain(int argc, char* const argv[])
+{
+    try
+    {
+        ipcParameters parameters {argc, argv};
+        if (
+            (
+                parameters.getProtocol() == protocolList::SHM
+                || parameters.getProtocol() == protocolList::QUEUE
+                || parameters.getProtocol() == protocolList::PIPE
+            )
+            && !checkIfFileExists(parameters.getFilePath()))
+        {
+            std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+            return EXIT_FAILURE;
+        }
+        switch (parameters.getProtocol())
+        {
+            case protocolList::NONE:
+            {
+                std::cout << "No protocol provided. Use --help option to display available commands. Bye!" << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::TOOMUCHARG:
+            {                   
+                std::cout << "Too many arguments are provided. Abort." <<std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::WRONGARG:
+            {
+                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abort." << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::NOFILE:
+            {
+                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>." << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::NOFILEOPT:
+            {
+                std::cout << "Name of the file is missing. Abort." << std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::HELP:
+            {
+                std::cout << "Welcome to this incredible program!" <<std::endl; 
+                std::cout << "It can do magic: copy a file in a completely ineffective way." <<std::endl;
+                std::cout << "To launch it, you need to provide the IPC protocol and the path of the file." <<std::endl<<std::endl;
+                std::cout << "Available protocols are at this time:" <<std::endl;
+                std::cout << "      --queue" <<std::endl<<std::endl;
+                std::cout << "Examples:" <<std::endl;
+                std::cout << "      --queue --file myFile" <<std::endl;
+                std::cout << "      --file myFile --queue" <<std::endl;
+                return EXIT_FAILURE;
+            }
+            case protocolList::QUEUE:
+            {
+                QueueSendFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
+            case protocolList::PIPE:
+            {
+                PipeSendFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
+            case protocolList::SHM:
+            {
+                ShmSendFile mySendFile;
+                mySendFile.syncFileWithIPC(parameters.getFilePath());
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    catch (std::exception &e)
+    {
+        std::cout << "caught :" << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    
+
+    return EXIT_SUCCESS;
+}

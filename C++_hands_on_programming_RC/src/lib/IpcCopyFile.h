@@ -63,4 +63,7 @@ class Reader : virtual public copyFilethroughIPC
         virtual void syncFileWithIPC(const std::string &filepath);
 };
 
+
+int receiverMain(int argc, char* const argv[]);
+int senderMain(int argc, char* const argv[]);
 #endif /* IPCCOPYFILE_H */
