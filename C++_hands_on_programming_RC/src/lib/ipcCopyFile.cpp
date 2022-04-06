@@ -6,6 +6,9 @@
 #include "../lib/IpcQueue.h"
 #include "../lib/IpcPipe.h"
 #include "../lib/IpcShm.h"
+#include <chrono>
+#include <thread>
+
 
 bool checkIfFileExists(const std::string &filepath)
 {
@@ -275,7 +278,7 @@ int receiverMain(int argc, char* const argv[])
             }
             case protocolList::TOOMUCHARG:
             {                   
-                std::cout << "Too many arguments are provided. Abort." <<std::endl;
+                std::cout << "Too many arguments are provided. Use --help option to display available commands. Abort." <<std::endl;
                 return 0;
             }
             case protocolList::WRONGARG:
@@ -285,12 +288,12 @@ int receiverMain(int argc, char* const argv[])
             }
             case protocolList::NOFILE:
             {
-                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>." << std::endl;
+                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>. Use --help option to display available commands." << std::endl;
                 return 0;
             }
             case protocolList::NOFILEOPT:
             {
-                std::cout << "Name of the file is missing. Abort." << std::endl;
+                std::cout << "Name of the file is missing. Use --help option to display available commands. Abort." << std::endl;
                 return 0;
             }
             case protocolList::HELP:
