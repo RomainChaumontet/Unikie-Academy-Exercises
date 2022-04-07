@@ -78,17 +78,17 @@ PipeSendFile::PipeSendFile(int maxAttempt)
         );
     }
 
-    ThreadInfo* info =  new ThreadInfo;
-    info->pipeName = name_;
-    info->pipFilePtr = &pipeFile_;
-    info->waitingTime = maxAttempt_;
+    ThreadInfo info;
+    info.pipeName = name_;
+    info.pipFilePtr = &pipeFile_;
+    info.waitingTime = maxAttempt_;
 
-    ::pthread_create(&info->thread1, nullptr,&OpenThread, (void*)info);
-    ::pthread_create(&info->timer, nullptr,&TimerThread, (void*)info);
+    ::pthread_create(&info.thread1, nullptr,&OpenThread, (void*)&info);
+    ::pthread_create(&info.timer, nullptr,&TimerThread, (void*)&info);
     
-    ::pthread_join(info->timer, nullptr);
+    ::pthread_join(info.timer, nullptr);
     void* retval;
-    ::pthread_join(info->thread1, &retval); 
+    ::pthread_join(info.thread1, &retval); 
     if (retval == PTHREAD_CANCELED)
     {
         unlink(name_.c_str());
@@ -102,17 +102,31 @@ PipeSendFile::PipeSendFile(int maxAttempt)
         );
     }
 
-    delete(info);
 }
+
+static void sigpipe_handler(int signum)
+{
+   std::cerr << "Error. Can't find the other program. Did it crash ?\n";
+}
+
 
 
 void PipeSendFile::syncIPCAndBuffer()
 {
+    struct sigaction sa;
+    sa.sa_handler = sigpipe_handler;
+    sigemptyset(&sa.sa_mask);
+
+    if (sigaction(SIGPIPE, &sa, NULL)==-1)
+    {
+        throw std::runtime_error("Error catching the signal");
+    }
+
     if (!pipeFile_.is_open())
     {
         throw std::runtime_error("syncIPCAndBuffer(). Error, trying to write to a pipe which is not opened.");
     }
-
+    
     pipeFile_.write(buffer_.data(), bufferSize_);
 
     auto state = pipeFile_.rdstate();
@@ -130,7 +144,29 @@ void PipeSendFile::syncIPCAndBuffer()
     throw std::runtime_error("syncIPCAndBuffer(). Unknown error.");
 }
 
+static void sigpipe_handler_end(int signum)
+{
+   std::cout << "Sending all data with success" << std::endl;
+   exit(EXIT_SUCCESS);
+}
 
+void PipeSendFile::waitForReceiverTerminate()
+{
+    struct sigaction sa;
+    sa.sa_handler = sigpipe_handler_end;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGPIPE, &sa, NULL)==-1)
+    {
+        throw std::runtime_error("Error catching the signal");
+    }
+    while(1)
+    {
+        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
+    }
+
+}
+
+///////////////////////////////////////////////// PipeReceiveFile
 PipeReceiveFile::~PipeReceiveFile()
 {
     if (pipeFile_.is_open())
@@ -177,18 +213,31 @@ void PipeReceiveFile::syncIPCAndBuffer()
     {
         throw std::runtime_error("Error, trying to read in a pipe that is not opened");
     }
-
+    bool eof = false;
     std::vector<char> (bufferSize_).swap(buffer_);
-
     pipeFile_.read(buffer_.data(), bufferSize_);
     bufferSize_ = pipeFile_.gcount();
-    buffer_.resize(bufferSize_);
-
+    buffer_.resize(bufferSize_); 
     auto state = pipeFile_.rdstate();
+    if (std::equal(endingVector_.rbegin(), endingVector_.rend(), buffer_.rbegin()))
+    {
+        bufferSize_ -= endingVector_.size();
+        buffer_.resize(bufferSize_); 
+        eof = true;
+    }
     if (state == std::ios_base::goodbit)
         return;
     if (state == std::ios_base::eofbit+std::ios_base::failbit)
+    {
+
+        if (eof)
+        {
+            return;
+        }
+        
+        throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
         return; // end of file
+    }
     if (state == std::ios_base::eofbit)
     {
         throw std::runtime_error("syncIPCAndBuffer(). Eofbit error.");

@@ -181,8 +181,7 @@ void Writer::syncFileWithBuffer()
 void Writer::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
-
-    while (bufferSize_ > 0)
+    while (bufferSize_ == 4096)
     {
         syncIPCAndBuffer();
         syncFileWithBuffer();
@@ -216,7 +215,6 @@ void Reader::syncFileWithBuffer()
     file_.read(buffer_.data(),bufferSize_);
     bufferSize_ = file_.gcount();
     buffer_.resize(bufferSize_);
-
     auto state = file_.rdstate();
     if (state == std::ios_base::goodbit)
         return;
@@ -252,10 +250,11 @@ void Reader::syncFileWithIPC(const std::string &filepath)
         syncIPCAndBuffer();
         datasent += getBufferSize();
     }
-
     //send and empty message to tell that's all.
-    syncFileWithBuffer();
+    endingVector_.swap(buffer_);
+    bufferSize_ = buffer_.size();
     syncIPCAndBuffer();
+    //waitForReceiverTerminate();
 }
 
 
@@ -335,7 +334,7 @@ int receiverMain(int argc, char* const argv[])
         std::cout << e.what() << std::endl;
         return -1;
     }
-    
+    std::cout << "Data receive with success\n";
     return 1;
 }
 
@@ -423,6 +422,7 @@ int senderMain(int argc, char* const argv[])
         return -1;
     }
     
+    std::cout << "Data send with success\n";
 
     return 1;
 }

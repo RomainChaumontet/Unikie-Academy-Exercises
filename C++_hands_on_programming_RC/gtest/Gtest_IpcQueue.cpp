@@ -188,10 +188,13 @@ TEST(SyncBuffAndQueue, SendQueue)
     EXPECT_THAT(queueAttrs.mq_curmsgs, Eq(1)); //one msg in the queue
     //Check the message
     buffer.resize(queueAttrs.mq_msgsize);
-    msgSize2 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
-    ASSERT_THAT(msgSize2, Eq(randomSize));
-    buffer.resize(msgSize2);
-    EXPECT_THAT(buffer.data(), StrEq(randomData2.data()));
+    size_t msgSize3 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
+    ASSERT_THAT(msgSize3, Eq(randomData2.size())); 
+    buffer.resize(msgSize3);
+    for (size_t i=0; i< randomData2.size(); i++)
+    {
+        EXPECT_THAT(buffer[i], Eq(randomData2[i]));
+    }
 
     mq_close(queueTest);
     mq_unlink(queueName.c_str());
@@ -544,4 +547,75 @@ TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 
 
     remove(fileoutput.c_str());
+}
+
+////////////////////// Killing a program: SendFile killed//////////////////////////
+
+
+void ThreadQueueSendFileKilledSend(void)
+{
+    QueueSendFile myQueueSend;
+    myQueueSend.openFile("input.dat");
+    int numberOfMessage = rand() % 20; //will end after a random number of message
+    for (int i = 0; i<numberOfMessage; i++)
+    {
+        myQueueSend.syncFileWithBuffer();
+        myQueueSend.syncIPCAndBuffer();
+    }
+}
+
+void ThreadQueueSendFileKilledReceive(void)
+{
+    QueueReceiveFile myQueueReceive(1);
+    ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), std::runtime_error);
+}
+
+TEST(KillingAProgram, QueueSendFileKilled)
+{
+    std::string fileinput = "input.dat";
+    std::string fileoutput = "output.dat";
+    
+    CreateRandomFile randomFile {fileinput,5, 1};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,ThreadQueueSendFileKilledSend);
+    start_pthread(&mThreadID2,ThreadQueueSendFileKilledReceive);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+
+    remove(fileoutput.c_str());
+}
+
+
+////////////////////// Killing a program: Receivefile killed//////////////////////////
+
+void ThreadQueueReceiveFileKilledSend(void)
+{
+    QueueSendFile myQueueSend(2);
+    ASSERT_THROW(myQueueSend.syncFileWithIPC("input.dat"), std::runtime_error);
+}
+
+void ThreadQueueReceiveFileKilledReceive(void)
+{
+    QueueReceiveFile myQueueReceive;
+    int numberOfMessage = rand() % 20 +10; //will end after a random number of message
+    for (int i = 0; i<numberOfMessage; i++)
+    {
+        myQueueReceive.syncIPCAndBuffer();
+    }
+}
+
+TEST(KillingAProgram, QueueReceiveFileKilled)
+{
+    std::string fileinput = "input.dat";
+    
+    CreateRandomFile randomFile {fileinput,5, 1};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,ThreadQueueReceiveFileKilledSend);
+    start_pthread(&mThreadID2,ThreadQueueReceiveFileKilledReceive);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
 }

@@ -85,7 +85,7 @@ void QueueSendFile::syncIPCAndBuffer()
     {   
         if (errno == ETIMEDOUT)
         {
-            throw std::runtime_error("Error, can't connect to the other program.");
+            throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
         }
         throw std::runtime_error(
             "Error executing command mq_send. Errno:"
@@ -144,6 +144,10 @@ void QueueReceiveFile::syncIPCAndBuffer()
     amountOfData = mq_timedreceive(queueFd_,buffer_.data(), mq_msgsize_, &queuePriority_,&waitingtime);
     if (amountOfData == -1)
     {
+        if (errno == ETIMEDOUT)
+            {
+                throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
+            }
         throw std::runtime_error(
             "Error when trying to receive message. Errno:"
             + std::string(strerror(errno))

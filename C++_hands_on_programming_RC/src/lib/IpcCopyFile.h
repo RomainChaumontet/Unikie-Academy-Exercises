@@ -46,6 +46,8 @@ class copyFilethroughIPC
         std::vector<char> buffer_;
         bool continueGettingData_ = true;
         int maxAttempt_;
+        std::string endingSentence_ = "All data is sent. You can leave.";
+        std::vector<char> endingVector_ = std::vector<char>(endingSentence_.begin(),endingSentence_.end());
 };
 
 class Writer : virtual public copyFilethroughIPC
@@ -62,6 +64,7 @@ class Reader : virtual public copyFilethroughIPC
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
         virtual void syncFileWithIPC(const std::string &filepath);
+        virtual void waitForReceiverTerminate(){};
 };
 
 

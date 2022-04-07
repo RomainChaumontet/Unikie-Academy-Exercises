@@ -351,3 +351,72 @@ TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
     remove("copyfileSendFileLast2");
 }
 
+
+////////////////////// Killing a program: SendFile killed//////////////////////////
+
+
+void ThreadShmSendFileKilledSend(void)
+{
+    ShmSendFile myShmSendObject1;
+    myShmSendObject1.syncFileWithIPC("input.dat");
+}
+
+void ThreadShmSendFileKilledReceive(void)
+{
+    CaptureStream stdcout(std::cout); //mute std::cout
+    ShmReceiveFile myShmReceiveObject1{1};
+    ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), std::runtime_error);
+}
+
+TEST(KillingAProgram, ShmSendFileKilled)
+{
+    std::string fileinput = "input.dat";
+    std::string fileoutput = "output2.dat";
+    
+    CreateRandomFile randomFile {fileinput,5, 5};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,ThreadShmSendFileKilledSend);
+    start_pthread(&mThreadID2,ThreadShmSendFileKilledReceive);
+    usleep(500000);
+    pthread_cancel(mThreadID1);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+    remove(fileoutput.c_str());
+}
+
+
+////////////////////// Killing a program: ReceiveFile killed//////////////////////////
+
+
+void ThreadShmReceiveFileKilledSend(void)
+{
+    ShmSendFile myShmSendObject1{1};
+    ASSERT_THROW(myShmSendObject1.syncFileWithIPC("input.dat"), std::runtime_error);
+}
+
+void ThreadShmReceiveFileKilledReceive(void)
+{
+    CaptureStream stdcout(std::cout); //mute std::cout
+    ShmReceiveFile myShmReceiveObject1;
+    myShmReceiveObject1.syncFileWithIPC("output2.dat");
+}
+
+TEST(KillingAProgram, ShmReceiveFileKilled)
+{
+    std::string fileinput = "input.dat";
+    std::string fileoutput = "output2.dat";
+    
+    CreateRandomFile randomFile {fileinput,10, 10};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID2,ThreadShmReceiveFileKilledReceive);
+    start_pthread(&mThreadID1,ThreadShmReceiveFileKilledSend);
+    usleep(1000000);
+    pthread_cancel(mThreadID2);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+    remove(fileoutput.c_str());
+}

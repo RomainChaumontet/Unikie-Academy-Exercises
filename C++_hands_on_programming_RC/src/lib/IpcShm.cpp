@@ -151,6 +151,9 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
         ts.tv_sec += 1;
         if (sem_timedwait(senderSemaphorePtr_,&ts) == -1)
         {
+            if (errno == ETIMEDOUT)
+                throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
+                
             throw std::runtime_error(
                 "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
                 + std::string(strerror(errno))
@@ -295,6 +298,9 @@ void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
         ts.tv_sec += 1;
         if(sem_timedwait(receiverSemaphorePtr_, &ts)==-1)
         {
+            if (errno == ETIMEDOUT)
+                throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
+
             throw std::runtime_error(
                 "ShmReceiveFile::syncFileWithIPC(). Error when waiting for the semaphore. Errno: "
                 + std::string(strerror(errno))
