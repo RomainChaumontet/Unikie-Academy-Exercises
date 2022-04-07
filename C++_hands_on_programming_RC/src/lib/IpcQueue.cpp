@@ -2,7 +2,10 @@
 #include <string.h>
 #include <mqueue.h>
 #include <unistd.h>
+#include <thread>
+#include <chrono>
 
+using namespace std::chrono_literals;
 Queue::~Queue(){}
 
 mqd_t Queue::getQueueDescriptor()

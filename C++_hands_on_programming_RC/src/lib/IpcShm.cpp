@@ -9,6 +9,10 @@
 #include <sched.h>
 #include "IpcCopyFile.h"
 #include "IpcShm.h"
+#include <thread>
+
+
+using namespace std::chrono_literals;
 
 Shm::~Shm(){}
 
@@ -181,8 +185,8 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_RDWR);
     while (senderSemaphorePtr_ == SEM_FAILED) //the semaphore is not opened
     {
-        std::cout << "Waiting for ipc_sendfile." << std::endl;
-        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
+        std::cout << "Waiting for ipc_senfile." << std::endl;
+        std::this_thread::sleep_for(500ms);
         if (++tryNumber > maxAttempt)
         {
             throw std::runtime_error(
@@ -196,8 +200,8 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     while (receiverSemaphorePtr_ == SEM_FAILED) //the semaphore is not opened
     {
         std::cout << "Waiting for ipc_senfile." << std::endl;
-        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
-        if (++tryNumber > maxAttempt*2)
+        std::this_thread::sleep_for(500ms);
+        if (++tryNumber > maxAttempt)
         {
             throw std::runtime_error(
                 "Error, can't connect to the other program.\n"
