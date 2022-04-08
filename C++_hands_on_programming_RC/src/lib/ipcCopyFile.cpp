@@ -6,6 +6,9 @@
 #include "../lib/IpcQueue.h"
 #include "../lib/IpcPipe.h"
 #include "../lib/IpcShm.h"
+#include <chrono>
+#include <thread>
+
 
 bool checkIfFileExists(const std::string &filepath)
 {
@@ -271,27 +274,27 @@ int receiverMain(int argc, char* const argv[])
             case protocolList::NONE:
             {
                 std::cout << "No protocol provided. Use --help option to display available commands. Bye!" << std::endl;
-                return 0;
+                return EXIT_FAILURE;
             }
             case protocolList::TOOMUCHARG:
             {                   
-                std::cout << "Too many arguments are provided. Abord." <<std::endl;
-                return 0;
+                std::cout << "Too many arguments are provided. Use --help option to display available commands. Abort." <<std::endl;
+                return EXIT_FAILURE;
             }
             case protocolList::WRONGARG:
             {
-                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abord." << std::endl;
-                return 0;
+                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abort." << std::endl;
+                return EXIT_FAILURE;
             }
             case protocolList::NOFILE:
             {
-                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>." << std::endl;
-                return 0;
+                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>. Use --help option to display available commands." << std::endl;
+                return EXIT_FAILURE;
             }
             case protocolList::NOFILEOPT:
             {
-                std::cout << "Name of the file is missing. Abord." << std::endl;
-                return 0;
+                std::cout << "Name of the file is missing. Use --help option to display available commands. Abort." << std::endl;
+                return EXIT_FAILURE;
             }
             case protocolList::HELP:
             {
@@ -304,7 +307,7 @@ int receiverMain(int argc, char* const argv[])
                 std::cout << "Examples:" <<std::endl;
                 std::cout << "      --queue --file myFile" <<std::endl;
                 std::cout << "      --file myFile --queue" <<std::endl;
-                return 0;
+                return EXIT_FAILURE;
             }
             case protocolList::QUEUE:
             {
@@ -332,11 +335,11 @@ int receiverMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cout << e.what() << std::endl;
-        return -1;
+        std::cout << "caught :" << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
     
-    return 1;
+    return EXIT_SUCCESS;
 }
 
 
@@ -354,34 +357,34 @@ int senderMain(int argc, char* const argv[])
             && !checkIfFileExists(parameters.getFilePath()))
         {
             std::cout << "Error, the file specified does not exist. Abord." << std::endl;
-            return 0;
+            return EXIT_FAILURE;
         }
         switch (parameters.getProtocol())
         {
             case protocolList::NONE:
             {
                 std::cout << "No protocol provided. Use --help option to display available commands. Bye!" << std::endl;
-                return 0;
+                return EXIT_FAILURE;
             }
             case protocolList::TOOMUCHARG:
             {                   
-                std::cout << "Too many arguments are provided. Abord." <<std::endl;
-                return 0;
+                std::cout << "Too many arguments are provided. Abort." <<std::endl;
+                return EXIT_FAILURE;
             }
             case protocolList::WRONGARG:
             {
-                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abord." << std::endl;
-                return 0;
+                std::cout << "Wrong arguments are provided. Use --help to know which ones you can use. Abort." << std::endl;
+                return EXIT_FAILURE;
             }
             case protocolList::NOFILE:
             {
                 std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>." << std::endl;
-                return 0;
+                return EXIT_FAILURE;
             }
             case protocolList::NOFILEOPT:
             {
-                std::cout << "Name of the file is missing. Abord." << std::endl;
-                return 0;
+                std::cout << "Name of the file is missing. Abort." << std::endl;
+                return EXIT_FAILURE;
             }
             case protocolList::HELP:
             {
@@ -393,7 +396,7 @@ int senderMain(int argc, char* const argv[])
                 std::cout << "Examples:" <<std::endl;
                 std::cout << "      --queue --file myFile" <<std::endl;
                 std::cout << "      --file myFile --queue" <<std::endl;
-                return 0;
+                return EXIT_FAILURE;
             }
             case protocolList::QUEUE:
             {
@@ -419,10 +422,10 @@ int senderMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cout << e.what() << std::endl;
-        return -1;
+        std::cout << "caught :" << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
     
 
-    return 1;
+    return EXIT_SUCCESS;
 }

@@ -141,10 +141,10 @@ std::map<std::string, inputLineOpt> inputMap =
 std::map<protocolList, std::string> statements=
 {
   {protocolList::NONE, "No protocol provided. Use --help option to display available commands. Bye!\n"},
-  {protocolList::TOOMUCHARG, "Too many arguments are provided. Abord.\n"},
-  {protocolList::WRONGARG, "Wrong arguments are provided. Use --help to know which ones you can use. Abord.\n"},
+  {protocolList::TOOMUCHARG, "Too many arguments are provided. Abort.\n"},
+  {protocolList::WRONGARG, "Wrong arguments are provided. Use --help to know which ones you can use. Abort.\n"},
   {protocolList::NOFILE, "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>.\n"},
-  {protocolList::NOFILEOPT, "Name of the file is missing. Abord.\n"}
+  {protocolList::NOFILEOPT, "Name of the file is missing. Abort.\n"}
 };
 
 class FakeCmdLineOptTest : public ::testing::TestWithParam<std::pair<const std::string, inputLineOpt>> {};

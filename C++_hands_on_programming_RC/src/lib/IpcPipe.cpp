@@ -150,7 +150,7 @@ PipeReceiveFile::PipeReceiveFile(int maxAttempt)
     while (!checkIfFileExists(name_) && count++ < maxAttempt)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
-        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
+        std::this_thread::sleep_for (500ms);
     }
     if (count >= maxAttempt)
     {
