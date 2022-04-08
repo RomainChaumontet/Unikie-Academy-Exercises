@@ -32,7 +32,7 @@ bool compareFiles(const std::string& fileName1, const std::string& fileName2) //
 std::vector<char> getRandomData()
 {
   srand (time(NULL));
-  ssize_t size = rand() % 4096;
+  ssize_t size = rand() % 4000;
   std::vector<char> retval;
   int randomDatafromUrandom = open("/dev/urandom", O_RDONLY);
   if (randomDatafromUrandom < 0)

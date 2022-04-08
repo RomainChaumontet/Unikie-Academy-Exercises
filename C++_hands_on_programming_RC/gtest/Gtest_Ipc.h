@@ -155,6 +155,11 @@ class FileManipulationClassReader : public Reader
         }
 
         void syncIPCAndBuffer(){}
+
+        std::vector<char> getEndingData()
+        {
+          return endingVector_;
+        }
 };
 
 class FileManipulationClassWriter : public Writer

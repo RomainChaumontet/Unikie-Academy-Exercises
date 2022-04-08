@@ -366,7 +366,7 @@ void ThreadShmSendFileKilledSend(void)
 void ThreadShmSendFileKilledReceive(void)
 {
     CaptureStream stdcout(std::cout); //mute std::cout
-    ShmReceiveFile myShmReceiveObject1{1};
+    ShmReceiveFile myShmReceiveObject1{2};
     ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), ipc_exception);
 }
 
@@ -375,12 +375,12 @@ TEST(KillingAProgram, ShmSendFileKilled)
     std::string fileinput = "input.dat";
     std::string fileoutput = "output2.dat";
     
-    CreateRandomFile randomFile {fileinput,5, 5};
+    CreateRandomFile randomFile {fileinput,10, 10};
 
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadShmSendFileKilledSend);
     start_pthread(&mThreadID2,ThreadShmSendFileKilledReceive);
-    usleep(500000);
+    sleep(1);
     pthread_cancel(mThreadID1);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 

@@ -47,6 +47,16 @@ QueueSendFile::QueueSendFile(int maxAttempt)
             std::cout << "Waiting to the ipc_receivefile." << std::endl;
             nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
         }
+        else 
+        {
+            mq_attr queueAttrs;
+            mq_getattr(queueFd_, &queueAttrs);
+            if (queueAttrs.mq_curmsgs > 0) // queue with message on it-> thrown
+            {
+                mq_unlink(name_.c_str());
+                throw ipc_exception("Error. A queue some messages already exists.\n");
+            }
+        }
     }
     while (queueFd_ == -1 && errno == ENOENT && attempt++ < maxAttempt);
     if (attempt >= maxAttempt)
@@ -111,9 +121,7 @@ QueueReceiveFile::QueueReceiveFile(int maxAttempt)
     queueAttrs_.mq_maxmsg = mq_maxmsg_;
     queueAttrs_.mq_msgsize = mq_msgsize_;
 
-    
     mq_unlink(name_.c_str());
-
     queueFd_ = mq_open(name_.c_str(), O_RDONLY | O_CREAT | O_EXCL,S_IRWXG |S_IRWXU, &queueAttrs_);
     if (queueFd_ == -1)
     {
@@ -156,4 +164,9 @@ void QueueReceiveFile::syncIPCAndBuffer()
     bufferSize_ = amountOfData;
     buffer_.resize(bufferSize_);
 
+    if (std::equal(endingVector_.rbegin(), endingVector_.rend(), buffer_.rbegin()))
+    {
+        bufferSize_ -= endingVector_.size();
+        buffer_.resize(bufferSize_);
+    }
 }

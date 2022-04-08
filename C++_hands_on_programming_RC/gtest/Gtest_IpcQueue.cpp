@@ -401,7 +401,7 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 {
     mqd_t queueTest;
     std::string queueName = "/CopyDataThroughQueue";
-
+    std::vector<char> endingData = getSomeInfoQueue.getEndingData();
     QueueTestReceiveFile myQueueObj;
     //open
     queueTest = mq_open(queueName.c_str(), O_WRONLY);
@@ -409,16 +409,19 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 
     // Text message
     std::string message = "This is a test.";
-    mq_send(queueTest, message.c_str(), message.size(), 5);
+    std::string data = message + std::string(endingData.data());
+    mq_send(queueTest, data.c_str(), data.size(), 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
     std::vector<char> output = myQueueObj.getBuffer();
     EXPECT_THAT(std::string (output.begin(), output.end()), StrEq(message));
 
     //binary message
     std::vector<char> randomData = getRandomData();
-    mq_send(queueTest, randomData.data(), randomData.size(), 5);
+    std::vector<char> dataToPush = randomData;
+    dataToPush.insert(dataToPush.end(), endingData.begin(), endingData.end());
+    mq_send(queueTest, dataToPush.data(), dataToPush.size(), 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
-    myQueueObj.getBuffer().swap(output);
+    output=myQueueObj.getBuffer();
     EXPECT_THAT(output.data(), StrEq(randomData.data()));
 
     mq_close(queueTest);
@@ -533,6 +536,7 @@ void ThreadQueueReceiveAuto(void)
 }
 TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 {
+    mq_unlink("/CopyDataThroughQueue");
     std::string fileinput = "input.dat";
     std::string fileoutput = "output.dat";
     
@@ -622,4 +626,43 @@ TEST(KillingAProgram, QueueReceiveFileKilled)
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
 
+}
+
+
+//////////////////////////// IPC Channel already exist ///////////////////////
+
+
+
+void QueueReceiveFileSend(void)
+{
+    ASSERT_THROW(QueueSendFile myQueueObject, ipc_exception);
+}
+
+void QueueReceiveFileReceive(void)
+{
+    QueueReceiveFile myQueueReceive{1};
+    ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), ipc_exception);
+}
+
+
+TEST(ipcAlreadyExists, QueueExistWithMsg)
+{
+    std::string queueName = "/CopyDataThroughQueue";
+    mqd_t queueTest = mq_open(
+        queueName.c_str(),
+            O_CREAT | O_WRONLY,
+            S_IRWXG |S_IRWXU,NULL); //queue is open
+    std::string data = "data";
+    mq_send(queueTest, &data[0], data.size(), 5); //sending a message in the queue
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,QueueReceiveFileSend);
+    usleep(500);
+    start_pthread(&mThreadID2,QueueReceiveFileReceive);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+    mq_close(queueTest);
+    mq_unlink("/CopyDataThroughQueue");
+    remove("output.dat");
 }

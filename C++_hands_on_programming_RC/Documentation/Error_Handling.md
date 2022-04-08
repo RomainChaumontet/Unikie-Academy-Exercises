@@ -6,6 +6,7 @@
   - [Giving different protocols between the two programs](#giving-different-protocols-between-the-two-programs)
   - [Killing a program while running](#killing-a-program-while-running)
   - [Case if the IPC channel already exists](#case-if-the-ipc-channel-already-exists)
+    - [Queue](#queue)
   - [Case if an argument is given after the protocol name](#case-if-an-argument-is-given-after-the-protocol-name)
   - [Max filename length is reached](#max-filename-length-is-reached)
   - [Other programs are using the protocol with the same name](#other-programs-are-using-the-protocol-with-the-same-name)
@@ -13,7 +14,7 @@
   - [Not enough space in the disk](#not-enough-space-in-the-disk)
   - [Not enough RAM](#not-enough-ram)
   - [Max path length is reached](#max-path-length-is-reached)
-  - [Writing file or Reading file become not reachable](#writing-file-or-reading-file-become-not-reachable)
+  - [Writing file or Reading file becomes not reachable](#writing-file-or-reading-file-becomes-not-reachable)
 
 # Program misuse
 ## Incorrect arguments
@@ -45,6 +46,14 @@ If the user or the system kills one program while the exchange of data is runnni
 The test case for this handling error is named `KillingAProgram` and is in the Gtest file corresponding to each protocol.
 
 ## Case if the IPC channel already exists
+### Queue
+If a queue is already opened and has 0 messages on it, the program will do nothing specific.
+
+If a queue is already opened and has some messages on it:
+* ipc_sendfile will throw with the statement: ` Error. A queue some messages already exists.\n"`
+* ipc_receivefile will throw only because ipc_sendfile won't connect.
+
+
 
 ## Case if an argument is given after the protocol name
 
@@ -59,5 +68,5 @@ The test case for this handling error is named `KillingAProgram` and is in the G
 
 ## Max path length is reached
 
-## Writing file or Reading file become not reachable
+## Writing file or Reading file becomes not reachable
 
