@@ -141,6 +141,12 @@ void copyFilethroughIPC::closeFile()
         file_.close();
 }
 
+
+size_t copyFilethroughIPC::getDefaultBufferSize()
+{
+    return defaultBufferSize_;
+}
+
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
@@ -181,7 +187,7 @@ void Writer::syncFileWithBuffer()
 void Writer::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
-    while (bufferSize_ == 4096)
+    while (bufferSize_ == defaultBufferSize_)
     {
         syncIPCAndBuffer();
         syncFileWithBuffer();

@@ -16,10 +16,10 @@ using ::testing::IsFalse;
 TEST(TestSimpleMethods, GetBufferSize)
 {
     FileManipulationClassReader dummyCopyFileReader;
-    EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(4096));
+    EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(dummyCopyFileReader.getDefaultBufferSize()));
 
     FileManipulationClassWriter dummyCopyFileWriter;
-    EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(4096));
+    EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(dummyCopyFileWriter.getDefaultBufferSize()));
 }
 
 TEST(FileManipulation, OpenFile)

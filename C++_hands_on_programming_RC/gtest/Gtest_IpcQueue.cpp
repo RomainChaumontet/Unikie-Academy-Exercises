@@ -48,6 +48,9 @@ class QueueTestReceiveFile : public QueueReceiveFile
         };
 };
 
+
+FileManipulationClassReader getSomeInfoQueue;
+
 TEST(NoOtherProgram, SendQueueAlone)
 {
     ASSERT_THROW(QueueSendFile myQueueObject(1),std::runtime_error);
@@ -95,7 +98,7 @@ TEST(BasicQueueCmd, QueueAlreadyOpened)
     //With messages on it
     struct mq_attr queueAttrs;
     queueAttrs.mq_maxmsg = 10;
-    queueAttrs.mq_msgsize = 4096;
+    queueAttrs.mq_msgsize = getSomeInfoQueue.getDefaultBufferSize();
 
     mqd_t queueTest = mq_open(
         queueName.c_str(),
@@ -160,7 +163,7 @@ TEST(SyncBuffAndQueue, SendQueue)
     
     /////////Try with binary data////////////////
     buffer.clear();
-    std::vector<char> randomData = getRandomData(4096);
+    std::vector<char> randomData = getRandomData();
     MyQueueSend.modifyBuffer(randomData);
     //sending a message in the Queue
     ASSERT_NO_THROW(MyQueueSend.syncIPCAndBuffer());
@@ -169,7 +172,7 @@ TEST(SyncBuffAndQueue, SendQueue)
     //Check the message
     buffer.resize(queueAttrs.mq_msgsize);
     size_t msgSize2 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
-    ASSERT_THAT(msgSize2, Eq(4096));
+    ASSERT_THAT(msgSize2, Eq(randomData.size()));
     buffer.resize(msgSize2);
     EXPECT_THAT(buffer.data(), StrEq(randomData.data()));
 
@@ -179,8 +182,8 @@ TEST(SyncBuffAndQueue, SendQueue)
 
     //////////Try with random size binary data/////////
     buffer.clear();
-    ssize_t randomSize = rand() % 4096;
-    std::vector<char> randomData2 = getRandomData(randomSize);
+    srand (time(NULL));
+    std::vector<char> randomData2 = getRandomData();
     MyQueueSend.modifyBuffer(randomData2);
     //sending a message in the Queue
     ASSERT_NO_THROW(MyQueueSend.syncIPCAndBuffer());
@@ -412,9 +415,8 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     EXPECT_THAT(std::string (output.begin(), output.end()), StrEq(message));
 
     //binary message
-    ssize_t randomSize = rand() % 4096;
-    std::vector<char> randomData = getRandomData(randomSize);
-    mq_send(queueTest, randomData.data(), randomSize, 5);
+    std::vector<char> randomData = getRandomData();
+    mq_send(queueTest, randomData.data(), randomData.size(), 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
     myQueueObj.getBuffer().swap(output);
     EXPECT_THAT(output.data(), StrEq(randomData.data()));
@@ -449,7 +451,7 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
     //Loop
     while (datasent < fileSize)
     {
-        std::vector<char> (4096).swap(buffer);
+        std::vector<char> (getSomeInfoQueue.getDefaultBufferSize()).swap(buffer);
         ASSERT_NO_THROW(Reader.syncFileWithBuffer());
         buffer = Reader.getBufferRead();
         mq_send(queueTest, buffer.data(), buffer.size(), 5);
@@ -556,6 +558,7 @@ void ThreadQueueSendFileKilledSend(void)
 {
     QueueSendFile myQueueSend;
     myQueueSend.openFile("input.dat");
+    srand (time(NULL));
     int numberOfMessage = rand() % 20; //will end after a random number of message
     for (int i = 0; i<numberOfMessage; i++)
     {
@@ -599,6 +602,7 @@ void ThreadQueueReceiveFileKilledSend(void)
 void ThreadQueueReceiveFileKilledReceive(void)
 {
     QueueReceiveFile myQueueReceive;
+    srand (time(NULL));
     int numberOfMessage = rand() % 20 +10; //will end after a random number of message
     for (int i = 0; i<numberOfMessage; i++)
     {

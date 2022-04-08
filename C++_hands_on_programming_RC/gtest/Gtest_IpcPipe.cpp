@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <time.h> 
 
 using ::testing::Eq;
 using ::testing::Ne;
@@ -22,12 +24,11 @@ using ::testing::IsFalse;
 using ::testing::StartsWith;
 using ::testing::EndsWith;
 
-
-std::vector<char> randomData = getRandomData(rand() % 4096);
+std::vector<char> randomData = getRandomData();
 
 std::string endingSentence = "All data is sent. You can leave.";
 std::vector<char> endingVector = std::vector<char>(endingSentence.begin(),endingSentence.end());
-
+FileManipulationClassReader getSomeInfo;
 
 class PipeTestSendFile : public PipeSendFile
 {
@@ -116,8 +117,8 @@ void ThreadPipeSendFilesyncIPCAndBufferTextData2(void)
     std::fstream connect2Pipe;
     connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
     EXPECT_THAT(connect2Pipe.is_open(), IsTrue);
-    std::vector<char> buffer(4096);
-    connect2Pipe.read(buffer.data(), 4096);
+    std::vector<char> buffer(getSomeInfo.getDefaultBufferSize());
+    connect2Pipe.read(buffer.data(), getSomeInfo.getDefaultBufferSize());
     buffer.resize(connect2Pipe.gcount());
 
     EXPECT_THAT(std::string (buffer.begin(), buffer.end()), StrEq("This is a test."));
@@ -159,8 +160,8 @@ void ThreadPipeSendFilesyncIPCAndBufferBinaryData2(void)
     std::fstream connect2Pipe;
     connect2Pipe.open("CopyDataThroughPipe",std::ios::in | std::ios::binary);
     ASSERT_THAT(connect2Pipe.is_open(), IsTrue);
-    std::vector<char> buffer(4096);
-    connect2Pipe.read(buffer.data(), 4096);
+    std::vector<char> buffer(getSomeInfo.getDefaultBufferSize());
+    connect2Pipe.read(buffer.data(), getSomeInfo.getDefaultBufferSize());
     buffer.resize(connect2Pipe.gcount());
 
     EXPECT_THAT(std::string (buffer.begin(), buffer.end()), StrEq(std::string (randomData.begin(), randomData.end())));
@@ -513,6 +514,7 @@ void ThreadPipeSendFileKilledReceive(void)
 
 void ThreadPipeSendFileKilledSend(void)
 {
+    srand (time(NULL));
     PipeSendFile mySender(3);
     mySender.openFile("input_pipe.dat");
     int numberOfMessage = rand() % 20; //will end after a random number of message

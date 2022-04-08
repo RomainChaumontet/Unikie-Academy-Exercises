@@ -28,7 +28,7 @@ const std::string semRName =  "myReceiverSemaphore";
 const std::string semSName =  "mySenderSemaphore";
 std::string shmfileName1 = "shminput.dat";
 std::string shmfileName2 = "shmoutput.dat";
-std::vector<char> ShmrandomData = getRandomData(rand() % 4096);
+std::vector<char> ShmrandomData = getRandomData();
 
 class IpcShmSendFileTest : public ShmSendFile
 {
@@ -124,6 +124,8 @@ void IpcShmSendFilesyncFileWithIPC2(void)
     sem_t* receiverSemaphorePtr;
     size_t size = 0;
     int wait = 0;
+    FileManipulationClassReader GettingSomeInfo;
+
 
     do
     {
@@ -140,7 +142,7 @@ void IpcShmSendFilesyncFileWithIPC2(void)
     
     ASSERT_THAT(fd, Ne(-1));
 
-    size_t sizemap = sizeof(ShmData_Header)+4096;
+    size_t sizemap = sizeof(ShmData_Header) + GettingSomeInfo.getDefaultBufferSize();
     
     void* bufferPtr= mmap(NULL, sizemap, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (bufferPtr == MAP_FAILED)
@@ -247,7 +249,7 @@ TEST(NoOtherProgram, ShmReceivefile)
 /////////////////////////// ShmReceivefile syncFileWithBuffer ///////////
 TEST(IpcShmReceiveFile,syncFileWithBuffer)
 {
-    std::vector<char> someRandomData = getRandomData(rand() % 4096);
+    std::vector<char> someRandomData = getRandomData();
     {
         EXPECT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
         EXPECT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));

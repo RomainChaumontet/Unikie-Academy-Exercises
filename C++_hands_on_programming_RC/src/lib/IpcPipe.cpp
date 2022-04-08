@@ -119,7 +119,7 @@ void PipeSendFile::syncIPCAndBuffer()
 
     if (sigaction(SIGPIPE, &sa, NULL)==-1)
     {
-        throw std::runtime_error("Error catching the signal");
+        throw std::runtime_error("Error assigning action to signal");
     }
 
     if (!pipeFile_.is_open())

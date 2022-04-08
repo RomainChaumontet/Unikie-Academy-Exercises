@@ -37,11 +37,13 @@ class copyFilethroughIPC
         virtual void syncFileWithBuffer() = 0;
         virtual void syncIPCAndBuffer() =0;
         virtual void syncFileWithIPC(const std::string &filepath) = 0;
+        size_t getDefaultBufferSize();
 
         virtual ~copyFilethroughIPC();
 
     protected:
-        size_t bufferSize_ = 4096;
+        size_t defaultBufferSize_ = 4096;
+        size_t bufferSize_ = defaultBufferSize_;
         std::fstream file_;
         std::vector<char> buffer_;
         bool continueGettingData_ = true;
