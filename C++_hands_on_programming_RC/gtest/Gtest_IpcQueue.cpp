@@ -418,7 +418,8 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     std::vector<char> randomData = getRandomData();
     mq_send(queueTest, randomData.data(), randomData.size(), 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
-    myQueueObj.getBuffer().swap(output);
+    output = myQueueObj.getBuffer();
+    output.shrink_to_fit();
     EXPECT_THAT(output.data(), StrEq(randomData.data()));
 
     mq_close(queueTest);

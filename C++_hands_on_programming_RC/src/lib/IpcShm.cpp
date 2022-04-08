@@ -148,7 +148,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
         {
             throw ipc_exception("Error getting time");
         }
-        ts.tv_sec += 1;
+        ts.tv_sec += maxAttempt_;
         if (sem_timedwait(senderSemaphorePtr_,&ts) == -1)
         {
             if (errno == ETIMEDOUT)

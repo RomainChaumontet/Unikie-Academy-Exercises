@@ -363,6 +363,7 @@ void ThreadPipeReceiveBinary(void)
     PipeTestReceiveFile myPipe;
     myPipe.syncIPCAndBuffer();
     std::vector<char> output = myPipe.getBuffer();
+    output.resize(myPipe.getBufferSize());
     EXPECT_THAT(output.data(), StrEq(randomData.data()));
 }
 
