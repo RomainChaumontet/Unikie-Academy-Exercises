@@ -68,7 +68,7 @@ TEST(BasicQueueCmd, OpenCloseQueue)
 
     mqd_t queueTest = mq_open(queueName.c_str(),O_RDONLY);
     EXPECT_THAT(queueTest, Eq(-1)); //The queue does not exist -> error
-    EXPECT_THAT(errno,Eq(2)); //The error is the queue does not exist.
+    EXPECT_THAT(errno,Eq(ENOENT)); //The error is the queue does not exist.
 }
 
 TEST(BasicQueueCmd, QueueAlreadyOpened)
