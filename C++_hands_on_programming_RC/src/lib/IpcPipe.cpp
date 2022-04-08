@@ -89,6 +89,8 @@ PipeSendFile::PipeSendFile(int maxAttempt)
     ::pthread_join(info->timer, nullptr);
     void* retval;
     ::pthread_join(info->thread1, &retval); 
+
+    delete(info);
     if (retval == PTHREAD_CANCELED)
     {
         unlink(name_.c_str());
@@ -97,12 +99,12 @@ PipeSendFile::PipeSendFile(int maxAttempt)
     }
     if (!pipeFile_.is_open())
     {
+        unlink(name_.c_str());
         throw std::runtime_error(
             "Error opening the pipe.\n"
         );
     }
 
-    delete(info);
 }
 
 

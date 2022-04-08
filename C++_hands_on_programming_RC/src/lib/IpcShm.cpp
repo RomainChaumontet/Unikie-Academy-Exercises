@@ -185,7 +185,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_RDWR);
     while (senderSemaphorePtr_ == SEM_FAILED) //the semaphore is not opened
     {
-        std::cout << "Waiting for ipc_senfile." << std::endl;
+        std::cout << "Waiting for ipc_sendfile." << std::endl;
         std::this_thread::sleep_for(500ms);
         if (++tryNumber > maxAttempt)
         {
