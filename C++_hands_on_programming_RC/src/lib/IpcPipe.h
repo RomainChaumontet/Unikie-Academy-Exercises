@@ -20,7 +20,6 @@ class PipeSendFile : public Pipe, public Reader
         PipeSendFile():PipeSendFile(30){};
         ~PipeSendFile();
         void syncIPCAndBuffer();
-        void waitForReceiverTerminate();
 
 };
 

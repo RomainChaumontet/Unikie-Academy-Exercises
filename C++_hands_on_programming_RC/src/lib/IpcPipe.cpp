@@ -63,7 +63,7 @@ PipeSendFile::PipeSendFile(int maxAttempt)
     maxAttempt_ = maxAttempt;   
     if (pipeFile_.is_open())
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error, trying to create a new pipe whereas the program is already connected to one."
         );
     }
@@ -72,7 +72,7 @@ PipeSendFile::PipeSendFile(int maxAttempt)
 
     if (mkfifo(name_.c_str(),S_IRWXU | S_IRWXG) == -1)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error when trying to create the pipe. Errno:"
             + std::string(strerror(errno))
         );
@@ -92,12 +92,12 @@ PipeSendFile::PipeSendFile(int maxAttempt)
     if (retval == PTHREAD_CANCELED)
     {
         unlink(name_.c_str());
-        throw std::runtime_error("Error, can't connect to the other program.\n" );
+        throw ipc_exception("Error, can't connect to the other program.\n" );
 
     }
     if (!pipeFile_.is_open())
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error opening the pipe.\n"
         );
     }
@@ -119,12 +119,12 @@ void PipeSendFile::syncIPCAndBuffer()
 
     if (sigaction(SIGPIPE, &sa, NULL)==-1)
     {
-        throw std::runtime_error("Error assigning action to signal");
+        throw ipc_exception("Error assigning action to signal");
     }
 
     if (!pipeFile_.is_open())
     {
-        throw std::runtime_error("syncIPCAndBuffer(). Error, trying to write to a pipe which is not opened.");
+        throw ipc_exception("syncIPCAndBuffer(). Error, trying to write to a pipe which is not opened.");
     }
     
     pipeFile_.write(buffer_.data(), bufferSize_);
@@ -135,36 +135,16 @@ void PipeSendFile::syncIPCAndBuffer()
 
     if (state == std::ios_base::failbit)
     {
-        throw std::runtime_error("syncIPCAndBuffer(). Failbit error. May be set if construction of sentry failed.");
+        throw ipc_exception("syncIPCAndBuffer(). Failbit error. May be set if construction of sentry failed.");
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("syncIPCAndBuffer(). Badbit error.");
+        throw ipc_exception("syncIPCAndBuffer(). Badbit error.");
     }
-    throw std::runtime_error("syncIPCAndBuffer(). Unknown error.");
+    throw ipc_exception("syncIPCAndBuffer(). Unknown error.");
 }
 
-static void sigpipe_handler_end(int signum)
-{
-   std::cout << "Sending all data with success" << std::endl;
-   exit(EXIT_SUCCESS);
-}
 
-void PipeSendFile::waitForReceiverTerminate()
-{
-    struct sigaction sa;
-    sa.sa_handler = sigpipe_handler_end;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGPIPE, &sa, NULL)==-1)
-    {
-        throw std::runtime_error("Error catching the signal");
-    }
-    while(1)
-    {
-        nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
-    }
-
-}
 
 ///////////////////////////////////////////////// PipeReceiveFile
 PipeReceiveFile::~PipeReceiveFile()
@@ -190,19 +170,19 @@ PipeReceiveFile::PipeReceiveFile(int maxAttempt)
     }
     if (count >= maxAttempt)
     {
-        throw std::runtime_error("Error, can't connect to the other program.\n" );
+        throw ipc_exception("Error, can't connect to the other program.\n" );
     }
 
     if (pipeFile_.is_open())
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error, trying to open a pipe that is already opened."
         );
     }
     pipeFile_.open(name_, std::ios::in | std::ios::binary);
     if (!pipeFile_.is_open())
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error when trying to connect to the pipe. rdstate:" + file_.rdstate());
     }
 }
@@ -211,7 +191,7 @@ void PipeReceiveFile::syncIPCAndBuffer()
 {
     if (!pipeFile_.is_open())
     {
-        throw std::runtime_error("Error, trying to read in a pipe that is not opened");
+        throw ipc_exception("Error, trying to read in a pipe that is not opened");
     }
     bool eof = false;
     std::vector<char> (bufferSize_).swap(buffer_);
@@ -235,22 +215,22 @@ void PipeReceiveFile::syncIPCAndBuffer()
             return;
         }
         
-        throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
+        throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
         return; // end of file
     }
     if (state == std::ios_base::eofbit)
     {
-        throw std::runtime_error("syncIPCAndBuffer(). Eofbit error.");
+        throw ipc_exception("syncIPCAndBuffer(). Eofbit error.");
         return;
     }
     if (state == std::ios_base::failbit)
     {
-        throw std::runtime_error("syncIPCAndBuffer(). Failbit error.");
+        throw ipc_exception("syncIPCAndBuffer(). Failbit error.");
         return;
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("syncIPCAndBuffer(). badbit error.");
+        throw ipc_exception("syncIPCAndBuffer(). badbit error.");
         return;
     }
 

@@ -93,7 +93,7 @@ TEST(PipeSendFile,ConstructorAndDestructor)
 ///////////////////////// Test PipeSendFiles only program launched ///////////////
 TEST(NoOtherProgram,PipeSendFile)
 {
-    EXPECT_THROW(PipeSendFile myPipe(1), std::runtime_error);
+    EXPECT_THROW(PipeSendFile myPipe(1), ipc_exception);
 }
 
 
@@ -315,7 +315,7 @@ TEST(PipeReceiveFile,ConstructorAndDestructor)
 ///////////////////////// Test PipeReceiveFiles only program launched ///////////////
 TEST(NoOtherProgram,PipeReceiveFile)
 {
-    EXPECT_THROW(PipeReceiveFile myPipe(1), std::runtime_error);
+    EXPECT_THROW(PipeReceiveFile myPipe(1), ipc_exception);
 }
 ///////////////////// Test PipeReceiveFiles Receiving Text Data//////////////////////
 void ThreadPipeReceiveText(void)
@@ -362,8 +362,7 @@ void ThreadPipeReceiveBinary(void)
     CaptureStream stdcout{std::cout};
     PipeTestReceiveFile myPipe;
     myPipe.syncIPCAndBuffer();
-    std::vector<char> output;
-    myPipe.getBuffer().swap(output);
+    std::vector<char> output = myPipe.getBuffer();
     EXPECT_THAT(output.data(), StrEq(randomData.data()));
 }
 
@@ -486,7 +485,7 @@ void ThreadPipeReceiveFileKilledSend(void)
 {
     CaptureStream stderr(std::cerr);
     PipeSendFile mySender(3);
-    ASSERT_THROW(mySender.syncFileWithIPC("input_pipe.dat"), std::runtime_error);
+    ASSERT_THROW(mySender.syncFileWithIPC("input_pipe.dat"), ipc_exception);
     EXPECT_THAT(stderr.str(),StrEq("Error. Can't find the other program. Did it crash ?\n"));
 }
 
@@ -509,7 +508,7 @@ void ThreadPipeSendFileKilledReceive(void)
 {
     CaptureStream stdout(std::cout);
     PipeReceiveFile myReceiver(3);
-    ASSERT_THROW(myReceiver.syncFileWithIPC("input_pipe.dat"), std::runtime_error);
+    ASSERT_THROW(myReceiver.syncFileWithIPC("input_pipe.dat"), ipc_exception);
 }
 
 void ThreadPipeSendFileKilledSend(void)

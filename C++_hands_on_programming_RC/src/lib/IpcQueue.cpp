@@ -26,7 +26,7 @@ QueueSendFile::QueueSendFile(int maxAttempt)
     int attempt = 0;
     if (queueFd_ != -1)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error, trying to open a queue which is already opened by this program./n"
         );
     }
@@ -37,7 +37,7 @@ QueueSendFile::QueueSendFile(int maxAttempt)
         if (queueFd_ == -1 && errno != ENOENT)
         {
             
-            throw std::runtime_error(
+            throw ipc_exception(
                 "Error executing command mq_open. Errno:"
                 + std::string(strerror(errno))
                 );
@@ -51,7 +51,7 @@ QueueSendFile::QueueSendFile(int maxAttempt)
     while (queueFd_ == -1 && errno == ENOENT && attempt++ < maxAttempt);
     if (attempt >= maxAttempt)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
                 "Error, can't connect to the other program."
                 );
     }
@@ -59,7 +59,7 @@ QueueSendFile::QueueSendFile(int maxAttempt)
     queueFd_ = mq_open(name_.c_str(), O_WRONLY);
     if (queueFd_ == -1)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error executing command mq_open. Errno:"
             + std::string(strerror(errno))
             );
@@ -71,7 +71,7 @@ void QueueSendFile::syncIPCAndBuffer()
     struct timespec waitingtime;
     if (clock_gettime(CLOCK_REALTIME, &waitingtime) == -1)
     {
-        throw std::runtime_error("Error getting time");
+        throw ipc_exception("Error getting time");
     }
     waitingtime.tv_sec += maxAttempt_;
     if (    mq_timedsend(
@@ -85,9 +85,9 @@ void QueueSendFile::syncIPCAndBuffer()
     {   
         if (errno == ETIMEDOUT)
         {
-            throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
+            throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
         }
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error executing command mq_send. Errno:"
             + std::string(strerror(errno))
             );
@@ -117,7 +117,7 @@ QueueReceiveFile::QueueReceiveFile(int maxAttempt)
     queueFd_ = mq_open(name_.c_str(), O_RDONLY | O_CREAT | O_EXCL,S_IRWXG |S_IRWXU, &queueAttrs_);
     if (queueFd_ == -1)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error executing command mq_open. Errno:"
             + std::string(strerror(errno))
             );
@@ -129,7 +129,7 @@ void QueueReceiveFile::syncIPCAndBuffer()
 {
     if (queueFd_ == -1)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error. Trying to sync buffer with a queue that is not opened."
         );
     }
@@ -138,7 +138,7 @@ void QueueReceiveFile::syncIPCAndBuffer()
     struct timespec waitingtime;
     if (clock_gettime(CLOCK_REALTIME, &waitingtime) == -1)
     {
-        throw std::runtime_error("Error getting time");
+        throw ipc_exception("Error getting time");
     }
     waitingtime.tv_sec += maxAttempt_;
     amountOfData = mq_timedreceive(queueFd_,buffer_.data(), mq_msgsize_, &queuePriority_,&waitingtime);
@@ -146,9 +146,9 @@ void QueueReceiveFile::syncIPCAndBuffer()
     {
         if (errno == ETIMEDOUT)
             {
-                throw std::runtime_error("Error. Can't find the other program. Did it crash ?\n");
+                throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
             }
-        throw std::runtime_error(
+        throw ipc_exception(
             "Error when trying to receive message. Errno:"
             + std::string(strerror(errno))
         );

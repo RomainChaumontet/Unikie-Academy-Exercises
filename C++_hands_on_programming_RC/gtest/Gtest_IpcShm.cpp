@@ -69,7 +69,7 @@ TEST(NoOtherProgram, ShmSendFile)
         ShmSendFile myShmObject(1);
         CreateRandomFile myFile("input.dat", 1, 1);
         myShmObject.syncFileWithIPC("input.dat");
-        }, std::runtime_error);
+        }, ipc_exception);
     
 }
 
@@ -220,7 +220,7 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
 
     {
         CaptureStream stdcout(std::cout);
-        ASSERT_THROW(ShmReceiveFile myShmReceiveObject(1), std::runtime_error);
+        ASSERT_THROW(ShmReceiveFile myShmReceiveObject(1), ipc_exception);
         EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_sendfile.\n"));
     }
 
@@ -228,7 +228,7 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
         sem_t* fdPtr = sem_open(semSName.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
         sem_t* fdPtr2 = sem_open(semRName.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
         ASSERT_THAT(fdPtr,Ne(SEM_FAILED));
-        ASSERT_THROW(ShmReceiveFile myShmReceiveObject, std::runtime_error);
+        ASSERT_THROW(ShmReceiveFile myShmReceiveObject, ipc_exception);
         sem_close(fdPtr);
         sem_unlink(semSName.c_str());
         sem_close(fdPtr2);
@@ -243,7 +243,7 @@ TEST(NoOtherProgram, ShmReceivefile)
         ShmReceiveFile myShmObject(1);
         CreateRandomFile myFile("input.dat", 1, 1);
         myShmObject.syncFileWithIPC("input.dat");
-        }, std::runtime_error);
+        }, ipc_exception);
     
 }
 /////////////////////////// ShmReceivefile syncFileWithBuffer ///////////
@@ -367,7 +367,7 @@ void ThreadShmSendFileKilledReceive(void)
 {
     CaptureStream stdcout(std::cout); //mute std::cout
     ShmReceiveFile myShmReceiveObject1{1};
-    ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), std::runtime_error);
+    ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), ipc_exception);
 }
 
 TEST(KillingAProgram, ShmSendFileKilled)
@@ -394,8 +394,8 @@ TEST(KillingAProgram, ShmSendFileKilled)
 
 void ThreadShmReceiveFileKilledSend(void)
 {
-    ShmSendFile myShmSendObject1{1};
-    ASSERT_THROW(myShmSendObject1.syncFileWithIPC("input.dat"), std::runtime_error);
+    ShmSendFile myShmSendObject1{2};
+    ASSERT_THROW(myShmSendObject1.syncFileWithIPC("input.dat"), ipc_exception);
 }
 
 void ThreadShmReceiveFileKilledReceive(void)
@@ -415,7 +415,7 @@ TEST(KillingAProgram, ShmReceiveFileKilled)
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID2,ThreadShmReceiveFileKilledReceive);
     start_pthread(&mThreadID1,ThreadShmReceiveFileKilledSend);
-    usleep(1000000);
+    sleep(1);
     pthread_cancel(mThreadID2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 

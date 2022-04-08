@@ -72,4 +72,17 @@ class Reader : virtual public copyFilethroughIPC
 
 int receiverMain(int argc, char* const argv[]);
 int senderMain(int argc, char* const argv[]);
+
+class file_exception : public std::runtime_error
+{
+    public:
+        using std::runtime_error::runtime_error;
+};
+
+class ipc_exception : public std::runtime_error
+{
+    public:
+        using std::runtime_error::runtime_error;
+};
+
 #endif /* IPCCOPYFILE_H */

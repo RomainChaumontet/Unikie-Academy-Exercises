@@ -53,12 +53,12 @@ FileManipulationClassReader getSomeInfoQueue;
 
 TEST(NoOtherProgram, SendQueueAlone)
 {
-    ASSERT_THROW(QueueSendFile myQueueObject(1),std::runtime_error);
+    ASSERT_THROW(QueueSendFile myQueueObject(1),ipc_exception);
 }
 TEST(NoOtherProgram, ReceiveQueueAlone)
 {
     QueueReceiveFile myQueueObject(1);
-    ASSERT_THROW(myQueueObject.syncIPCAndBuffer(),std::runtime_error);
+    ASSERT_THROW(myQueueObject.syncIPCAndBuffer(),ipc_exception);
 }
 
 TEST(BasicQueueCmd, OpenCloseQueue)
@@ -390,7 +390,7 @@ TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
 
     {
         CaptureStream stdcout{std::cout};
-        EXPECT_THROW(QueueSendFile myQueueObject{1},std::runtime_error);
+        EXPECT_THROW(QueueSendFile myQueueObject{1},ipc_exception);
         EXPECT_THAT(stdcout.str(),StartsWith("Waiting to the ipc_receivefile.\n"));
     }
 
@@ -570,7 +570,7 @@ void ThreadQueueSendFileKilledSend(void)
 void ThreadQueueSendFileKilledReceive(void)
 {
     QueueReceiveFile myQueueReceive(1);
-    ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), std::runtime_error);
+    ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), ipc_exception);
 }
 
 TEST(KillingAProgram, QueueSendFileKilled)
@@ -596,7 +596,7 @@ TEST(KillingAProgram, QueueSendFileKilled)
 void ThreadQueueReceiveFileKilledSend(void)
 {
     QueueSendFile myQueueSend(2);
-    ASSERT_THROW(myQueueSend.syncFileWithIPC("input.dat"), std::runtime_error);
+    ASSERT_THROW(myQueueSend.syncFileWithIPC("input.dat"), ipc_exception);
 }
 
 void ThreadQueueReceiveFileKilledReceive(void)

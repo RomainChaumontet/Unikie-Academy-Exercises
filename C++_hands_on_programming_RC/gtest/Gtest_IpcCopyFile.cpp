@@ -29,7 +29,7 @@ TEST(FileManipulation, OpenFile)
     FileManipulationClassWriter dummyCopyFileWriter;
     {
         std::string dummyFile = "IamTestingToOpenThisFile";
-        EXPECT_THROW(dummyCopyFileReader.openFile(dummyFile.c_str()),std::runtime_error);
+        EXPECT_THROW(dummyCopyFileReader.openFile(dummyFile.c_str()),file_exception);
     }
 
     std::string fileToOpenForWriting = "fileToOpenForWriting";
@@ -69,10 +69,10 @@ TEST(FileManipulation, ReadAndWriteSimpleFiles)
     writingToAFile.modifyBufferToWrite(data);
 
     //Test writing while the file is not opened
-    EXPECT_THROW(writingToAFile.syncFileWithBuffer(), std::runtime_error);
+    EXPECT_THROW(writingToAFile.syncFileWithBuffer(), file_exception);
 
     //Test reading while the file is not opened
-    EXPECT_THROW(readingAFile.syncFileWithBuffer(), std::runtime_error);
+    EXPECT_THROW(readingAFile.syncFileWithBuffer(), file_exception);
 
     ASSERT_NO_THROW(writingToAFile.openFile("TmpFile.txt")); //file empty
     EXPECT_NO_THROW(writingToAFile.syncFileWithBuffer());
