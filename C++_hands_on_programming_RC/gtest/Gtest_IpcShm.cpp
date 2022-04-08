@@ -336,6 +336,7 @@ void ThreadReceiveFile2(void)
 
 TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
 {
+    shm_unlink(ipcName.c_str());
     CreateRandomFile myRandomfile("copyfileSendFileLast",2,2);
     ASSERT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
     ASSERT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));
@@ -366,7 +367,7 @@ void ThreadShmSendFileKilledSend(void)
 void ThreadShmSendFileKilledReceive(void)
 {
     CaptureStream stdcout(std::cout); //mute std::cout
-    ShmReceiveFile myShmReceiveObject1{1};
+    ShmReceiveFile myShmReceiveObject1{3};
     ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), ipc_exception);
 }
 
@@ -394,7 +395,7 @@ TEST(KillingAProgram, ShmSendFileKilled)
 
 void ThreadShmReceiveFileKilledSend(void)
 {
-    ShmSendFile myShmSendObject1{2};
+    ShmSendFile myShmSendObject1{3};
     ASSERT_THROW(myShmSendObject1.syncFileWithIPC("input.dat"), ipc_exception);
 }
 
