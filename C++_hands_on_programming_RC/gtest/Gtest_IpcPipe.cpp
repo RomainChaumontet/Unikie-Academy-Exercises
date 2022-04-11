@@ -373,7 +373,6 @@ void ThreadPipeReceiveBinary2(void)
 
     create2Pipe.open("CopyDataThroughPipe",std::ios::out | std::ios::binary);
     ASSERT_THAT(create2Pipe.is_open(), IsTrue);
-
     create2Pipe.write(randomData.data(), randomData.size());
     create2Pipe.write(endingVector.data(), endingVector.size());
     create2Pipe.close();

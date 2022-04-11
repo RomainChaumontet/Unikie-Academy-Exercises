@@ -68,8 +68,6 @@ PipeSendFile::PipeSendFile(int maxAttempt)
         );
     }
 
-    unlink(name_.c_str());
-
     if (mkfifo(name_.c_str(),S_IRWXU | S_IRWXG) == -1)
     {
         throw ipc_exception(
