@@ -37,15 +37,19 @@ class copyFilethroughIPC
         virtual void syncFileWithBuffer() = 0;
         virtual void syncIPCAndBuffer() =0;
         virtual void syncFileWithIPC(const std::string &filepath) = 0;
+        size_t getDefaultBufferSize();
 
         virtual ~copyFilethroughIPC();
 
     protected:
-        size_t bufferSize_ = 4096;
+        size_t defaultBufferSize_ = 4096;
+        size_t bufferSize_ = defaultBufferSize_;
         std::fstream file_;
         std::vector<char> buffer_;
         bool continueGettingData_ = true;
         int maxAttempt_;
+        std::string endingSentence_ = "All data is sent. You can leave.";
+        std::vector<char> endingVector_ = std::vector<char>(endingSentence_.begin(),endingSentence_.end());
 };
 
 class Writer : virtual public copyFilethroughIPC
@@ -62,9 +66,23 @@ class Reader : virtual public copyFilethroughIPC
         void openFile(const std::string &filepath);
         void syncFileWithBuffer();
         virtual void syncFileWithIPC(const std::string &filepath);
+        virtual void waitForReceiverTerminate(){};
 };
 
 
 int receiverMain(int argc, char* const argv[]);
 int senderMain(int argc, char* const argv[]);
+
+class file_exception : public std::runtime_error
+{
+    public:
+        using std::runtime_error::runtime_error;
+};
+
+class ipc_exception : public std::runtime_error
+{
+    public:
+        using std::runtime_error::runtime_error;
+};
+
 #endif /* IPCCOPYFILE_H */

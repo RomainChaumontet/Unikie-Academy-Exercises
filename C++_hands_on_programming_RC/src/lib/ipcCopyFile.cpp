@@ -19,7 +19,7 @@ bool checkIfFileExists(const std::string &filepath)
 size_t returnFileSize(const std::string &filepath)
 {
     if (checkIfFileExists(filepath) == 0)
-        throw std::runtime_error("returnFileSize(). File does not exist.");
+        throw file_exception("returnFileSize(). File does not exist.");
     struct stat buffer;
     stat(filepath.c_str(), &buffer);
     return buffer.st_size;
@@ -144,6 +144,12 @@ void copyFilethroughIPC::closeFile()
         file_.close();
 }
 
+
+size_t copyFilethroughIPC::getDefaultBufferSize()
+{
+    return defaultBufferSize_;
+}
+
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
@@ -153,7 +159,7 @@ void Writer::openFile(const std::string &filepath)
     file_.open(filepath, std::ios::out | std::ios::binary | std::ios::trunc);
     if (!file_.is_open())
     {
-        throw std::runtime_error("Error in std::fstream.open(). rdstate:" + file_.rdstate());
+        throw file_exception("Error in std::fstream.open(). rdstate:" + file_.rdstate());
     }
 }
 
@@ -161,7 +167,7 @@ void Writer::syncFileWithBuffer()
 {
     if (!file_.is_open())
     {
-        throw std::runtime_error("syncFileWithBuffer(). Error, trying to write to a file which is not opened.");
+        throw file_exception("syncFileWithBuffer(). Error, trying to write to a file which is not opened.");
     }
     
     file_.write(buffer_.data(), bufferSize_);
@@ -172,20 +178,19 @@ void Writer::syncFileWithBuffer()
 
     if (state == std::ios_base::failbit)
     {
-        throw std::runtime_error("syncFileWithBuffer(). Failbit error. May be set if construction of sentry failed.");
+        throw file_exception("syncFileWithBuffer(). Failbit error. May be set if construction of sentry failed.");
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("Writer syncFileWithBuffer(). Badbit error.");
+        throw file_exception("Writer syncFileWithBuffer(). Badbit error.");
     }
-    throw std::runtime_error("Writer syncFileWithBuffer(). Unknown error.");
+    throw file_exception("Writer syncFileWithBuffer(). Unknown error.");
 }
 
 void Writer::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
-
-    while (bufferSize_ > 0)
+    while (bufferSize_ == defaultBufferSize_)
     {
         syncIPCAndBuffer();
         syncFileWithBuffer();
@@ -198,13 +203,13 @@ void Reader::openFile(const std::string &filepath)
 {
     if (!checkIfFileExists(filepath))
     {
-        throw std::runtime_error("Error. Trying to open a file for reading which does not exist.");
+        throw file_exception("Error. Trying to open a file for reading which does not exist.");
     }
 
     file_.open(filepath, std::ios::in | std::ios::binary);
     if (!file_.is_open())
     {
-        throw std::runtime_error("Error in std::fstream.open(). rdstate:" + file_.rdstate());
+        throw file_exception("Error in std::fstream.open(). rdstate:" + file_.rdstate());
     }
 }
 
@@ -212,14 +217,13 @@ void Reader::syncFileWithBuffer()
 {
     if (!file_.is_open())
     {
-        throw std::runtime_error("syncFileWithBuffer(). Error, trying to read a file which is not opened.");
+        throw file_exception("syncFileWithBuffer(). Error, trying to read a file which is not opened.");
     }
 
     std::vector<char>(bufferSize_).swap(buffer_);
     file_.read(buffer_.data(),bufferSize_);
     bufferSize_ = file_.gcount();
     buffer_.resize(bufferSize_);
-
     auto state = file_.rdstate();
     if (state == std::ios_base::goodbit)
         return;
@@ -227,17 +231,17 @@ void Reader::syncFileWithBuffer()
         return; // end of file
     if (state == std::ios_base::eofbit)
     {
-        throw std::runtime_error("syncFileWithBuffer(). Eofbit error.");
+        throw file_exception("syncFileWithBuffer(). Eofbit error.");
         return;
     }
     if (state == std::ios_base::failbit)
     {
-        throw std::runtime_error("syncFileWithBuffer(). Failbit error.");
+        throw file_exception("syncFileWithBuffer(). Failbit error.");
         return;
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("Reader syncFileWithBuffer(). badbit error.");
+        throw file_exception("Reader syncFileWithBuffer(). badbit error.");
         return;
     }
 }
@@ -255,9 +259,9 @@ void Reader::syncFileWithIPC(const std::string &filepath)
         syncIPCAndBuffer();
         datasent += getBufferSize();
     }
-
     //send and empty message to tell that's all.
-    syncFileWithBuffer();
+    endingVector_.swap(buffer_);
+    bufferSize_ = buffer_.size();
     syncIPCAndBuffer();
 }
 
@@ -338,7 +342,6 @@ int receiverMain(int argc, char* const argv[])
         std::cout << "caught :" << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-    
     return EXIT_SUCCESS;
 }
 
@@ -426,6 +429,7 @@ int senderMain(int argc, char* const argv[])
         return EXIT_FAILURE;
     }
     
+    std::cout << "Data send with success\n";
 
     return EXIT_SUCCESS;
 }

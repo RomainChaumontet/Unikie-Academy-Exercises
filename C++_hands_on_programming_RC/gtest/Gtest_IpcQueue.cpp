@@ -48,14 +48,17 @@ class QueueTestReceiveFile : public QueueReceiveFile
         };
 };
 
+
+FileManipulationClassReader getSomeInfoQueue;
+
 TEST(NoOtherProgram, SendQueueAlone)
 {
-    ASSERT_THROW(QueueSendFile myQueueObject(1),std::runtime_error);
+    ASSERT_THROW(QueueSendFile myQueueObject(1),ipc_exception);
 }
 TEST(NoOtherProgram, ReceiveQueueAlone)
 {
     QueueReceiveFile myQueueObject(1);
-    ASSERT_THROW(myQueueObject.syncIPCAndBuffer(),std::runtime_error);
+    ASSERT_THROW(myQueueObject.syncIPCAndBuffer(),ipc_exception);
 }
 
 TEST(BasicQueueCmd, OpenCloseQueue)
@@ -95,7 +98,7 @@ TEST(BasicQueueCmd, QueueAlreadyOpened)
     //With messages on it
     struct mq_attr queueAttrs;
     queueAttrs.mq_maxmsg = 10;
-    queueAttrs.mq_msgsize = 4096;
+    queueAttrs.mq_msgsize = getSomeInfoQueue.getDefaultBufferSize();
 
     mqd_t queueTest = mq_open(
         queueName.c_str(),
@@ -160,7 +163,7 @@ TEST(SyncBuffAndQueue, SendQueue)
     
     /////////Try with binary data////////////////
     buffer.clear();
-    std::vector<char> randomData = getRandomData(4096);
+    std::vector<char> randomData = getRandomData();
     MyQueueSend.modifyBuffer(randomData);
     //sending a message in the Queue
     ASSERT_NO_THROW(MyQueueSend.syncIPCAndBuffer());
@@ -169,7 +172,7 @@ TEST(SyncBuffAndQueue, SendQueue)
     //Check the message
     buffer.resize(queueAttrs.mq_msgsize);
     size_t msgSize2 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
-    ASSERT_THAT(msgSize2, Eq(4096));
+    ASSERT_THAT(msgSize2, Eq(randomData.size()));
     buffer.resize(msgSize2);
     EXPECT_THAT(buffer.data(), StrEq(randomData.data()));
 
@@ -179,8 +182,8 @@ TEST(SyncBuffAndQueue, SendQueue)
 
     //////////Try with random size binary data/////////
     buffer.clear();
-    ssize_t randomSize = rand() % 4096;
-    std::vector<char> randomData2 = getRandomData(randomSize);
+    srand (time(NULL));
+    std::vector<char> randomData2 = getRandomData();
     MyQueueSend.modifyBuffer(randomData2);
     //sending a message in the Queue
     ASSERT_NO_THROW(MyQueueSend.syncIPCAndBuffer());
@@ -188,10 +191,13 @@ TEST(SyncBuffAndQueue, SendQueue)
     EXPECT_THAT(queueAttrs.mq_curmsgs, Eq(1)); //one msg in the queue
     //Check the message
     buffer.resize(queueAttrs.mq_msgsize);
-    msgSize2 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
-    ASSERT_THAT(msgSize2, Eq(randomSize));
-    buffer.resize(msgSize2);
-    EXPECT_THAT(buffer.data(), StrEq(randomData2.data()));
+    size_t msgSize3 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
+    ASSERT_THAT(msgSize3, Eq(randomData2.size())); 
+    buffer.resize(msgSize3);
+    for (size_t i=0; i< randomData2.size(); i++)
+    {
+        EXPECT_THAT(buffer[i], Eq(randomData2[i]));
+    }
 
     mq_close(queueTest);
     mq_unlink(queueName.c_str());
@@ -384,7 +390,7 @@ TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
 
     {
         CaptureStream stdcout{std::cout};
-        EXPECT_THROW(QueueSendFile myQueueObject{1},std::runtime_error);
+        EXPECT_THROW(QueueSendFile myQueueObject{1},ipc_exception);
         EXPECT_THAT(stdcout.str(),StartsWith("Waiting to the ipc_receivefile.\n"));
     }
 
@@ -409,11 +415,11 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     EXPECT_THAT(std::string (output.begin(), output.end()), StrEq(message));
 
     //binary message
-    ssize_t randomSize = rand() % 4096;
-    std::vector<char> randomData = getRandomData(randomSize);
-    mq_send(queueTest, randomData.data(), randomSize, 5);
+    std::vector<char> randomData = getRandomData();
+    mq_send(queueTest, randomData.data(), randomData.size(), 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
-    myQueueObj.getBuffer().swap(output);
+    output = myQueueObj.getBuffer();
+    output.shrink_to_fit();
     EXPECT_THAT(output.data(), StrEq(randomData.data()));
 
     mq_close(queueTest);
@@ -446,7 +452,7 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
     //Loop
     while (datasent < fileSize)
     {
-        std::vector<char> (4096).swap(buffer);
+        std::vector<char> (getSomeInfoQueue.getDefaultBufferSize()).swap(buffer);
         ASSERT_NO_THROW(Reader.syncFileWithBuffer());
         buffer = Reader.getBufferRead();
         mq_send(queueTest, buffer.data(), buffer.size(), 5);
@@ -544,4 +550,77 @@ TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 
 
     remove(fileoutput.c_str());
+}
+
+////////////////////// Killing a program: SendFile killed//////////////////////////
+
+
+void ThreadQueueSendFileKilledSend(void)
+{
+    QueueSendFile myQueueSend;
+    myQueueSend.openFile("input.dat");
+    srand (time(NULL));
+    int numberOfMessage = rand() % 20; //will end after a random number of message
+    for (int i = 0; i<numberOfMessage; i++)
+    {
+        myQueueSend.syncFileWithBuffer();
+        myQueueSend.syncIPCAndBuffer();
+    }
+}
+
+void ThreadQueueSendFileKilledReceive(void)
+{
+    QueueReceiveFile myQueueReceive(1);
+    ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), ipc_exception);
+}
+
+TEST(KillingAProgram, QueueSendFileKilled)
+{
+    std::string fileinput = "input.dat";
+    std::string fileoutput = "output.dat";
+    
+    CreateRandomFile randomFile {fileinput,5, 1};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,ThreadQueueSendFileKilledSend);
+    start_pthread(&mThreadID2,ThreadQueueSendFileKilledReceive);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+
+    remove(fileoutput.c_str());
+}
+
+
+////////////////////// Killing a program: Receivefile killed//////////////////////////
+
+void ThreadQueueReceiveFileKilledSend(void)
+{
+    QueueSendFile myQueueSend(2);
+    ASSERT_THROW(myQueueSend.syncFileWithIPC("input.dat"), ipc_exception);
+}
+
+void ThreadQueueReceiveFileKilledReceive(void)
+{
+    QueueReceiveFile myQueueReceive;
+    srand (time(NULL));
+    int numberOfMessage = rand() % 20 +10; //will end after a random number of message
+    for (int i = 0; i<numberOfMessage; i++)
+    {
+        myQueueReceive.syncIPCAndBuffer();
+    }
+}
+
+TEST(KillingAProgram, QueueReceiveFileKilled)
+{
+    std::string fileinput = "input.dat";
+    
+    CreateRandomFile randomFile {fileinput,5, 1};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,ThreadQueueReceiveFileKilledSend);
+    start_pthread(&mThreadID2,ThreadQueueReceiveFileKilledReceive);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
 }

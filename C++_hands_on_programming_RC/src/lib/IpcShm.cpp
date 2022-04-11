@@ -25,7 +25,7 @@ ShmSendFile::ShmSendFile(int maxAttempt)
     shmFileDescriptor_ = shm_open(name_.c_str(), O_RDWR | O_CREAT | O_EXCL, 0660);
     if (shmFileDescriptor_ == -1)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "ShmSendFile(). Error trying to open the shared memory. Errno"
             + std::string(strerror(errno))
         );
@@ -33,13 +33,13 @@ ShmSendFile::ShmSendFile(int maxAttempt)
 
     if (ftruncate(shmFileDescriptor_,shmSize_)==-1)
     {
-        throw std::runtime_error("Error when setting the size of the shared memory.");
+        throw ipc_exception("Error when setting the size of the shared memory.");
     }
 
     bufferPtr = static_cast<char *> (mmap(NULL, shmSize_,PROT_READ | PROT_WRITE, MAP_SHARED, shmFileDescriptor_, 0));
     if (bufferPtr == static_cast<char *>(MAP_FAILED))
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "ShmSendFile(). Error when mapping the memory. Errno"
             + std::string(strerror(errno))
         );
@@ -57,7 +57,7 @@ ShmSendFile::ShmSendFile(int maxAttempt)
     senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
     if (senderSemaphorePtr_ == SEM_FAILED)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "ShmSendFile(). Error when creating the semaphore. Errno"
             + std::string(strerror(errno))
         );
@@ -66,7 +66,7 @@ ShmSendFile::ShmSendFile(int maxAttempt)
     receiverSemaphorePtr_ = sem_open(semRName_.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
     if (receiverSemaphorePtr_ == SEM_FAILED)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "ShmSendFile(). Error when creating the semaphore. Errno"
             + std::string(strerror(errno))
         );
@@ -115,16 +115,16 @@ void ShmSendFile::syncFileWithBuffer(char* bufferPtr)
         return; // end of file
     if (state == std::ios_base::eofbit)
     {
-        throw std::runtime_error("syncFileWithIPC(). Eofbit error.");
+        throw ipc_exception("syncFileWithIPC(). Eofbit error.");
     }
     if (state == std::ios_base::failbit)
     {
-        throw std::runtime_error("syncFileWithIPC(). Failbit error.");
+        throw ipc_exception("syncFileWithIPC(). Failbit error.");
 
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("syncFileWithIPC(). badbit error.");
+        throw ipc_exception("syncFileWithIPC(). badbit error.");
     }
 }
 
@@ -137,12 +137,12 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
     //wait for the receiver to connect
     if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
     {
-        throw std::runtime_error("Error getting time");
+        throw ipc_exception("Error getting time");
     }
     ts.tv_sec += maxAttempt_;
     if (sem_timedwait(senderSemaphorePtr_,&ts) == -1) 
     {
-        throw std::runtime_error("Error, can't connect to the other program.\n");
+        throw ipc_exception("Error, can't connect to the other program.\n");
     }
     sem_post(senderSemaphorePtr_);
 
@@ -150,12 +150,15 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
     {
         if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
         {
-            throw std::runtime_error("Error getting time");
+            throw ipc_exception("Error getting time");
         }
-        ts.tv_sec += 1;
+        ts.tv_sec += maxAttempt_;
         if (sem_timedwait(senderSemaphorePtr_,&ts) == -1)
         {
-            throw std::runtime_error(
+            if (errno == ETIMEDOUT)
+                throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+                
+            throw ipc_exception(
                 "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
                 + std::string(strerror(errno))
             );
@@ -166,7 +169,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
 
         if(sem_post(receiverSemaphorePtr_) == -1)
         {
-            throw std::runtime_error(
+            throw ipc_exception(
                 "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
                 + std::string(strerror(errno))
             );
@@ -189,7 +192,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
         std::this_thread::sleep_for(500ms);
         if (++tryNumber > maxAttempt)
         {
-            throw std::runtime_error(
+            throw ipc_exception(
                 "Error, can't connect to the other program.\n"
                 );
         }
@@ -203,7 +206,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
         std::this_thread::sleep_for(500ms);
         if (++tryNumber > maxAttempt)
         {
-            throw std::runtime_error(
+            throw ipc_exception(
                 "Error, can't connect to the other program.\n"
                 );
         }
@@ -213,7 +216,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     shmFileDescriptor_ = shm_open(name_.c_str(), O_RDWR, 0);
     if(shmFileDescriptor_ == -1)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "ShmReceiveFile(). Error trying to open the shared memory. Errno: "
             + std::string(strerror(errno))
             );
@@ -222,7 +225,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     bufferPtr = static_cast<char *>(mmap(NULL, shmSize_, PROT_READ | PROT_WRITE, MAP_SHARED, shmFileDescriptor_, 0));
     if (bufferPtr == (char*)MAP_FAILED)
     {
-        throw std::runtime_error(
+        throw ipc_exception(
             "ShmReceiveFile(). Error when mapping the memory. Errno"
             + std::string(strerror(errno))
         );
@@ -263,7 +266,7 @@ void ShmReceiveFile::syncFileWithBuffer(char* bufferPtr)
 {
     if (!file_.is_open())
     {
-        throw std::runtime_error("syncFileWithBuffer(). Error, trying to write to a file which is not opened.");
+        throw ipc_exception("syncFileWithBuffer(). Error, trying to write to a file which is not opened.");
     }
     
     file_.write(bufferPtr, bufferSize_);
@@ -274,13 +277,13 @@ void ShmReceiveFile::syncFileWithBuffer(char* bufferPtr)
 
     if (state == std::ios_base::failbit)
     {
-        throw std::runtime_error("syncFileWithBuffer(). Failbit error. May be set if construction of sentry failed.");
+        throw ipc_exception("syncFileWithBuffer(). Failbit error. May be set if construction of sentry failed.");
     }
     if (state == std::ios_base::badbit)
     {
-        throw std::runtime_error("Writer syncFileWithBuffer(). Badbit error.");
+        throw ipc_exception("Writer syncFileWithBuffer(). Badbit error.");
     }
-    throw std::runtime_error("Writer syncFileWithBuffer(). Unknown error.");
+    throw ipc_exception("Writer syncFileWithBuffer(). Unknown error.");
 }
 
 void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
@@ -294,12 +297,15 @@ void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
     {
         if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
         {
-            throw std::runtime_error("Error getting time");
+            throw ipc_exception("Error getting time");
         }
         ts.tv_sec += 1;
         if(sem_timedwait(receiverSemaphorePtr_, &ts)==-1)
         {
-            throw std::runtime_error(
+            if (errno == ETIMEDOUT)
+                throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+
+            throw ipc_exception(
                 "ShmReceiveFile::syncFileWithIPC(). Error when waiting for the semaphore. Errno: "
                 + std::string(strerror(errno))
                 );
