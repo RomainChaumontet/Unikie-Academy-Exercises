@@ -141,10 +141,10 @@ std::map<std::string, inputLineOpt> inputMap =
 std::map<protocolList, std::string> statements=
 {
   {protocolList::NONE, "No protocol provided. Use --help option to display available commands. Bye!\n"},
-  {protocolList::TOOMUCHARG, "Too many arguments are provided. Abord.\n"},
-  {protocolList::WRONGARG, "Wrong arguments are provided. Use --help to know which ones you can use. Abord.\n"},
-  {protocolList::NOFILE, "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>.\n"},
-  {protocolList::NOFILEOPT, "Name of the file is missing. Abord.\n"}
+  {protocolList::TOOMUCHARG, "Too many arguments are provided. Use --help option to display available commands. Abort.\n"},
+  {protocolList::WRONGARG, "Wrong arguments are provided. Use --help to know which ones you can use. Abort.\n"},
+  {protocolList::NOFILE, "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>. Use --help option to display available commands.\n"},
+  {protocolList::NOFILEOPT, "Name of the file is missing. Use --help option to display available commands. Abort.\n"}
 };
 
 class FakeCmdLineOptTest : public ::testing::TestWithParam<std::pair<const std::string, inputLineOpt>> {};
@@ -182,20 +182,20 @@ TEST_P(FakeCmdLineOptTest, MainTest) // Test the main() function with wrong use 
   {
     {
       CaptureStream stdcout(std::cout);
-      EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+      EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
     }
 
     {
       CaptureStream stdcout(std::cout);
-      EXPECT_THAT(receiverMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+      EXPECT_THAT(receiverMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
     }
   }
   else //correct arguments, but the file does not exist
   {
     CaptureStream stdcout(std::cout);
-    EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(0));
+    EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
     EXPECT_THAT(stdcout.str(), StrEq("Error, the file specified does not exist. Abord.\n"));
   }
 }
