@@ -30,4 +30,18 @@ cc_test(
     visibility = ["//visibility:public"],
 )
 
+cc_test(
+    name="Gtest_pipe",
+    srcs = ["Gtest_Ipc.cpp",
+        "Gtest_Ipc.h",
+        "Gtest_IpcPipe.cpp"],
+    deps = [
+        "//src/lib:ipcCopyFileLib",
+        "@com_google_googletest//:gtest_main",
+    ],
+    linkopts = ["-lrt", "-pthread"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+)
+
         

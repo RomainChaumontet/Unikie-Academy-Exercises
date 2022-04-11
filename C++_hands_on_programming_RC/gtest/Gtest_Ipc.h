@@ -19,7 +19,7 @@ struct inputLineOpt{
 
 bool compareFiles(const std::string& fileName1, const std::string& fileName2); // https://stackoverflow.com/questions/6163611/compare-two-files
 
-std::vector<char> getRandomData(ssize_t size);
+std::vector<char> getRandomData();
 
 
 //Wrap function into thread to be able to test.
@@ -110,13 +110,12 @@ class CreateRandomFile
       char buffer [100];
       snprintf(buffer, 100, "/bin/dd if=/dev/urandom of=%s bs=%dM count=%d status=none", file_name_.c_str(), blockSize_, nbOfBlocks_);
       std::system(const_cast<char*>(buffer)) ;
-
-      ssize_t randomSize = rand() % 4096;
-      std::vector<char> data = getRandomData(randomSize);
+      
+      std::vector<char> data = getRandomData();
 
       std::fstream file;
       file.open(file_name.c_str(), std::ios::binary | std::fstream::in | std::fstream::out | std::fstream::app);
-      file.write(data.data(), randomSize);
+      file.write(data.data(), data.size());
 
     }
 

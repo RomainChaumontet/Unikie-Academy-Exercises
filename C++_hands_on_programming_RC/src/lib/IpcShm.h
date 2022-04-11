@@ -36,13 +36,13 @@ class Shm : public virtual copyFilethroughIPC
 	    sem_t* receiverSemaphorePtr_ = SEM_FAILED;
         size_t shmSize_ = sizeof(ShmData_Header)+bufferSize_;
         char* bufferPtr;
-        
 };
 
 class ShmSendFile : public Shm, public Reader
 {
     public:
-        ShmSendFile();
+        ShmSendFile(int maxAttempt);
+        ShmSendFile():ShmSendFile(30){};
         ~ShmSendFile();
         void syncFileWithIPC(const std::string &filepath);
         void syncFileWithBuffer(char* bufferPtr);
@@ -54,7 +54,7 @@ class ShmReceiveFile : public Shm, public Writer
 {
     public:
         ShmReceiveFile(int maxAttempt);
-        ShmReceiveFile():ShmReceiveFile(60){};
+        ShmReceiveFile():ShmReceiveFile(30){};
         ~ShmReceiveFile();
         void syncFileWithIPC(const std::string &filepath);
         void syncFileWithBuffer(char* bufferPtr);

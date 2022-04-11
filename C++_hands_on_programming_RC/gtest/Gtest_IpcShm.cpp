@@ -28,12 +28,61 @@ const std::string semRName =  "myReceiverSemaphore";
 const std::string semSName =  "mySenderSemaphore";
 std::string shmfileName1 = "shminput.dat";
 std::string shmfileName2 = "shmoutput.dat";
-std::vector<char> ShmrandomData = getRandomData(rand() % 4096);
+std::vector<char> ShmrandomData = getRandomData();
 
 class IpcShmSendFileTest : public ShmSendFile
 {
     public:
         char* get_buffer() {return shm_.data;};
+
+        void MokeSync(const std::string &filepath)
+        {
+            struct timespec ts;
+            openFile(filepath);
+            //wait for the receiver to connect
+            if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+            {
+                throw ipc_exception("Error getting time");
+            }
+            ts.tv_sec += maxAttempt_;
+            if (sem_timedwait(senderSemaphorePtr_,&ts) == -1) 
+            {
+                throw ipc_exception("Error, can't connect to the other program.\n");
+            }
+            sem_post(senderSemaphorePtr_);
+
+            srand (time(NULL));
+            int timeSyncsBeforeStopping = rand() % 20 +1;
+            int timesync = 0;
+            while (timesync++ < timeSyncsBeforeStopping)
+            {
+                if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+                {
+                    throw ipc_exception("Error getting time");
+                }
+                ts.tv_sec += maxAttempt_;
+                if (sem_timedwait(senderSemaphorePtr_,&ts) == -1)
+                {
+                    if (errno == ETIMEDOUT)
+                        throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+                        
+                    throw ipc_exception(
+                        "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
+                        + std::string(strerror(errno))
+                    );
+                }
+                file_.read(shm_.data,bufferSize_);
+                bufferSize_ = file_.gcount();
+                shm_.main->data_size = bufferSize_;
+                if(sem_post(receiverSemaphorePtr_) == -1)
+                {
+                    throw ipc_exception(
+                        "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
+                        + std::string(strerror(errno))
+                    );
+                }
+            }
+        }
 };
 
 class IpcShmReceiveFileTest : public ShmReceiveFile
@@ -42,6 +91,34 @@ class IpcShmReceiveFileTest : public ShmReceiveFile
         void setBufferSize(size_t size)
         {
             bufferSize_ = size;
+        }
+        void MokeSync()
+        {
+            struct timespec ts;
+            sem_post(senderSemaphorePtr_); //letting the sender send some data
+            srand (time(NULL));
+            int timeSyncsBeforeStopping = rand() % 20 +1;
+            int timesync = 0;
+            while (timesync++ < timeSyncsBeforeStopping)
+            {
+                if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+                {
+                    throw ipc_exception("Error getting time");
+                }
+                ts.tv_sec += 1;
+                if(sem_timedwait(receiverSemaphorePtr_, &ts)==-1)
+                {
+                    if (errno == ETIMEDOUT)
+                        throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+
+                    throw ipc_exception(
+                        "ShmReceiveFile::syncFileWithIPC(). Error when waiting for the semaphore. Errno: "
+                        + std::string(strerror(errno))
+                        );
+                }
+                sem_post(senderSemaphorePtr_);
+            }
+
         }
 };
 
@@ -62,13 +139,22 @@ TEST(IpcShmSendFile, ConstructorDestructor)
     EXPECT_THAT(sem_open(semRName.c_str(), 0), Eq(SEM_FAILED));
 }
 
+////////////// ShmSendFile launchedalone ///////////////////
+TEST(NoOtherProgram, ShmSendFile)
+{ 
+    EXPECT_THROW({
+        ShmSendFile myShmObject(1);
+        CreateRandomFile myFile("input.dat", 1, 1);
+        myShmObject.syncFileWithIPC("input.dat");
+        }, ipc_exception);
+    
+}
 
 ////////////// ShmSendFile syncFileWithBuffer///////////////////
 TEST(IpcShmSendFile, syncFileWithBuffer)
 {
     {
-
-        int shmFd = shm_open(ipcName.c_str(), O_RDWR,0);
+        int shmFd = shm_open(ipcName.c_str(), O_RDONLY,0);
         sem_t* semaphorePtr = sem_open(semSName.c_str(), 0);
         ASSERT_THAT(shmFd, Eq(-1));
         ASSERT_THAT(semaphorePtr, Eq(SEM_FAILED));
@@ -115,6 +201,8 @@ void IpcShmSendFilesyncFileWithIPC2(void)
     sem_t* receiverSemaphorePtr;
     size_t size = 0;
     int wait = 0;
+    FileManipulationClassReader GettingSomeInfo;
+
 
     do
     {
@@ -131,7 +219,7 @@ void IpcShmSendFilesyncFileWithIPC2(void)
     
     ASSERT_THAT(fd, Ne(-1));
 
-    size_t sizemap = sizeof(ShmData_Header)+4096;
+    size_t sizemap = sizeof(ShmData_Header) + GettingSomeInfo.getDefaultBufferSize();
     
     void* bufferPtr= mmap(NULL, sizemap, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (bufferPtr == MAP_FAILED)
@@ -209,25 +297,36 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
 
     {
         CaptureStream stdcout(std::cout);
-        ASSERT_THROW(ShmReceiveFile myShmReceiveObject(1), std::runtime_error);
-        EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_senfile.\n"));
+        ASSERT_THROW(ShmReceiveFile myShmReceiveObject(1), ipc_exception);
+        EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_sendfile.\n"));
     }
 
     {
         sem_t* fdPtr = sem_open(semSName.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
         sem_t* fdPtr2 = sem_open(semRName.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
         ASSERT_THAT(fdPtr,Ne(SEM_FAILED));
-        ASSERT_THROW(ShmReceiveFile myShmReceiveObject, std::runtime_error);
+        ASSERT_THROW(ShmReceiveFile myShmReceiveObject, ipc_exception);
         sem_close(fdPtr);
         sem_unlink(semSName.c_str());
         sem_close(fdPtr2);
         sem_unlink(semRName.c_str());
     }
 }
+
+////////////// ShmReceivefile launchedalone ///////////////////
+TEST(NoOtherProgram, ShmReceivefile)
+{ 
+    EXPECT_THROW({
+        ShmReceiveFile myShmObject(1);
+        CreateRandomFile myFile("input.dat", 1, 1);
+        myShmObject.syncFileWithIPC("input.dat");
+        }, ipc_exception);
+    
+}
 /////////////////////////// ShmReceivefile syncFileWithBuffer ///////////
 TEST(IpcShmReceiveFile,syncFileWithBuffer)
 {
-    std::vector<char> someRandomData = getRandomData(rand() % 4096);
+    std::vector<char> someRandomData = getRandomData();
     {
         EXPECT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
         EXPECT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));
@@ -314,6 +413,7 @@ void ThreadReceiveFile2(void)
 
 TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
 {
+    shm_unlink(ipcName.c_str());
     CreateRandomFile myRandomfile("copyfileSendFileLast",2,2);
     ASSERT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
     ASSERT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));
@@ -332,3 +432,66 @@ TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
 }
 
 
+////////////////////// Killing a program: SendFile killed//////////////////////////
+
+
+void ThreadShmSendFileKilledSend(void)
+{
+    IpcShmSendFileTest myShmSendObject1;
+    myShmSendObject1.MokeSync("input.dat");
+}
+
+void ThreadShmSendFileKilledReceive(void)
+{
+    //CaptureStream stdcout(std::cout); //mute std::cout
+    ShmReceiveFile myShmReceiveObject1{3};
+    ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), ipc_exception);
+}
+
+TEST(KillingAProgram, ShmSendFileKilled)
+{
+    std::string fileinput = "input.dat";
+    std::string fileoutput = "output2.dat";
+    
+    CreateRandomFile randomFile {fileinput,1, 1};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,ThreadShmSendFileKilledSend);
+    start_pthread(&mThreadID2,ThreadShmSendFileKilledReceive);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+    remove(fileoutput.c_str());
+}
+
+
+////////////////////// Killing a program: ReceiveFile killed//////////////////////////
+
+
+void ThreadShmReceiveFileKilledSend(void)
+{
+    ShmSendFile myShmSendObject1{3};
+    ASSERT_THROW(myShmSendObject1.syncFileWithIPC("input.dat"), ipc_exception);
+}
+
+void ThreadShmReceiveFileKilledReceive(void)
+{
+    CaptureStream stdcout(std::cout); //mute std::cout
+    IpcShmReceiveFileTest myShmReceiveObject1;
+    myShmReceiveObject1.MokeSync();
+}
+
+TEST(KillingAProgram, ShmReceiveFileKilled)
+{
+    std::string fileinput = "input.dat";
+    std::string fileoutput = "output2.dat";
+    
+    CreateRandomFile randomFile {fileinput,1, 1};
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID2,ThreadShmReceiveFileKilledReceive);
+    start_pthread(&mThreadID1,ThreadShmReceiveFileKilledSend);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+}
