@@ -333,7 +333,7 @@ int receiverMain(int argc, char* const argv[])
                 break;
         }
     }
-    catch (std::exception &e)
+    catch (const std::exception &e)
     {
         std::cout << "caught :" << e.what() << std::endl;
         return EXIT_FAILURE;
@@ -368,7 +368,7 @@ int senderMain(int argc, char* const argv[])
             }
             case protocolList::TOOMUCHARG:
             {                   
-                std::cout << "Too many arguments are provided. Abort." <<std::endl;
+                std::cout << "Too many arguments are provided. Use --help option to display available commands. Abort." <<std::endl;
                 return EXIT_FAILURE;
             }
             case protocolList::WRONGARG:
@@ -378,12 +378,12 @@ int senderMain(int argc, char* const argv[])
             }
             case protocolList::NOFILE:
             {
-                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>." << std::endl;
+                std::cout << "No --file provided. To launch IPCtransfert you need to specify a file which the command --file <nameOfFile>. Use --help option to display available commands." << std::endl;
                 return EXIT_FAILURE;
             }
             case protocolList::NOFILEOPT:
             {
-                std::cout << "Name of the file is missing. Abort." << std::endl;
+                std::cout << "Name of the file is missing. Use --help option to display available commands. Abort." << std::endl;
                 return EXIT_FAILURE;
             }
             case protocolList::HELP:
@@ -420,7 +420,7 @@ int senderMain(int argc, char* const argv[])
                 break;
         }
     }
-    catch (std::exception &e)
+    catch (const std::exception &e)
     {
         std::cout << "caught :" << e.what() << std::endl;
         return EXIT_FAILURE;

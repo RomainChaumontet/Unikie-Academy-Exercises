@@ -45,6 +45,7 @@ class copyFilethroughIPC
         std::fstream file_;
         std::vector<char> buffer_;
         bool continueGettingData_ = true;
+        int maxAttempt_;
 };
 
 class Writer : virtual public copyFilethroughIPC

@@ -19,22 +19,47 @@ QueueSendFile::~QueueSendFile()
     {
         mq_close(queueFd_);   
     }
+    
+    mq_unlink(name_.c_str());
 }
 
-QueueSendFile::QueueSendFile()
+QueueSendFile::QueueSendFile(int maxAttempt)
 {
+    maxAttempt_ = maxAttempt;
+    int attempt = 0;
     if (queueFd_ != -1)
     {
         throw std::runtime_error(
             "Error, trying to open a queue which is already opened by this program./n"
         );
     }
-    queueAttrs_.mq_maxmsg = mq_maxmsg_;
-    queueAttrs_.mq_msgsize = mq_msgsize_;
-    
-    mq_unlink(name_.c_str());
 
-    queueFd_ = mq_open(name_.c_str(), O_WRONLY | O_CREAT | O_EXCL,S_IRWXG |S_IRWXU, &queueAttrs_);
+    do
+    {
+        queueFd_ = mq_open(name_.c_str(), O_RDONLY);
+        if (queueFd_ == -1 && errno != ENOENT)
+        {
+            
+            throw std::runtime_error(
+                "Error executing command mq_open. Errno:"
+                + std::string(strerror(errno))
+                );
+        }
+        else if (queueFd_ == -1 && errno == ENOENT)
+        {
+            std::cout << "Waiting to the ipc_receivefile." << std::endl;
+            nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);
+        }
+    }
+    while (queueFd_ == -1 && errno == ENOENT && attempt++ < maxAttempt);
+    if (attempt >= maxAttempt)
+    {
+        throw std::runtime_error(
+                "Error, can't connect to the other program."
+                );
+    }
+
+    queueFd_ = mq_open(name_.c_str(), O_WRONLY);
     if (queueFd_ == -1)
     {
         throw std::runtime_error(
@@ -46,14 +71,25 @@ QueueSendFile::QueueSendFile()
 
 void QueueSendFile::syncIPCAndBuffer()
 {
-    if (    mq_send(
+    struct timespec waitingtime;
+    if (clock_gettime(CLOCK_REALTIME, &waitingtime) == -1)
+    {
+        throw std::runtime_error("Error getting time");
+    }
+    waitingtime.tv_sec += maxAttempt_;
+    if (    mq_timedsend(
                 queueFd_,
                 buffer_.data(),
                 bufferSize_,
-                queuePriority_
+                queuePriority_,
+                &waitingtime
                 )
             == -1)
-    {
+    {   
+        if (errno == ETIMEDOUT)
+        {
+            throw std::runtime_error("Error, can't connect to the other program.");
+        }
         throw std::runtime_error(
             "Error executing command mq_send. Errno:"
             + std::string(strerror(errno))
@@ -74,37 +110,20 @@ QueueReceiveFile::~QueueReceiveFile()
 
 QueueReceiveFile::QueueReceiveFile(int maxAttempt)
 {
-    int attempt = 0;
-    if (queueFd_ != -1)
-    {
-        throw std::runtime_error(
-            "Error, trying to open a queue which is already opened by this program./n"
-        );
-    }
-    do
-    {
-        queueFd_ = mq_open(name_.c_str(), O_RDONLY);
-        if (queueFd_ == -1 && errno != ENOENT)
-        {
-            
-            throw std::runtime_error(
-                "Error executing command mq_open. Errno:"
-                + std::string(strerror(errno))
-                );
-        }
-        else if (queueFd_ == -1 && errno == ENOENT)
-        {
-            std::cout << "Waiting to the ipcsendfile." << std::endl;
-            std::this_thread::sleep_for (500ms);
-        }
-    }
-    while (queueFd_ == -1 && errno == ENOENT && ++attempt < maxAttempt);
+    maxAttempt_ = maxAttempt;
+    queueAttrs_.mq_maxmsg = mq_maxmsg_;
+    queueAttrs_.mq_msgsize = mq_msgsize_;
+
     
-    if (attempt == maxAttempt)
+    mq_unlink(name_.c_str());
+
+    queueFd_ = mq_open(name_.c_str(), O_RDONLY | O_CREAT | O_EXCL,S_IRWXG |S_IRWXU, &queueAttrs_);
+    if (queueFd_ == -1)
     {
         throw std::runtime_error(
-                "Error, the queue was not opened by another process"
-                );
+            "Error executing command mq_open. Errno:"
+            + std::string(strerror(errno))
+            );
     }
 }
 
@@ -119,7 +138,13 @@ void QueueReceiveFile::syncIPCAndBuffer()
     }
     std::vector<char> (mq_msgsize_).swap(buffer_);
     ssize_t amountOfData;
-    amountOfData = mq_receive(queueFd_,buffer_.data(), mq_msgsize_, &queuePriority_);
+    struct timespec waitingtime;
+    if (clock_gettime(CLOCK_REALTIME, &waitingtime) == -1)
+    {
+        throw std::runtime_error("Error getting time");
+    }
+    waitingtime.tv_sec += maxAttempt_;
+    amountOfData = mq_timedreceive(queueFd_,buffer_.data(), mq_msgsize_, &queuePriority_,&waitingtime);
     if (amountOfData == -1)
     {
         throw std::runtime_error(

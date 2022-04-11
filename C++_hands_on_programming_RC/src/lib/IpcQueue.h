@@ -24,7 +24,8 @@ class QueueSendFile : public Queue, public Reader
 {
     public:
         ~QueueSendFile();
-        QueueSendFile();
+        QueueSendFile(int maxAttempt);
+        QueueSendFile():QueueSendFile(30){};
         void syncIPCAndBuffer();
 
 };
@@ -33,7 +34,7 @@ class QueueReceiveFile : public Queue, public Writer
     public:
         ~QueueReceiveFile();
         QueueReceiveFile(int maxAttempt);
-        QueueReceiveFile():QueueReceiveFile(60){};
+        QueueReceiveFile():QueueReceiveFile(30){};
         void syncIPCAndBuffer();
 
 };

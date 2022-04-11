@@ -62,13 +62,22 @@ TEST(IpcShmSendFile, ConstructorDestructor)
     EXPECT_THAT(sem_open(semRName.c_str(), 0), Eq(SEM_FAILED));
 }
 
+////////////// ShmSendFile launchedalone ///////////////////
+TEST(NoOtherProgram, ShmSendFile)
+{ 
+    EXPECT_THROW({
+        ShmSendFile myShmObject(1);
+        CreateRandomFile myFile("input.dat", 1, 1);
+        myShmObject.syncFileWithIPC("input.dat");
+        }, std::runtime_error);
+    
+}
 
 ////////////// ShmSendFile syncFileWithBuffer///////////////////
 TEST(IpcShmSendFile, syncFileWithBuffer)
 {
     {
-
-        int shmFd = shm_open(ipcName.c_str(), O_RDWR,0);
+        int shmFd = shm_open(ipcName.c_str(), O_RDONLY,0);
         sem_t* semaphorePtr = sem_open(semSName.c_str(), 0);
         ASSERT_THAT(shmFd, Eq(-1));
         ASSERT_THAT(semaphorePtr, Eq(SEM_FAILED));
@@ -210,7 +219,7 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
     {
         CaptureStream stdcout(std::cout);
         ASSERT_THROW(ShmReceiveFile myShmReceiveObject(1), std::runtime_error);
-        EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_senfile.\n"));
+        EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_sendfile.\n"));
     }
 
     {
@@ -223,6 +232,17 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
         sem_close(fdPtr2);
         sem_unlink(semRName.c_str());
     }
+}
+
+////////////// ShmReceivefile launchedalone ///////////////////
+TEST(NoOtherProgram, ShmReceivefile)
+{ 
+    EXPECT_THROW({
+        ShmReceiveFile myShmObject(1);
+        CreateRandomFile myFile("input.dat", 1, 1);
+        myShmObject.syncFileWithIPC("input.dat");
+        }, std::runtime_error);
+    
 }
 /////////////////////////// ShmReceivefile syncFileWithBuffer ///////////
 TEST(IpcShmReceiveFile,syncFileWithBuffer)
@@ -330,5 +350,4 @@ TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
     remove("copyfileSendFileLast");
     remove("copyfileSendFileLast2");
 }
-
 

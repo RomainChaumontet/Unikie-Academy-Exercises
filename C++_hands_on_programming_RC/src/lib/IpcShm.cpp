@@ -16,12 +16,13 @@ using namespace std::chrono_literals;
 
 Shm::~Shm(){}
 
-ShmSendFile::ShmSendFile()
+ShmSendFile::ShmSendFile(int maxAttempt)
 {
+    maxAttempt_ = maxAttempt;
     //Opening shared memory
     shm_unlink(name_.c_str());
 
-    shmFileDescriptor_ = shm_open(name_.c_str(), O_RDWR | O_CREAT, 0660);
+    shmFileDescriptor_ = shm_open(name_.c_str(), O_RDWR | O_CREAT | O_EXCL, 0660);
     if (shmFileDescriptor_ == -1)
     {
         throw std::runtime_error(
@@ -75,25 +76,20 @@ ShmSendFile::ShmSendFile()
 ShmSendFile::~ShmSendFile()
 {
     file_.close();
-    if (shmFileDescriptor_ != -1)
-    {
-        close(shmFileDescriptor_);
-    }
+    close(shmFileDescriptor_);
+    
     
     munmap(bufferPtr, shmSize_);
     
 
-    if (senderSemaphorePtr_ != SEM_FAILED)
-    {
-        sem_close(senderSemaphorePtr_);
-    }
-    if (receiverSemaphorePtr_ != SEM_FAILED)
-    {
-        sem_close(receiverSemaphorePtr_);
-    }
+    sem_close(senderSemaphorePtr_);
+    sem_close(receiverSemaphorePtr_);
+    
 
     sem_unlink(semSName_.c_str());
     sem_unlink(semRName_.c_str());
+
+    shm_unlink(name_.c_str());
 }
 
 
@@ -143,13 +139,10 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
     {
         throw std::runtime_error("Error getting time");
     }
-    ts.tv_sec += 30;
+    ts.tv_sec += maxAttempt_;
     if (sem_timedwait(senderSemaphorePtr_,&ts) == -1) 
     {
-        throw std::runtime_error(
-            "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
-            + std::string(strerror(errno))
-        );
+        throw std::runtime_error("Error, can't connect to the other program.\n");
     }
     sem_post(senderSemaphorePtr_);
 
@@ -192,12 +185,12 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
     senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_RDWR);
     while (senderSemaphorePtr_ == SEM_FAILED) //the semaphore is not opened
     {
-        std::cout << "Waiting for ipc_senfile." << std::endl;
+        std::cout << "Waiting for ipc_sendfile." << std::endl;
         std::this_thread::sleep_for(500ms);
         if (++tryNumber > maxAttempt)
         {
             throw std::runtime_error(
-                "ShmReceiveFile(). Error when opening the semaphore : max attempt reached.\n"
+                "Error, can't connect to the other program.\n"
                 );
         }
         senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_RDWR);
@@ -211,7 +204,7 @@ ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
         if (++tryNumber > maxAttempt)
         {
             throw std::runtime_error(
-                "ShmReceiveFile(). Error when opening the semaphore : max attempt reached.\n"
+                "Error, can't connect to the other program.\n"
                 );
         }
         receiverSemaphorePtr_ = sem_open(semRName_.c_str(), O_RDWR);
