@@ -99,9 +99,8 @@ PipeSendFile::PipeSendFile(int maxAttempt)
     
     ::pthread_join(info.timer, nullptr);
     void* retval;
-    ::pthread_join(info->thread1, &retval); 
+    ::pthread_join(info.thread1, &retval); 
 
-    delete(info);
     if (retval == PTHREAD_CANCELED)
     {
         unlink(name_.c_str());

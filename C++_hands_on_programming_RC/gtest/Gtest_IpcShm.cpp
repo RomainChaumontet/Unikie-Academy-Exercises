@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <semaphore.h>
 #include <sched.h>
+#include <cstring>
 #include "../src/lib/IpcCopyFile.h"
 #include "../src/lib/IpcShm.h"
 
@@ -49,8 +50,18 @@ class IpcShmSendFileTest : public ShmSendFile
             {
                 throw ipc_exception("Error, can't connect to the other program.\n");
             }
-            sem_post(senderSemaphorePtr_);
+            //sending header
+            Header header(filepath, defaultBufferSize_);
+            std::memcpy(shm_.data, header.getHeader().data(), defaultBufferSize_);
+            shm_.main->data_size = defaultBufferSize_;
 
+            if(sem_post(receiverSemaphorePtr_) == -1)
+            {
+                throw ipc_exception(
+                    "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
+                    + std::string(strerror(errno))
+                );
+            }
             srand (time(NULL));
             int timeSyncsBeforeStopping = rand() % 20 +1;
             int timesync = 0;
@@ -96,6 +107,36 @@ class IpcShmReceiveFileTest : public ShmReceiveFile
         {
             struct timespec ts;
             sem_post(senderSemaphorePtr_); //letting the sender send some data
+
+            //receiving header
+            if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+            {
+                throw ipc_exception("Error getting time");
+            }
+            ts.tv_sec += maxAttempt_;
+            if(sem_timedwait(receiverSemaphorePtr_, &ts)==-1)
+            {
+                if (errno == ETIMEDOUT)
+                    throw ipc_exception("Error. Can't find ipc_sendfile. Did it crash ?\n");
+
+                throw ipc_exception(
+                    "ShmReceiveFile::syncFileWithIPC(). Error when waiting for the semaphore. Errno: "
+                    + std::string(strerror(errno))
+                    );
+            }
+
+            Header header(defaultBufferSize_);
+            std::vector<size_t> headerReceived;
+            headerReceived.resize(defaultBufferSize_);
+            std::memcpy(headerReceived.data(),shm_.data,defaultBufferSize_);
+            if (header.getHeader()[0] != headerReceived[0])
+            {
+                throw ipc_exception("Error. Another message is present. Maybe another program uses this IPC.\n");
+            }
+            fileSize_ = headerReceived[1];
+
+            sem_post(senderSemaphorePtr_);
+
             srand (time(NULL));
             int timeSyncsBeforeStopping = rand() % 20 +1;
             int timesync = 0;
