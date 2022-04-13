@@ -8,7 +8,6 @@
   - [Case if the IPC channel already exists / Another program uses the IPC channel](#case-if-the-ipc-channel-already-exists--another-program-uses-the-ipc-channel)
   - [Case if an argument is given after the protocol name](#case-if-an-argument-is-given-after-the-protocol-name)
   - [Max filename length is reached](#max-filename-length-is-reached)
-  - [Other programs are using the protocol with the same name](#other-programs-are-using-the-protocol-with-the-same-name)
 - [Hardware-related issues](#hardware-related-issues)
   - [Not enough space in the disk](#not-enough-space-in-the-disk)
   - [Not enough RAM](#not-enough-ram)
@@ -55,17 +54,18 @@ If a queue is already opened and has some messages on it:
 * ipc_receivefile will throw only because ipc_sendfile won't connect.
 
 ## Case if an argument is given after the protocol name
-
+*Todo*
 ## Max filename length is reached
-
-## Other programs are using the protocol with the same name
+If the length of the path (or the name of the file) exceed PATH_MAX (or NAME_MAX). The program will end with EXIT_FAILURE and print:
+* if the path is too long: `Error. The path of the file is too long.`.
+* if the name is too long: `Error. The name of the file is too long.`.
 
 # Hardware-related issues
 ## Not enough space in the disk
-
+*Todo*
 ## Not enough RAM
-
+*Todo*
 ## Max path length is reached
-
+*Todo*
 ## Writing file or Reading file becomes not reachable
-
+*Todo*

@@ -530,7 +530,6 @@ void ThreadShmReceiveFileKilledReceive(void)
 
 TEST(KillingAProgram, ShmReceiveFileKilled)
 {
-    CaptureStream stdcout(std::cout); //mute std::cout
     std::string fileinput = "input.dat";
     std::string fileoutput = "output2.dat";
     

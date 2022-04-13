@@ -7,9 +7,33 @@
 #include "../lib/IpcQueue.h"
 #include "../lib/IpcPipe.h"
 #include "../lib/IpcShm.h"
+#include <limits.h>
 #include <chrono>
 #include <thread>
+#include <string>
 
+void checkFilePath(const std::string &filepath)
+{
+    std::string::size_type slashPosition = filepath.rfind('/');
+    if (slashPosition == std::string::npos)
+    {
+        if (filepath.size() > NAME_MAX)
+        {
+            throw file_exception("Error, the name of the file provided is too long.\n");
+        }
+    }
+    else
+    {
+        if (filepath.size()-slashPosition > NAME_MAX)
+        {
+            throw file_exception("Error, the name of the file provided is too long.\n");
+        }
+        if (slashPosition > PATH_MAX)
+        {
+            throw file_exception("Error, the path of the file provided is too long.\n");
+        }
+    }
+}
 
 bool checkIfFileExists(const std::string &filepath)
 {
@@ -176,6 +200,7 @@ void copyFilethroughIPC::receiveHeader()
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
+    checkFilePath(filepath);
     if (checkIfFileExists(filepath))
         std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
 
@@ -236,6 +261,7 @@ void Writer::syncFileWithIPC(const std::string &filepath)
 /////////////////// Reader Class
 void Reader::openFile(const std::string &filepath)
 {
+    checkFilePath(filepath);
     if (!checkIfFileExists(filepath))
     {
         throw file_exception("Error. Trying to open a file for reading which does not exist.");

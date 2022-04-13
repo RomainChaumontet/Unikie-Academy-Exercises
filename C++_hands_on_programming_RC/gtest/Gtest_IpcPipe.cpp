@@ -597,7 +597,7 @@ void ThreadIPCUsedByAnotherProgram1Send(void)
 
 TEST(IPCUsedByAnotherProgram,PipeDoubleReceiver)
 {
-    CaptureStream stdcout{std::cout};
+    //CaptureStream stdcout{std::cout};
     remove("CopyDataThroughPipe");
     usleep(50);
     CreateRandomFile Randomfile("input_pipe.dat",10,10);
