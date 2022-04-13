@@ -71,7 +71,7 @@ TEST(BasicQueueCmd, OpenCloseQueue)
 
     mqd_t queueTest = mq_open(queueName.c_str(),O_RDONLY);
     EXPECT_THAT(queueTest, Eq(-1)); //The queue does not exist -> error
-    EXPECT_THAT(errno,Eq(2)); //The error is the queue does not exist.
+    EXPECT_THAT(errno,Eq(ENOENT)); //The error is the queue does not exist.
 }
 
 TEST(BasicQueueCmd, QueueAlreadyOpened)
@@ -420,7 +420,7 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     std::vector<char> randomData = getRandomData();
     mq_send(queueTest, randomData.data(), randomData.size(), 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
-    output=myQueueObj.getBuffer();
+    output = myQueueObj.getBuffer();
     output.shrink_to_fit();
     EXPECT_THAT(output.data(), StrEq(randomData.data()));
 
