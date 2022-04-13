@@ -41,7 +41,7 @@ std::vector<char> getRandomData()
   }
   else
   {
-      retval.resize(size);
+      std::vector<char>(size).swap(retval);
       ssize_t result = read(randomDatafromUrandom, retval.data(), size);
       if (result < 0)
       {

@@ -62,7 +62,7 @@ QueueSendFile::QueueSendFile(int maxAttempt)
     if (attempt >= maxAttempt)
     {
         throw ipc_exception(
-                "Error, can't connect to the other program."
+                "Error, can't connect to ipc_receivefile."
                 );
     }
 
@@ -76,7 +76,7 @@ QueueSendFile::QueueSendFile(int maxAttempt)
     }
 }
 
-void QueueSendFile::syncIPCAndBuffer()
+void QueueSendFile::syncIPCAndBuffer(void *data, size_t &data_size_bytes)
 {
     struct timespec waitingtime;
     if (clock_gettime(CLOCK_REALTIME, &waitingtime) == -1)
@@ -86,8 +86,8 @@ void QueueSendFile::syncIPCAndBuffer()
     waitingtime.tv_sec += maxAttempt_;
     if (    mq_timedsend(
                 queueFd_,
-                buffer_.data(),
-                bufferSize_,
+                static_cast<const char*>(data),
+                data_size_bytes,
                 queuePriority_,
                 &waitingtime
                 )
@@ -95,7 +95,7 @@ void QueueSendFile::syncIPCAndBuffer()
     {   
         if (errno == ETIMEDOUT)
         {
-            throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+            throw ipc_exception("Error. Can't find ipc_receivefile. Did it crash ?\n");
         }
         throw ipc_exception(
             "Error executing command mq_send. Errno:"
@@ -117,6 +117,7 @@ QueueReceiveFile::~QueueReceiveFile()
 
 QueueReceiveFile::QueueReceiveFile(int maxAttempt)
 {
+    buffer_.resize(defaultBufferSize_);
     maxAttempt_ = maxAttempt;
     queueAttrs_.mq_maxmsg = mq_maxmsg_;
     queueAttrs_.mq_msgsize = mq_msgsize_;
@@ -133,15 +134,14 @@ QueueReceiveFile::QueueReceiveFile(int maxAttempt)
 }
 
 
-void QueueReceiveFile::syncIPCAndBuffer()
-{
+void QueueReceiveFile::syncIPCAndBuffer(void *data, size_t &data_size_bytes)
+{ 
     if (queueFd_ == -1)
     {
         throw ipc_exception(
             "Error. Trying to sync buffer with a queue that is not opened."
         );
     }
-    std::vector<char> (mq_msgsize_).swap(buffer_);
     ssize_t amountOfData;
     struct timespec waitingtime;
     if (clock_gettime(CLOCK_REALTIME, &waitingtime) == -1)
@@ -149,24 +149,18 @@ void QueueReceiveFile::syncIPCAndBuffer()
         throw ipc_exception("Error getting time");
     }
     waitingtime.tv_sec += maxAttempt_;
-    amountOfData = mq_timedreceive(queueFd_,buffer_.data(), mq_msgsize_, &queuePriority_,&waitingtime);
+    amountOfData = mq_timedreceive(queueFd_,static_cast<char*>(data), mq_msgsize_, &queuePriority_,&waitingtime);
+    //std::cout << "temp[0]" << temp[0] << std::endl;
     if (amountOfData == -1)
     {
         if (errno == ETIMEDOUT)
             {
-                throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+                throw ipc_exception("Error. Can't find ipc_sendfile. Did it crash ?\n");
             }
         throw ipc_exception(
             "Error when trying to receive message. Errno:"
             + std::string(strerror(errno))
         );
     }
-    bufferSize_ = amountOfData;
-    buffer_.resize(bufferSize_);
-
-    if (std::equal(endingVector_.rbegin(), endingVector_.rend(), buffer_.rbegin()))
-    {
-        bufferSize_ -= endingVector_.size();
-        buffer_.resize(bufferSize_);
-    }
+    data_size_bytes = amountOfData;
 }

@@ -35,15 +35,19 @@ class copyFilethroughIPC
         virtual void openFile(const std::string &filepath) = 0;
         void closeFile();
         virtual void syncFileWithBuffer() = 0;
+        virtual void syncIPCAndBuffer(void *data, size_t &data_size_bytes) = 0;
         virtual void syncIPCAndBuffer() =0;
         virtual void syncFileWithIPC(const std::string &filepath) = 0;
         size_t getDefaultBufferSize();
 
         virtual ~copyFilethroughIPC();
+        void sendHeader(const std::string &filepath);
+        void receiveHeader();
 
     protected:
         size_t defaultBufferSize_ = 4096;
         size_t bufferSize_ = defaultBufferSize_;
+        size_t fileSize_;
         std::fstream file_;
         std::vector<char> buffer_;
         bool continueGettingData_ = true;
@@ -85,4 +89,31 @@ class ipc_exception : public std::runtime_error
         using std::runtime_error::runtime_error;
 };
 
+
+class Header
+{
+    std::vector<size_t> main_;
+    size_t start = 156886431;
+
+    public:
+        Header(const std::string &filename, int defaultsize)
+        {
+            main_.emplace_back(start);
+            main_.emplace_back(returnFileSize(filename));
+            main_.resize(defaultsize);
+        };
+        Header(int defaultsize)
+        {
+            main_.emplace_back(start);
+            main_.resize(defaultsize);
+        };
+        std::vector<size_t> &getHeader()
+        {
+            return main_;
+        };
+        const size_t sizeFile() const
+        {
+            return main_[1];
+        };
+};
 #endif /* IPCCOPYFILE_H */

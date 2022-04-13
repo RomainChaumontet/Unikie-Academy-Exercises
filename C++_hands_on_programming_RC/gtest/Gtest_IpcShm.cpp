@@ -96,7 +96,7 @@ TEST(IpcShmSendFile, syncFileWithBuffer)
         ASSERT_NO_THROW(myShmObject.openFile(shmfileName1));
         ASSERT_NO_THROW(myShmObject.syncFileWithBuffer(myShmObject.get_buffer()));
 
-        ASSERT_THAT(std::string(myShmObject.get_buffer()), StrEq(std::string(ShmrandomData.data())));
+        EXPECT_TRUE(std::equal(ShmrandomData.begin(), ShmrandomData.end(), myShmObject.get_buffer()));
 
         remove(shmfileName1.c_str());
         close(shmFd);
@@ -165,6 +165,10 @@ void IpcShmSendFilesyncFileWithIPC2(void)
     fd = open(shmfileName2.c_str(), O_WRONLY | O_CREAT, 0660, NULL);
     
 
+    sem_post(senderSemaphorePtr);
+
+    //simulate receiving header
+    sem_wait(receiverSemaphorePtr);
     sem_post(senderSemaphorePtr);
 
     usleep(10);
@@ -287,7 +291,6 @@ void ThreadSendFile(void)
 void ThreadReceiveFile(void)
 {
     
-    CaptureStream stdout(std::cout);
     ShmReceiveFile myShmReceiveObject1;
     myShmReceiveObject1.syncFileWithIPC(shmfileName2);
     
@@ -295,6 +298,7 @@ void ThreadReceiveFile(void)
 
 TEST(ShmReceivefileAndShmSendfile, copyfileSendFileFirst)
 {
+    CaptureStream stdout(std::cout);
     CreateRandomFile myRandomfile(shmfileName1,2,2);
 
     pthread_t mThreadID1, mThreadID2;
@@ -328,7 +332,6 @@ void ThreadSendFile2(void)
 
 void ThreadReceiveFile2(void)
 {
-    CaptureStream stdcout(std::cout); //mute std::cout
     ShmReceiveFile myShmReceiveObject1;
     myShmReceiveObject1.syncFileWithIPC("copyfileSendFileLast2");
 
@@ -336,6 +339,7 @@ void ThreadReceiveFile2(void)
 
 TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
 {
+    CaptureStream stdcout(std::cout); //mute std::cout
     CreateRandomFile myRandomfile("copyfileSendFileLast",2,2);
     ASSERT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
     ASSERT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));
@@ -365,8 +369,7 @@ void ThreadShmSendFileKilledSend(void)
 
 void ThreadShmSendFileKilledReceive(void)
 {
-    CaptureStream stdcout(std::cout); //mute std::cout
-    ShmReceiveFile myShmReceiveObject1{2};
+    ShmReceiveFile myShmReceiveObject1{3};
     ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), ipc_exception);
 }
 
@@ -374,6 +377,7 @@ TEST(KillingAProgram, ShmSendFileKilled)
 {
     std::string fileinput = "input.dat";
     std::string fileoutput = "output2.dat";
+    CaptureStream stdcout(std::cout); //mute std::cout
     
     CreateRandomFile randomFile {fileinput,10, 10};
 
@@ -400,13 +404,13 @@ void ThreadShmReceiveFileKilledSend(void)
 
 void ThreadShmReceiveFileKilledReceive(void)
 {
-    CaptureStream stdcout(std::cout); //mute std::cout
     ShmReceiveFile myShmReceiveObject1;
     myShmReceiveObject1.syncFileWithIPC("output2.dat");
 }
 
 TEST(KillingAProgram, ShmReceiveFileKilled)
 {
+    CaptureStream stdcout(std::cout); //mute std::cout
     std::string fileinput = "input.dat";
     std::string fileoutput = "output2.dat";
     
@@ -421,4 +425,93 @@ TEST(KillingAProgram, ShmReceiveFileKilled)
     ::pthread_join(mThreadID2, nullptr); 
 
     remove(fileoutput.c_str());
+}
+
+
+
+/////////////////////////// 2 ShmReceiveFile ///////////////////////////
+
+
+void ThreadShmDoubleReceiverReceive(void)
+{
+    ShmReceiveFile myReceiver{2};
+    ASSERT_THROW(myReceiver.syncFileWithIPC("output_pipe.dat"), ipc_exception);
+}
+
+void ThreadShmDoubleReceiverSend(void)
+{
+    ShmSendFile mySender{2};
+    try 
+    {
+        mySender.syncFileWithIPC("input_pipe.dat");
+    }
+    catch (const ipc_exception &e)
+    {
+        std::cerr << "ThreadShmDoubleReceiverSend throw (expected)" << std::endl;
+    }
+}
+
+TEST(IPCUsedByAnotherProgram,ShmDoubleReceiver)
+{
+    CaptureStream stdcout{std::cout};
+    CreateRandomFile Randomfile("input_pipe.dat",10,10);
+    pthread_t mThreadID1, mThreadID2, mThreadID3;
+    start_pthread(&mThreadID1,ThreadShmDoubleReceiverReceive);
+    start_pthread(&mThreadID3,ThreadShmDoubleReceiverReceive);
+    start_pthread(&mThreadID2,ThreadShmDoubleReceiverSend);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+    ::pthread_join(mThreadID3, nullptr); 
+    remove("output_pipe.dat");
+}
+
+
+
+
+
+///////////////////////////////// 2 ShmSendFile //////////////////////
+
+void ThreadShmDoubleSenderReceive(void)
+{
+    ShmReceiveFile myReceiver{2};
+    ASSERT_THROW(myReceiver.syncFileWithIPC("output_pipe.dat"), ipc_exception);
+}
+
+void ThreadShmDoubleSenderSend(void)
+{
+    ShmSendFile mySender{2};
+    try
+    {
+        mySender.syncFileWithIPC("input_pipe.dat");
+    }
+    catch (const ipc_exception &e)
+    {
+        std::cerr << "ThreadShmDoubleSenderSend throw (expected)" << std::endl;
+    }
+}
+void ThreadShmDoubleSenderSend2(void)
+{
+    ShmSendFile mySender{2};
+    try
+    {
+        mySender.syncFileWithIPC("input_pipe2.dat");
+    }
+    catch (const ipc_exception &e)
+    {
+        std::cerr << "ThreadShmDoubleSenderSend2 throw (expected)" << std::endl;
+    }
+}
+
+TEST(IPCUsedByAnotherProgram,ShmDoubleSender)
+{
+    CreateRandomFile Randomfile("input_pipe.dat",1,1);
+    CreateRandomFile Randomfile2("input_pipe2.dat",1,1);
+    pthread_t mThreadID1, mThreadID2, mThreadID3;
+    start_pthread(&mThreadID1,ThreadShmDoubleSenderReceive);
+    start_pthread(&mThreadID3,ThreadShmDoubleSenderSend);
+    start_pthread(&mThreadID2,ThreadShmDoubleSenderSend2);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+    ::pthread_join(mThreadID3, nullptr); 
+    remove("output_pipe.dat");
 }
