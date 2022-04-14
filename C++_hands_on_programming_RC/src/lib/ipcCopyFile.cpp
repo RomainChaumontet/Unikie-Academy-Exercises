@@ -19,18 +19,18 @@ void checkFilePath(const std::string &filepath)
     {
         if (filepath.size() > NAME_MAX)
         {
-            throw file_exception("Error, the name of the file provided is too long.\n");
+            throw file_exception("Error, the name of the file provided is too long.");
         }
     }
     else
     {
         if (filepath.size()-slashPosition > NAME_MAX)
         {
-            throw file_exception("Error, the name of the file provided is too long.\n");
+            throw file_exception("Error, the name of the file provided is too long.");
         }
         if (slashPosition > PATH_MAX)
         {
-            throw file_exception("Error, the path of the file provided is too long.\n");
+            throw file_exception("Error, the name of the path provided is too long.");
         }
     }
 }
@@ -200,7 +200,6 @@ void copyFilethroughIPC::receiveHeader()
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
-    checkFilePath(filepath);
     if (checkIfFileExists(filepath))
         std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
 
@@ -261,7 +260,6 @@ void Writer::syncFileWithIPC(const std::string &filepath)
 /////////////////// Reader Class
 void Reader::openFile(const std::string &filepath)
 {
-    checkFilePath(filepath);
     if (!checkIfFileExists(filepath))
     {
         throw file_exception("Error. Trying to open a file for reading which does not exist.");
@@ -332,6 +330,16 @@ int receiverMain(int argc, char* const argv[])
     try
     {
         ipcParameters parameters {argc, argv};
+        //check filepath
+        if  (
+                parameters.getProtocol() == protocolList::SHM
+                || parameters.getProtocol() == protocolList::QUEUE
+                || parameters.getProtocol() == protocolList::PIPE
+            )
+        {
+            checkFilePath(parameters.getFilePath());
+        }
+
         switch (parameters.getProtocol())
         {
             case protocolList::NONE:
@@ -397,7 +405,7 @@ int receiverMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cout << "caught :" << e.what() << std::endl;
+        std::cerr << "caught :" << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
@@ -417,7 +425,7 @@ int senderMain(int argc, char* const argv[])
             )
             && !checkIfFileExists(parameters.getFilePath()))
         {
-            std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+            std::cerr << "Error, the file specified does not exist. Abord." << std::endl;
             return EXIT_FAILURE;
         }
         switch (parameters.getProtocol())
@@ -483,7 +491,7 @@ int senderMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cout << "caught :" << e.what() << std::endl;
+        std::cerr << "caught :" << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     

@@ -53,13 +53,15 @@ If a queue is already opened and has some messages on it:
 * ipc_sendfile will throw with the statement: ` Error. A queue with some messages already exists.\n"`
 * ipc_receivefile will throw only because ipc_sendfile won't connect.
 
+The test suite for this error is named `IPCUsedByAnotherProgram`.
 ## Case if an argument is given after the protocol name
 *Todo*
 ## Max filename length is reached
-If the length of the path (or the name of the file) exceed PATH_MAX (or NAME_MAX). The program will end with EXIT_FAILURE and print:
+If the length of the path (or the name of the file) exceeds PATH_MAX (or NAME_MAX). The program will end with EXIT_FAILURE and print:
 * if the path is too long: `Error. The path of the file is too long.`.
 * if the name is too long: `Error. The name of the file is too long.`.
 
+The test case for this error handling is `FileNameOrPathTooLong`.
 # Hardware-related issues
 ## Not enough space in the disk
 *Todo*

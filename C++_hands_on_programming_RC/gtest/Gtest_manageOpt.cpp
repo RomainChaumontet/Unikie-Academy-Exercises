@@ -4,6 +4,7 @@
 #include <deque>
 #include <vector>
 #include <map>
+#include <limits.h>
 
 
 using ::testing::Eq;
@@ -13,6 +14,7 @@ using ::testing::StrEq;
 using ::testing::IsTrue;
 using ::testing::IsFalse;
 using ::testing::StartsWith;
+using ::testing::EndsWith;
 
 std::map<std::string, inputLineOpt> inputMap =
 {
@@ -194,9 +196,9 @@ TEST_P(FakeCmdLineOptTest, MainTest) // Test the main() function with wrong use 
   }
   else //correct arguments, but the file does not exist
   {
-    CaptureStream stdcout(std::cout);
+    CaptureStream stdcerr(std::cerr);
     EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
-    EXPECT_THAT(stdcout.str(), StrEq("Error, the file specified does not exist. Abord.\n"));
+    EXPECT_THAT(stdcerr.str(), StrEq("Error, the file specified does not exist. Abord.\n"));
   }
 }
 
@@ -208,3 +210,87 @@ INSTANTIATE_TEST_SUITE_P(
     return info.param.first;
 });
 
+
+std::map<std::string, std::vector<const char*>> FileNameOrPathTooLongArguments=
+{
+  {"Pipe", std::vector<const char*> {"--pipe", "--file"}},
+  {"Shm", std::vector<const char*> {"--shm", "--file"}},
+  {"Queue", std::vector<const char*> {"--queue", "--file"}},
+};
+
+class FileNameOrPathTooLong : public ::testing::TestWithParam<std::pair<const std::string, std::vector<const char*>>> {};
+
+
+TEST_P(FileNameOrPathTooLong,FilePathTooLong)
+{
+  {
+    std::string filepath(PATH_MAX+1, 'c');
+    filepath.append("/myFile.txt");
+
+    EXPECT_THROW(checkFilePath(filepath), file_exception);
+
+    std::vector<const char*> arguments = GetParam().second;
+    arguments.emplace_back(filepath.c_str());
+    FakeCmdLineOpt FakeArg (arguments.begin(), arguments.end());
+    {
+      CaptureStream stdcerr(std::cerr);
+      EXPECT_THAT(receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(stdcerr.str(), EndsWith("Error, the name of the path provided is too long.\n"));
+    }
+    {
+      CaptureStream stdcerr(std::cerr);
+      EXPECT_THAT(senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(stdcerr.str(), EndsWith("Error, the file specified does not exist. Abord.\n"));
+    }
+  }
+  {
+    std::string filepath(NAME_MAX+1, 'c');
+
+    EXPECT_THROW(checkFilePath(filepath), file_exception);
+
+    std::vector<const char*> arguments = GetParam().second;
+    arguments.emplace_back(filepath.c_str());
+    FakeCmdLineOpt FakeArg (arguments.begin(), arguments.end());
+    {
+      CaptureStream stdcerr(std::cerr);
+      EXPECT_THAT(receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(stdcerr.str(), EndsWith("Error, the name of the file provided is too long.\n"));
+    }
+    {
+      CaptureStream stdcerr(std::cerr);
+      EXPECT_THAT(senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(stdcerr.str(), EndsWith("Error, the file specified does not exist. Abord.\n"));
+    }
+  }
+  {
+    std::string filepath = "myfilePath/";
+    std::string filename(NAME_MAX+1, 'c');
+    filepath.append(filename);
+
+    EXPECT_THROW(checkFilePath(filepath), file_exception);
+
+    std::vector<const char*> arguments = GetParam().second;
+    arguments.emplace_back(filepath.c_str());
+    FakeCmdLineOpt FakeArg (arguments.begin(), arguments.end());
+    {
+      CaptureStream stdcerr(std::cerr);
+      EXPECT_THAT(receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(stdcerr.str(), EndsWith("Error, the name of the file provided is too long.\n"));
+    }
+    {
+      CaptureStream stdcerr(std::cerr);
+      EXPECT_THAT(senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(stdcerr.str(), EndsWith("Error, the file specified does not exist. Abord.\n"));
+    }
+  }
+
+}
+
+
+INSTANTIATE_TEST_SUITE_P(
+  TestWithFileNameOrPathTooLong,
+  FileNameOrPathTooLong,
+  ::testing::ValuesIn(FileNameOrPathTooLongArguments),
+  [](const ::testing::TestParamInfo<FileNameOrPathTooLong::ParamType> &info) {
+    return info.param.first;
+});

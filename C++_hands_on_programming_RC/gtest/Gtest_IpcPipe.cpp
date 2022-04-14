@@ -604,6 +604,7 @@ TEST(IPCUsedByAnotherProgram,PipeDoubleReceiver)
     pthread_t mThreadID1, mThreadID2, mThreadID3;
     start_pthread(&mThreadID1,ThreadIPCUsedByAnotherProgram2Receive);
     start_pthread(&mThreadID3,ThreadIPCUsedByAnotherProgram2Receive);
+    usleep(50);
     start_pthread(&mThreadID2,ThreadIPCUsedByAnotherProgram1Send);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 

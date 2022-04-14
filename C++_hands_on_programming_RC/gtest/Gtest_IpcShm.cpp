@@ -443,8 +443,8 @@ TEST(ShmReceivefileAndShmSendfile, copyfileSendFileFirst)
 void ThreadSendFile2(void)
 {
 
-        ShmSendFile myShmSendObject1;
-        myShmSendObject1.syncFileWithIPC("copyfileSendFileLast");
+    ShmSendFile myShmSendObject1;
+    myShmSendObject1.syncFileWithIPC("copyfileSendFileLast");
     
 }
 
@@ -457,7 +457,6 @@ void ThreadReceiveFile2(void)
 
 TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
 {
-    CaptureStream stdcout(std::cout); //mute std::cout
     shm_unlink(ipcName.c_str());
     CreateRandomFile myRandomfile("copyfileSendFileLast",2,2);
     ASSERT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
