@@ -33,7 +33,7 @@ std::vector<char> getRandomData()
 {
   srand (time(NULL));
   ssize_t size = rand() % 4000;
-  std::vector<char> retval;
+  std::vector<char> retval(size);
   int randomDatafromUrandom = open("/dev/urandom", O_RDONLY);
   if (randomDatafromUrandom < 0)
   {
@@ -41,7 +41,6 @@ std::vector<char> getRandomData()
   }
   else
   {
-      std::vector<char>(size).swap(retval);
       ssize_t result = read(randomDatafromUrandom, retval.data(), size);
       if (result < 0)
       {

@@ -402,7 +402,6 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 {
     mqd_t queueTest;
     std::string queueName = "/CopyDataThroughQueue";
-    std::vector<char> endingData = getSomeInfoQueue.getEndingData();
     QueueTestReceiveFile myQueueObj;
     //open
     queueTest = mq_open(queueName.c_str(), O_WRONLY);
@@ -422,7 +421,7 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
     output = myQueueObj.getBuffer();
     output.shrink_to_fit();
-    EXPECT_THAT(output.data(), StrEq(randomData.data()));
+    EXPECT_TRUE(std::equal(randomData.begin(), randomData.end(), output.begin()));
 
     mq_close(queueTest);
 }

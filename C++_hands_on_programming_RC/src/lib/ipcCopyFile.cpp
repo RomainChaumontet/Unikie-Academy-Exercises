@@ -161,8 +161,7 @@ void copyFilethroughIPC::sendHeader(const std::string &filepath)
 void copyFilethroughIPC::receiveHeader()
 {
     Header header(defaultBufferSize_); 
-    std::vector<size_t> headerReceived;
-    headerReceived.resize(defaultBufferSize_);
+    std::vector<size_t> headerReceived(defaultBufferSize_);
 
     syncIPCAndBuffer(headerReceived.data(),defaultBufferSize_);
     if (header.getHeader()[0] != headerReceived[0])

@@ -7,6 +7,8 @@
 #include <fstream>
 #include <vector>
 
+const size_t identificationNumber = 156886431; //for the header to be sure that the program recognize each other
+
 enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
 bool checkIfFileExists (const std::string &filepath);
 size_t returnFileSize(const std::string &filepath) ;
@@ -93,7 +95,7 @@ class ipc_exception : public std::runtime_error
 class Header
 {
     std::vector<size_t> main_;
-    size_t start = 156886431;
+    size_t start = identificationNumber;
 
     public:
         Header(const std::string &filename, int defaultsize)
@@ -113,6 +115,8 @@ class Header
         };
         const size_t sizeFile() const
         {
+            if (main_.size() < 2)
+                throw std::runtime_error("Error in checking the size of the file inside de header.\n");
             return main_[1];
         };
 };

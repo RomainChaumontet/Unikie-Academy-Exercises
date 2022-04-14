@@ -95,7 +95,7 @@ class CaptureStream
   protected:
    std::ostream &to_swap_;
    std::stringstream buffer_;
-   std::streambuf *old_buff_ = 0;
+   std::streambuf *old_buff_ = nullptr;
 };
 
 
@@ -160,10 +160,6 @@ class FileManipulationClassReader : public Reader
 
         void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}
 
-        std::vector<char> getEndingData()
-        {
-          return endingVector_;
-        }
 };
 
 class FileManipulationClassWriter : public Writer
