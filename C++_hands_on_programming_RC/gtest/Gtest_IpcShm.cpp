@@ -569,7 +569,6 @@ void ThreadShmDoubleReceiverSend(void)
 
 TEST(IPCUsedByAnotherProgram,ShmDoubleReceiver)
 {
-    CaptureStream stdcout{std::cout};
     CreateRandomFile Randomfile("input_pipe.dat",10,10);
     pthread_t mThreadID1, mThreadID2, mThreadID3;
     start_pthread(&mThreadID1,ThreadShmDoubleReceiverReceive);
@@ -596,26 +595,13 @@ void ThreadShmDoubleSenderReceive(void)
 void ThreadShmDoubleSenderSend(void)
 {
     ShmSendFile mySender{2};
-    try
-    {
-        mySender.syncFileWithIPC("input_pipe.dat");
-    }
-    catch (const ipc_exception &e)
-    {
-        std::cerr << "ThreadShmDoubleSenderSend throw (expected)" << std::endl;
-    }
+    EXPECT_THROW(mySender.syncFileWithIPC("input_pipe.dat"),ipc_exception);
+    
 }
 void ThreadShmDoubleSenderSend2(void)
 {
     ShmSendFile mySender{2};
-    try
-    {
-        mySender.syncFileWithIPC("input_pipe2.dat");
-    }
-    catch (const ipc_exception &e)
-    {
-        std::cerr << "ThreadShmDoubleSenderSend2 throw (expected)" << std::endl;
-    }
+    EXPECT_THROW(mySender.syncFileWithIPC("input_pipe2.dat"),ipc_exception);
 }
 
 TEST(IPCUsedByAnotherProgram,ShmDoubleSender)

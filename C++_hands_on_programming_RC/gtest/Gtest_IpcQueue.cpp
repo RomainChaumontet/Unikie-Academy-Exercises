@@ -402,7 +402,6 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 {
     mqd_t queueTest;
     std::string queueName = "/CopyDataThroughQueue";
-    std::vector<char> endingData = getSomeInfoQueue.getEndingData();
     QueueTestReceiveFile myQueueObj;
     //open
     queueTest = mq_open(queueName.c_str(), O_WRONLY);
