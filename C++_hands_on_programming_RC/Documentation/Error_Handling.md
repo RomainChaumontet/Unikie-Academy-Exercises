@@ -54,6 +54,9 @@ If a queue is already opened and has some messages on it:
 * ipc_sendfile will throw with the statement: ` Error. A queue with some messages already exists.\n"`
 * ipc_receivefile will throw only because ipc_sendfile won't connect.
 
+In some cases, the receiver can receive exactly the same amount of data than expected. If that happened, it won't end with EXIT_FAILURE but with EXIT_SUCCESS, whereas the sender will end with EXIT_FAILURE.
+
+
 ## Case if an argument is given after the protocol name
 
 ## Max filename length is reached

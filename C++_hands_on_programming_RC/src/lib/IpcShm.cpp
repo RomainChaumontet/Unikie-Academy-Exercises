@@ -359,7 +359,7 @@ void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
         syncFileWithBuffer(shm_.data);
         dataReceived += bufferSize_;
         sem_post(senderSemaphorePtr_);
-    } while (bufferSize_ > 0 && dataReceived < fileSize_);
+    } while (bufferSize_ > 0 && dataReceived <= fileSize_);
 
     file_.close();
     if (fileSize_ != returnFileSize(filepath))

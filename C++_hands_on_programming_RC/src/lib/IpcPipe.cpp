@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <signal.h>
 
+volatile sig_atomic_t signum_received = 0;
 
 using namespace std::chrono_literals;
 struct ThreadInfo
@@ -25,7 +26,7 @@ struct ThreadInfo
 
 static void sigpipe_handler(int signum)
 {
-   std::cerr << "Error. Can't find the other program. Did it crash ?\n";
+   signum_received = 1;
 }
 
 void* TimerThread(void* arg)
@@ -66,6 +67,7 @@ PipeSendFile::~PipeSendFile()
 
 PipeSendFile::PipeSendFile(int maxAttempt)
 {
+    signum_received = 0;
     sa.sa_handler = sigpipe_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
@@ -123,8 +125,17 @@ void PipeSendFile::syncIPCAndBuffer(void *data, size_t &data_size_bytes)
     {
         throw ipc_exception("syncIPCAndBuffer(). Error, trying to write to a pipe which is not opened.");
     }
-    
+
+    if (signum_received == 1)
+    {
+        throw ipc_exception("Error. Can't find the ipc_receivefile anymore. It ends too early.\n");
+    }
     pipeFile_.write(static_cast<char*>(data), data_size_bytes);
+
+    if (signum_received == 1)
+    {
+        throw ipc_exception("Error. Can't find the ipc_receivefile anymore. It ends too early.\n");
+    }
 
     auto state = pipeFile_.rdstate();
     if (state == std::ios_base::goodbit)
