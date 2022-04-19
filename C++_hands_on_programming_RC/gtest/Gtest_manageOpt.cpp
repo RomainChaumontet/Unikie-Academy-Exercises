@@ -329,7 +329,7 @@ TEST_P(AllProtocolAsArgument, enoughSpaceAvailable)
   
   {
     CaptureStream stdcerr(std::cerr);
-    myTest.senderMain(FakeArg.argc(), FakeArg.argv());
+    EXPECT_THAT(myTest.senderMain(FakeArg.argc(), FakeArg.argv()), Eq(EXIT_FAILURE));
     EXPECT_THAT(stdcerr.str(), EndsWith("Error, not enough space on the disk to copy the file.\n"));
   }
 

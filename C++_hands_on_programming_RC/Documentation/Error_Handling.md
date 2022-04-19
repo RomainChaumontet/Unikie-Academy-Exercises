@@ -64,7 +64,7 @@ If the length of the path (or the name of the file) exceeds PATH_MAX (or NAME_MA
 The test case for this error handling is `FileNameOrPathTooLong`.
 # Hardware-related issues
 ## Not enough space in the disk
-The ipc_sendfile program check if there is enough space on the disk to copy the file, with the function `enoughSpaceAvailable`. If the disk as not enough space, the program will end with EXIT_FAILURE and print: `Error, not enough space on the disk to copy the file.`.
+The ipc_sendfile program checks if there is enough space on the disk to copy the file, with the function `enoughSpaceAvailable`. If the disk has not enough space, the program will end with EXIT_FAILURE and print: `Error, not enough space on the disk to copy the file.`.
 
 ## Not enough RAM
 *Todo*
