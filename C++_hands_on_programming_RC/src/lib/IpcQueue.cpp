@@ -23,8 +23,9 @@ QueueSendFile::~QueueSendFile()
     mq_unlink(name_.c_str());
 }
 
-QueueSendFile::QueueSendFile(int maxAttempt)
+QueueSendFile::QueueSendFile(int maxAttempt, AllToolBox* myToolBox)
 {
+    toolBox_ = myToolBox;
     maxAttempt_ = maxAttempt;
     int attempt = 0;
     if (queueFd_ != -1)
@@ -118,8 +119,9 @@ QueueReceiveFile::~QueueReceiveFile()
 
 
 
-QueueReceiveFile::QueueReceiveFile(int maxAttempt)
+QueueReceiveFile::QueueReceiveFile(int maxAttempt, AllToolBox* myToolBox)
 {
+    toolBox_ = myToolBox;
     buffer_.resize(defaultBufferSize_);
     maxAttempt_ = maxAttempt;
     queueAttrs_.mq_maxmsg = mq_maxmsg_;

@@ -58,14 +58,13 @@ PipeSendFile::~PipeSendFile()
     {
         pipeFile_.close();
     }
-    if (checkIfFileExists(name_))
-    {
-        unlink(name_.c_str());
-    }
+    unlink(name_.c_str());
+    
 }
 
-PipeSendFile::PipeSendFile(int maxAttempt)
+PipeSendFile::PipeSendFile(int maxAttempt, AllToolBox* myToolBox)
 {
+    toolBox_ = myToolBox;
     sa.sa_handler = sigpipe_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
@@ -152,18 +151,17 @@ PipeReceiveFile::~PipeReceiveFile()
     {
         pipeFile_.close();
     }
-    if (checkIfFileExists(name_))
-    {
-        unlink(name_.c_str());
-    }
+    unlink(name_.c_str());
+    
 }
 
-PipeReceiveFile::PipeReceiveFile(int maxAttempt)
+PipeReceiveFile::PipeReceiveFile(int maxAttempt, AllToolBox* myToolBox)
 {
+    toolBox_ = myToolBox;
     buffer_.resize(defaultBufferSize_);
     maxAttempt_ = maxAttempt;
     int count = 0;
-    while (!checkIfFileExists(name_) && count++ < maxAttempt)
+    while (!toolBox_->checkIfFileExists(name_) && count++ < maxAttempt)
     {
         std::cout << "Waiting for ipc_sendfile."<<std::endl;
         std::this_thread::sleep_for (500ms);

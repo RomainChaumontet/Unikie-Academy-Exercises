@@ -133,38 +133,47 @@ class CreateRandomFile
 class FileManipulationClassReader : public Reader
 {
     public:
-        void modifyBufferToWrite(const std::string &data)
-        {
-            bufferSize_ = data.size();
-            buffer_ = std::vector<char> (data.begin(), data.end());
-            return;
-        }
-        void modifyBufferToWrite(const std::vector<char> &data)
-        {
-            bufferSize_ = data.size();
-            buffer_ = data;
-            return;
-        }
-        
-        std::string bufferForReading() const
-        {
-            return std::string (buffer_.begin(), buffer_.end());
-        }
+      FileManipulationClassReader(AllToolBox* myToolBox)
+      {
+        toolBox_ = myToolBox;
+      };
+      void modifyBufferToWrite(const std::string &data)
+      {
+          bufferSize_ = data.size();
+          buffer_ = std::vector<char> (data.begin(), data.end());
+          return;
+      }
+      void modifyBufferToWrite(const std::vector<char> &data)
+      {
+          bufferSize_ = data.size();
+          buffer_ = data;
+          return;
+      }
+      
+      std::string bufferForReading() const
+      {
+          return std::string (buffer_.begin(), buffer_.end());
+      }
 
-        std::vector<char> getBufferRead() const
-        {
-            return buffer_;
-        }
+      std::vector<char> getBufferRead() const
+      {
+          return buffer_;
+      }
 
-        void syncIPCAndBuffer(){}
+      void syncIPCAndBuffer(){}
 
-        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}
+      void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}
 
 };
 
 class FileManipulationClassWriter : public Writer
 {
   public:
+
+        FileManipulationClassWriter(AllToolBox* myToolBox)
+        {
+          toolBox_ = myToolBox;
+        };
         void modifyBufferToWrite(const std::string &data)
         {
             bufferSize_ = data.size();

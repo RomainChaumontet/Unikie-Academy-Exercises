@@ -4,5 +4,7 @@
 
 int main(int argc, char* const argv[])
 {
-    return senderMain(argc, argv);
+    toolBox myToolBox;
+    ipcRun IpcWrapper{&myToolBox};
+    return IpcWrapper.senderMain(argc, argv);
 }

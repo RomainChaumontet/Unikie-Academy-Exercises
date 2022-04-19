@@ -11,22 +11,22 @@ using ::testing::Eq;
 using ::testing::StrEq;
 using ::testing::IsTrue;
 using ::testing::IsFalse;
-
+toolBox myToolBox;
 
 TEST(TestSimpleMethods, GetBufferSize)
 {
-    FileManipulationClassReader dummyCopyFileReader;
+    FileManipulationClassReader dummyCopyFileReader(&myToolBox);
     EXPECT_THAT(dummyCopyFileReader.getBufferSize(),Eq(dummyCopyFileReader.getDefaultBufferSize()));
 
-    FileManipulationClassWriter dummyCopyFileWriter;
+    FileManipulationClassWriter dummyCopyFileWriter(&myToolBox);
     EXPECT_THAT(dummyCopyFileWriter.getBufferSize(),Eq(dummyCopyFileWriter.getDefaultBufferSize()));
 }
 
 TEST(FileManipulation, OpenFile)
 {
     
-    FileManipulationClassReader dummyCopyFileReader;
-    FileManipulationClassWriter dummyCopyFileWriter;
+    FileManipulationClassReader dummyCopyFileReader(&myToolBox);
+    FileManipulationClassWriter dummyCopyFileWriter(&myToolBox);
     {
         std::string dummyFile = "IamTestingToOpenThisFile";
         EXPECT_THROW(dummyCopyFileReader.openFile(dummyFile.c_str()),file_exception);
@@ -38,7 +38,7 @@ TEST(FileManipulation, OpenFile)
 
     
     {
-        FileManipulationClassWriter openAnotherTime;
+        FileManipulationClassWriter openAnotherTime(&myToolBox);
         CaptureStream stdcout{std::cout};
         EXPECT_NO_THROW(openAnotherTime.openFile(fileToOpenForWriting.c_str()));
         EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));
@@ -49,10 +49,10 @@ TEST(FileManipulation, OpenFile)
     {
         
         CreateRandomFile randomFile {"testfile.dat", 10, 1};
-        FileManipulationClassReader openRandomFile;
+        FileManipulationClassReader openRandomFile(&myToolBox);
         EXPECT_NO_THROW(openRandomFile.openFile(randomFile.getFileName()));
         {
-            FileManipulationClassWriter openRandomFileWriter;
+            FileManipulationClassWriter openRandomFileWriter(&myToolBox);
             CaptureStream stdcout{std::cout};
             EXPECT_NO_THROW(openRandomFileWriter.openFile(randomFile.getFileName()));
             EXPECT_THAT(stdcout.str(), StrEq("The file specified to write in already exists. Data will be erased before proceeding.\n"));
@@ -63,8 +63,8 @@ TEST(FileManipulation, OpenFile)
 
 TEST(FileManipulation, ReadAndWriteSimpleFiles)
 {
-    FileManipulationClassWriter writingToAFile;
-    FileManipulationClassReader readingAFile;
+    FileManipulationClassWriter writingToAFile(&myToolBox);
+    FileManipulationClassReader readingAFile(&myToolBox);
     std::string data = "I expect these data will be writen in the file.\n";
     writingToAFile.modifyBufferToWrite(data);
 
@@ -104,10 +104,10 @@ TEST(FileManipulation, ReadAndWriteComplexFiles)
 {
     std::string nameOfRandomFile = "testfile.dat";
     CreateRandomFile randomFile (nameOfRandomFile, 10, 1);
-    size_t sizeOfOriginalFile = returnFileSize(nameOfRandomFile);
+    size_t sizeOfOriginalFile = myToolBox.returnFileSize(nameOfRandomFile);
     std::string fileForWriting = "testfilecpy.dat";
-    FileManipulationClassWriter writingToAFile;
-    FileManipulationClassReader readingAFile;
+    FileManipulationClassWriter writingToAFile(&myToolBox);
+    FileManipulationClassReader readingAFile(&myToolBox);
 
     size_t dataRead = 0;
     ASSERT_NO_THROW(readingAFile.openFile(nameOfRandomFile.c_str()));
