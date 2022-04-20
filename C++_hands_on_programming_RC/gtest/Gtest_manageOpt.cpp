@@ -23,7 +23,7 @@ using ::testing::A;
 toolBox MyToolBox;
 ipcRun myIpcRun{&MyToolBox};
 
-class MockTB : public AllToolBox
+class MockTB : public toolBox
 {
   public:
     

@@ -133,7 +133,7 @@ class CreateRandomFile
 class FileManipulationClassReader : public Reader
 {
     public:
-      FileManipulationClassReader(AllToolBox* myToolBox)
+      FileManipulationClassReader(toolBox* myToolBox)
       {
         toolBox_ = myToolBox;
       };
@@ -170,7 +170,7 @@ class FileManipulationClassWriter : public Writer
 {
   public:
 
-        FileManipulationClassWriter(AllToolBox* myToolBox)
+        FileManipulationClassWriter(toolBox* myToolBox)
         {
           toolBox_ = myToolBox;
         };

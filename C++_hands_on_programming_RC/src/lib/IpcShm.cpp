@@ -17,7 +17,7 @@ using namespace std::chrono_literals;
 
 Shm::~Shm(){}
 
-ShmSendFile::ShmSendFile(int maxAttempt, AllToolBox* myToolBox)
+ShmSendFile::ShmSendFile(int maxAttempt, toolBox* myToolBox)
 {
     toolBox_ = myToolBox;
     maxAttempt_ = maxAttempt;
@@ -195,7 +195,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
 
 
 //////////////////// ShmReceiveFile ///////////////
-ShmReceiveFile :: ShmReceiveFile(int maxAttempt, AllToolBox* myToolBox)
+ShmReceiveFile :: ShmReceiveFile(int maxAttempt, toolBox* myToolBox)
 {
     toolBox_ = myToolBox;
     maxAttempt_ = maxAttempt;

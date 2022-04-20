@@ -11,17 +11,9 @@ const size_t identificationNumber = 156886431; //for the header to be sure that 
 
 enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
 
-class AllToolBox
-{
-    public:
-        virtual ~AllToolBox(){};
-        virtual void checkFilePath(const std::string &filepath) = 0;
-        virtual bool checkIfFileExists (const std::string &filepath) = 0;
-        virtual size_t returnFileSize(const std::string &filepath) = 0;
-        virtual bool enoughSpaceAvailable(const size_t fileSize) = 0;
-};
 
-class toolBox : public AllToolBox
+
+class toolBox 
 {
     public:
         virtual ~toolBox(){};
@@ -33,9 +25,9 @@ class toolBox : public AllToolBox
 
 class ipcRun
 {
-    AllToolBox *toolBox_;
+    toolBox *toolBox_;
     public:
-        ipcRun(AllToolBox* myToolBox):toolBox_(myToolBox){};
+        ipcRun(toolBox* myToolBox):toolBox_(myToolBox){};
         int senderMain(int argc, char* const argv[]);
         int receiverMain(int argc, char* const argv[]);
 };
@@ -74,7 +66,7 @@ class copyFilethroughIPC
         void receiveHeader();
 
     protected:
-        AllToolBox* toolBox_;
+        toolBox* toolBox_;
         size_t defaultBufferSize_ = 4096;
         size_t bufferSize_ = defaultBufferSize_;
         size_t fileSize_;
@@ -124,10 +116,10 @@ class Header
 {
     std::vector<size_t> main_;
     size_t start = identificationNumber;
-    AllToolBox* toolBox_;
+    toolBox* toolBox_;
 
     public:
-        Header(const std::string &filename, int defaultsize, AllToolBox* myToolBox):toolBox_(myToolBox)
+        Header(const std::string &filename, int defaultsize, toolBox* myToolBox):toolBox_(myToolBox)
         {
             main_.emplace_back(start);
             main_.emplace_back(toolBox_->returnFileSize(filename));

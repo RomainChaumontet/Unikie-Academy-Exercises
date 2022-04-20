@@ -23,7 +23,7 @@ toolBox myQueueToolBox;
 class QueueTestSendFile : public QueueSendFile
 {
     public:
-        QueueTestSendFile(AllToolBox* myQueueToolBox):QueueSendFile(myQueueToolBox){};
+        QueueTestSendFile(toolBox* myQueueToolBox):QueueSendFile(myQueueToolBox){};
         void modifyBuffer(std::vector<char> &input)
         {
             bufferSize_ = input.size();
@@ -43,7 +43,7 @@ class QueueTestSendFile : public QueueSendFile
 class QueueTestReceiveFile : public QueueReceiveFile
 {
     public:
-        QueueTestReceiveFile(AllToolBox* myQueueToolBox):QueueReceiveFile(myQueueToolBox){};
+        QueueTestReceiveFile(toolBox* myQueueToolBox):QueueReceiveFile(myQueueToolBox){};
 
         std::vector<char> getBuffer()
         {

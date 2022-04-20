@@ -36,7 +36,7 @@ toolBox myShmToolBox;
 class IpcShmSendFileTest : public ShmSendFile
 {
     public:
-        IpcShmSendFileTest(AllToolBox* myToolBox):ShmSendFile(myToolBox){};
+        IpcShmSendFileTest(toolBox* myToolBox):ShmSendFile(myToolBox){};
         char* get_buffer() {return shm_.data;};
 
         void MokeSync(const std::string &filepath)
@@ -102,7 +102,7 @@ class IpcShmSendFileTest : public ShmSendFile
 class IpcShmReceiveFileTest : public ShmReceiveFile
 {
     public:
-        IpcShmReceiveFileTest(AllToolBox* myToolBox):ShmReceiveFile(myToolBox){};
+        IpcShmReceiveFileTest(toolBox* myToolBox):ShmReceiveFile(myToolBox){};
         void setBufferSize(size_t size)
         {
             bufferSize_ = size;

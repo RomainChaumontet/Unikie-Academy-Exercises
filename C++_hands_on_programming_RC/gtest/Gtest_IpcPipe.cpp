@@ -33,7 +33,7 @@ FileManipulationClassReader getSomeInfo{&myPipeToolBox};
 class PipeTestSendFile : public PipeSendFile
 {
     public:
-        PipeTestSendFile(AllToolBox* myToolBox):PipeSendFile(myToolBox){};
+        PipeTestSendFile(toolBox* myToolBox):PipeSendFile(myToolBox){};
         void modifyBuffer(std::vector<char> &input_pipe)
         {
             bufferSize_ = input_pipe.size();
@@ -52,8 +52,8 @@ class PipeTestSendFile : public PipeSendFile
 class PipeTestReceiveFile : public PipeReceiveFile
 {
     public:
-        PipeTestReceiveFile(int maxAttempt,AllToolBox* myToolBox):PipeReceiveFile(maxAttempt, myToolBox){};
-        PipeTestReceiveFile(AllToolBox* myToolBox):PipeTestReceiveFile(30, myToolBox){};
+        PipeTestReceiveFile(int maxAttempt,toolBox* myToolBox):PipeReceiveFile(maxAttempt, myToolBox){};
+        PipeTestReceiveFile(toolBox* myToolBox):PipeTestReceiveFile(30, myToolBox){};
         std::vector<char> getBuffer()
         {
             buffer_.resize(bufferSize_);

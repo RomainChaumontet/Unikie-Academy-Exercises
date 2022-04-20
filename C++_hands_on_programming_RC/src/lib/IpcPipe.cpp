@@ -62,7 +62,7 @@ PipeSendFile::~PipeSendFile()
     
 }
 
-PipeSendFile::PipeSendFile(int maxAttempt, AllToolBox* myToolBox)
+PipeSendFile::PipeSendFile(int maxAttempt, toolBox* myToolBox)
 {
     toolBox_ = myToolBox;
     sa.sa_handler = sigpipe_handler;
@@ -155,7 +155,7 @@ PipeReceiveFile::~PipeReceiveFile()
     
 }
 
-PipeReceiveFile::PipeReceiveFile(int maxAttempt, AllToolBox* myToolBox)
+PipeReceiveFile::PipeReceiveFile(int maxAttempt, toolBox* myToolBox)
 {
     toolBox_ = myToolBox;
     buffer_.resize(defaultBufferSize_);
