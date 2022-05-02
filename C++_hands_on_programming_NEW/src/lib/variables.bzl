@@ -1,0 +1,1 @@
+COPTS=["-g","-std=c++14","-Wno-unknown-pragmas"]
