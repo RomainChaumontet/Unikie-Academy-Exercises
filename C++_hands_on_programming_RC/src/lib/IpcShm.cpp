@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <sched.h>
+#include <cstring>
 #include "IpcCopyFile.h"
 #include "IpcShm.h"
 #include <thread>
@@ -20,9 +21,8 @@ ShmSendFile::ShmSendFile(int maxAttempt)
 {
     maxAttempt_ = maxAttempt;
     //Opening shared memory
-    shm_unlink(name_.c_str());
 
-    shmFileDescriptor_ = shm_open(name_.c_str(), O_RDWR | O_CREAT | O_EXCL, 0660);
+    shmFileDescriptor_ = shm_open(name_.c_str(), O_RDWR | O_CREAT, 0660);
     if (shmFileDescriptor_ == -1)
     {
         throw ipc_exception(
@@ -53,7 +53,6 @@ ShmSendFile::ShmSendFile(int maxAttempt)
     close(shmFileDescriptor_);
 
     //Creating semaphores
-    sem_unlink(semSName_.c_str());
     senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
     if (senderSemaphorePtr_ == SEM_FAILED)
     {
@@ -62,7 +61,6 @@ ShmSendFile::ShmSendFile(int maxAttempt)
             + std::string(strerror(errno))
         );
     }
-    sem_unlink(semRName_.c_str());
     receiverSemaphorePtr_ = sem_open(semRName_.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
     if (receiverSemaphorePtr_ == SEM_FAILED)
     {
@@ -98,7 +96,6 @@ ShmSendFile::~ShmSendFile()
 // the syncIPCAndBuffer method is not used.
 // Or the SHM is used has the buffer
 
-void ShmSendFile::syncIPCAndBuffer(){};
 
 
 void ShmSendFile::syncFileWithBuffer(char* bufferPtr)
@@ -132,7 +129,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
 {
     struct timespec ts;
     openFile(filepath);
-
+    size_t dataSent = 0;
 
     //wait for the receiver to connect
     if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
@@ -142,9 +139,24 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
     ts.tv_sec += maxAttempt_;
     if (sem_timedwait(senderSemaphorePtr_,&ts) == -1) 
     {
-        throw ipc_exception("Error, can't connect to the other program.\n");
+        if (errno == ETIMEDOUT)
+                throw ipc_exception("Error. Can't find ipc_receivefile. Did it crash ?\n");
+        throw ipc_exception("Error, can't connect to ipc_receivefile.\n");
     }
-    sem_post(senderSemaphorePtr_);
+    //sending header
+    Header header(filepath, defaultBufferSize_);
+    std::memcpy(shm_.data, header.getHeader().data(), defaultBufferSize_);
+    shm_.main->data_size = defaultBufferSize_;
+
+    if(sem_post(receiverSemaphorePtr_) == -1)
+    {
+        throw ipc_exception(
+            "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
+            + std::string(strerror(errno))
+        );
+    }
+
+    //sending data
 
     do
     {
@@ -156,7 +168,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
         if (sem_timedwait(senderSemaphorePtr_,&ts) == -1)
         {
             if (errno == ETIMEDOUT)
-                throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+                throw ipc_exception("Error. Can't find ipc_receivefile. Did it crash ?\n");
                 
             throw ipc_exception(
                 "ShmSendFile::syncFileWithIPC(). Error when waiting the semaphore. Errno"
@@ -166,7 +178,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
 
         syncFileWithBuffer(shm_.data);
         shm_.main->data_size = bufferSize_;
-
+        dataSent += bufferSize_;
         if(sem_post(receiverSemaphorePtr_) == -1)
         {
             throw ipc_exception(
@@ -176,6 +188,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
         }
     }
     while (bufferSize_ > 0);
+
 }
 
 
@@ -183,6 +196,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
 //////////////////// ShmReceiveFile ///////////////
 ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
 {
+    maxAttempt_ = maxAttempt;
     int tryNumber = 0;
     //Connecting to the semaphore
     senderSemaphorePtr_ = sem_open(semSName_.c_str(), O_RDWR);
@@ -259,7 +273,6 @@ ShmReceiveFile::~ShmReceiveFile()
     shm_unlink(name_.c_str());
 }
 
-void ShmReceiveFile::syncIPCAndBuffer(){}
 
 
 void ShmReceiveFile::syncFileWithBuffer(char* bufferPtr)
@@ -290,8 +303,39 @@ void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
 {
     struct timespec ts;
     openFile(filepath);
+    size_t  dataReceived = 0;
 
     sem_post(senderSemaphorePtr_); //letting the sender send some data
+
+    //receiving header
+    if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+    {
+        throw ipc_exception("Error getting time");
+    }
+    ts.tv_sec += maxAttempt_;
+    if(sem_timedwait(receiverSemaphorePtr_, &ts)==-1)
+    {
+        if (errno == ETIMEDOUT)
+            throw ipc_exception("Error. Can't find ipc_sendfile. Did it crash ?\n");
+
+        throw ipc_exception(
+            "ShmReceiveFile::syncFileWithIPC(). Error when waiting for the semaphore. Errno: "
+            + std::string(strerror(errno))
+            );
+    }
+
+    Header header(defaultBufferSize_);
+    std::vector<size_t> headerReceived;
+    headerReceived.resize(defaultBufferSize_);
+    std::memcpy(headerReceived.data(),shm_.data,defaultBufferSize_);
+    if (header.getHeader()[0] != headerReceived[0])
+    {
+        throw ipc_exception("Error. Another message is present. Maybe another program uses this IPC.\n");
+    }
+    fileSize_ = headerReceived[1];
+
+    sem_post(senderSemaphorePtr_);
+
 
     do
     {
@@ -299,11 +343,11 @@ void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
         {
             throw ipc_exception("Error getting time");
         }
-        ts.tv_sec += 1;
+        ts.tv_sec += maxAttempt_;
         if(sem_timedwait(receiverSemaphorePtr_, &ts)==-1)
         {
             if (errno == ETIMEDOUT)
-                throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
+                throw ipc_exception("Error. Can't find ipc_sendfile. Did it crash ?\n");
 
             throw ipc_exception(
                 "ShmReceiveFile::syncFileWithIPC(). Error when waiting for the semaphore. Errno: "
@@ -313,8 +357,15 @@ void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
 
         bufferSize_ = shm_.main->data_size;
         syncFileWithBuffer(shm_.data);
-
+        dataReceived += bufferSize_;
         sem_post(senderSemaphorePtr_);
-    } while (bufferSize_ > 0);
+    } while (bufferSize_ > 0 && dataReceived <= fileSize_);
+
+    file_.close();
+    if (fileSize_ != returnFileSize(filepath))
+    {
+        throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC.\n");
+    }
+
 }
 

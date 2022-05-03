@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <signal.h>
 
+volatile sig_atomic_t signum_received = 0;
 
 using namespace std::chrono_literals;
 struct ThreadInfo
@@ -21,6 +22,12 @@ struct ThreadInfo
     std::string pipeName;
     int waitingTime;
 };
+
+
+static void sigpipe_handler(int signum)
+{
+   signum_received = 1;
+}
 
 void* TimerThread(void* arg)
 {
@@ -60,6 +67,14 @@ PipeSendFile::~PipeSendFile()
 
 PipeSendFile::PipeSendFile(int maxAttempt)
 {
+    signum_received = 0;
+    sa.sa_handler = sigpipe_handler;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGPIPE, &sa, NULL)==-1)
+    {
+        throw ipc_exception("Error assigning action to signal");
+    }
     maxAttempt_ = maxAttempt;   
     if (pipeFile_.is_open())
     {
@@ -68,12 +83,10 @@ PipeSendFile::PipeSendFile(int maxAttempt)
         );
     }
 
-    unlink(name_.c_str());
-
-    if (mkfifo(name_.c_str(),S_IRWXU | S_IRWXG) == -1)
+    if (mkfifo(name_.c_str(),S_IRWXU | S_IRWXG) == -1 && errno != EEXIST)
     {
         throw ipc_exception(
-            "Error when trying to create the pipe. Errno:"
+            "Error when trying to create the pipe. Errno: "
             + std::string(strerror(errno))
         );
     }
@@ -88,9 +101,8 @@ PipeSendFile::PipeSendFile(int maxAttempt)
     
     ::pthread_join(info.timer, nullptr);
     void* retval;
-    ::pthread_join(info->thread1, &retval); 
+    ::pthread_join(info.thread1, &retval); 
 
-    delete(info);
     if (retval == PTHREAD_CANCELED)
     {
         unlink(name_.c_str());
@@ -104,33 +116,31 @@ PipeSendFile::PipeSendFile(int maxAttempt)
             "Error opening the pipe.\n"
         );
     }
-static void sigpipe_handler(int signum)
-{
-   std::cerr << "Error. Can't find the other program. Did it crash ?\n";
 }
 
-
-
-void PipeSendFile::syncIPCAndBuffer()
+void PipeSendFile::syncIPCAndBuffer(void *data, size_t &data_size_bytes)
 {
-    struct sigaction sa;
-    sa.sa_handler = sigpipe_handler;
-    sigemptyset(&sa.sa_mask);
-
-    if (sigaction(SIGPIPE, &sa, NULL)==-1)
-    {
-        throw ipc_exception("Error assigning action to signal");
-    }
 
     if (!pipeFile_.is_open())
     {
         throw ipc_exception("syncIPCAndBuffer(). Error, trying to write to a pipe which is not opened.");
     }
-    
-    pipeFile_.write(buffer_.data(), bufferSize_);
+
+    if (signum_received == 1)
+    {
+        throw ipc_exception("Error. Can't find the ipc_receivefile anymore. It ends too early.\n");
+    }
+    pipeFile_.write(static_cast<char*>(data), data_size_bytes);
+
+    if (signum_received == 1)
+    {
+        throw ipc_exception("Error. Can't find the ipc_receivefile anymore. It ends too early.\n");
+    }
 
     auto state = pipeFile_.rdstate();
     if (state == std::ios_base::goodbit)
+        return;
+    if (state == std::ios_base::failbit && state == std::ios_base::eofbit)
         return;
 
     if (state == std::ios_base::failbit)
@@ -161,6 +171,7 @@ PipeReceiveFile::~PipeReceiveFile()
 
 PipeReceiveFile::PipeReceiveFile(int maxAttempt)
 {
+    buffer_.resize(defaultBufferSize_);
     maxAttempt_ = maxAttempt;
     int count = 0;
     while (!checkIfFileExists(name_) && count++ < maxAttempt)
@@ -187,35 +198,21 @@ PipeReceiveFile::PipeReceiveFile(int maxAttempt)
     }
 }
 
-void PipeReceiveFile::syncIPCAndBuffer()
+void PipeReceiveFile::syncIPCAndBuffer(void *data, size_t &data_size_bytes)
 {
     if (!pipeFile_.is_open())
     {
         throw ipc_exception("Error, trying to read in a pipe that is not opened");
     }
-    bool eof = false;
-    std::vector<char> (bufferSize_).swap(buffer_);
-    pipeFile_.read(buffer_.data(), bufferSize_);
-    bufferSize_ = pipeFile_.gcount();
-    buffer_.resize(bufferSize_); 
+    
+    pipeFile_.read(static_cast<char*>(data), data_size_bytes);
+    data_size_bytes = pipeFile_.gcount();
     auto state = pipeFile_.rdstate();
-    if (std::equal(endingVector_.rbegin(), endingVector_.rend(), buffer_.rbegin()))
-    {
-        bufferSize_ -= endingVector_.size();
-        buffer_.resize(bufferSize_); 
-        eof = true;
-    }
+    
     if (state == std::ios_base::goodbit)
         return;
     if (state == std::ios_base::eofbit+std::ios_base::failbit)
     {
-
-        if (eof)
-        {
-            return;
-        }
-        
-        throw ipc_exception("Error. Can't find the other program. Did it crash ?\n");
         return; // end of file
     }
     if (state == std::ios_base::eofbit)
@@ -233,5 +230,4 @@ void PipeReceiveFile::syncIPCAndBuffer()
         throw ipc_exception("syncIPCAndBuffer(). badbit error.");
         return;
     }
-
 }

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
+#include <signal.h>
 #include "../lib/IpcQueue.h"
 #include "../lib/IpcPipe.h"
 #include "../lib/IpcShm.h"
@@ -150,6 +151,27 @@ size_t copyFilethroughIPC::getDefaultBufferSize()
     return defaultBufferSize_;
 }
 
+void copyFilethroughIPC::sendHeader(const std::string &filepath)
+{
+    Header header(filepath, defaultBufferSize_);
+    syncIPCAndBuffer(header.getHeader().data(),defaultBufferSize_);
+    fileSize_ = header.sizeFile();
+}
+
+void copyFilethroughIPC::receiveHeader()
+{
+    Header header(defaultBufferSize_); 
+    std::vector<size_t> headerReceived(defaultBufferSize_);
+
+    syncIPCAndBuffer(headerReceived.data(),defaultBufferSize_);
+    if (header.getHeader()[0] != headerReceived[0])
+    {
+        throw ipc_exception("Error. Another message is present. Maybe another program uses this IPC.\n");
+    }
+    fileSize_ = headerReceived[1];
+    
+}
+
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
@@ -190,10 +212,22 @@ void Writer::syncFileWithBuffer()
 void Writer::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
-    while (bufferSize_ == defaultBufferSize_)
+    receiveHeader();
+    buffer_.resize(defaultBufferSize_);
+    size_t dataReceived = 0;
+
+    while (dataReceived < fileSize_ && bufferSize_ == defaultBufferSize_)
     {
         syncIPCAndBuffer();
+        buffer_.resize(bufferSize_);
         syncFileWithBuffer();
+        dataReceived += bufferSize_;
+
+    }
+    file_.close();
+    if (fileSize_ != returnFileSize(filepath))
+    {
+        throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC. Or the sender crashed.\n");
     }
 }
 
@@ -220,10 +254,11 @@ void Reader::syncFileWithBuffer()
         throw file_exception("syncFileWithBuffer(). Error, trying to read a file which is not opened.");
     }
 
-    std::vector<char>(bufferSize_).swap(buffer_);
+    buffer_.resize(bufferSize_);
     file_.read(buffer_.data(),bufferSize_);
     bufferSize_ = file_.gcount();
     buffer_.resize(bufferSize_);
+    buffer_.shrink_to_fit();
     auto state = file_.rdstate();
     if (state == std::ios_base::goodbit)
         return;
@@ -252,6 +287,7 @@ void Reader::syncFileWithIPC(const std::string &filepath)
     ssize_t fileSize = returnFileSize(filepath);
     ssize_t datasent = 0;
 
+    sendHeader(filepath);
 
     while (datasent < fileSize)
     {
@@ -259,10 +295,6 @@ void Reader::syncFileWithIPC(const std::string &filepath)
         syncIPCAndBuffer();
         datasent += getBufferSize();
     }
-    //send and empty message to tell that's all.
-    endingVector_.swap(buffer_);
-    bufferSize_ = buffer_.size();
-    syncIPCAndBuffer();
 }
 
 
@@ -270,9 +302,9 @@ void Reader::syncFileWithIPC(const std::string &filepath)
 
 int receiverMain(int argc, char* const argv[])
 {
+    ipcParameters parameters {argc, argv};
     try
     {
-        ipcParameters parameters {argc, argv};
         switch (parameters.getProtocol())
         {
             case protocolList::NONE:
@@ -322,7 +354,6 @@ int receiverMain(int argc, char* const argv[])
             }
             case protocolList::PIPE:
             {
-                
                 PipeReceiveFile myReceiveFile;
                 myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
@@ -340,6 +371,7 @@ int receiverMain(int argc, char* const argv[])
     catch (const std::exception &e)
     {
         std::cout << "caught :" << e.what() << std::endl;
+        remove(parameters.getFilePath());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
@@ -408,7 +440,7 @@ int senderMain(int argc, char* const argv[])
                 break;
             }
             case protocolList::PIPE:
-            {
+            {   
                 PipeSendFile mySendFile;
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
@@ -429,7 +461,7 @@ int senderMain(int argc, char* const argv[])
         return EXIT_FAILURE;
     }
     
-    std::cout << "Data send with success\n";
+    std::cout << "Data sent with success\n";
 
     return EXIT_SUCCESS;
 }

@@ -170,11 +170,12 @@ TEST(SyncBuffAndQueue, SendQueue)
     EXPECT_THAT(mq_getattr(queueTest, &queueAttrs), Eq(0));
     EXPECT_THAT(queueAttrs.mq_curmsgs, Eq(1)); //one msg in the queue
     //Check the message
-    buffer.resize(queueAttrs.mq_msgsize);
+    std::vector<char>(queueAttrs.mq_msgsize).swap(buffer);
     size_t msgSize2 = mq_receive(queueTest, buffer.data(), queueAttrs.mq_msgsize, &prio);
     ASSERT_THAT(msgSize2, Eq(randomData.size()));
     buffer.resize(msgSize2);
-    EXPECT_THAT(buffer.data(), StrEq(randomData.data()));
+    buffer.shrink_to_fit();
+    EXPECT_TRUE(std::equal(randomData.begin(), randomData.end(), buffer.begin()));
 
     //Check if there is no other message
     EXPECT_THAT(mq_getattr(queueTest, &queueAttrs), Eq(0));
@@ -209,7 +210,7 @@ TEST(SyncBuffAndQueue, ExceedMaxMsg)
 
     QueueReceiveFile myRQueue; // just to create the queue
     start_pthread(&mThreadID1,ThreadExceedMaxMsgSend);
-    usleep(500);
+    usleep(50000);
     start_pthread(&mThreadID2,ThreadExceedMaxMsgReceive);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
@@ -401,7 +402,6 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 {
     mqd_t queueTest;
     std::string queueName = "/CopyDataThroughQueue";
-
     QueueTestReceiveFile myQueueObj;
     //open
     queueTest = mq_open(queueName.c_str(), O_WRONLY);
@@ -412,6 +412,7 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     mq_send(queueTest, message.c_str(), message.size(), 5);
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
     std::vector<char> output = myQueueObj.getBuffer();
+    output.resize(myQueueObj.getBufferSize());
     EXPECT_THAT(std::string (output.begin(), output.end()), StrEq(message));
 
     //binary message
@@ -420,7 +421,7 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
     output = myQueueObj.getBuffer();
     output.shrink_to_fit();
-    EXPECT_THAT(output.data(), StrEq(randomData.data()));
+    EXPECT_TRUE(std::equal(randomData.begin(), randomData.end(), output.begin()));
 
     mq_close(queueTest);
 }
@@ -534,6 +535,7 @@ void ThreadQueueReceiveAuto(void)
 }
 TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 {
+    mq_unlink("/CopyDataThroughQueue");
     std::string fileinput = "input.dat";
     std::string fileoutput = "output.dat";
     
@@ -559,6 +561,7 @@ void ThreadQueueSendFileKilledSend(void)
 {
     QueueSendFile myQueueSend;
     myQueueSend.openFile("input.dat");
+    myQueueSend.sendHeader("input.dat");
     srand (time(NULL));
     int numberOfMessage = rand() % 20; //will end after a random number of message
     for (int i = 0; i<numberOfMessage; i++)
@@ -570,16 +573,17 @@ void ThreadQueueSendFileKilledSend(void)
 
 void ThreadQueueSendFileKilledReceive(void)
 {
-    QueueReceiveFile myQueueReceive(1);
+    QueueReceiveFile myQueueReceive(2);
     ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), ipc_exception);
 }
 
 TEST(KillingAProgram, QueueSendFileKilled)
 {
+    mq_unlink("/CopyDataThroughQueue");
     std::string fileinput = "input.dat";
     std::string fileoutput = "output.dat";
     
-    CreateRandomFile randomFile {fileinput,5, 1};
+    CreateRandomFile randomFile {fileinput,5, 5};
 
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadQueueSendFileKilledSend);
@@ -596,7 +600,7 @@ TEST(KillingAProgram, QueueSendFileKilled)
 
 void ThreadQueueReceiveFileKilledSend(void)
 {
-    QueueSendFile myQueueSend(2);
+    QueueSendFile myQueueSend(3);
     ASSERT_THROW(myQueueSend.syncFileWithIPC("input.dat"), ipc_exception);
 }
 
@@ -613,14 +617,55 @@ void ThreadQueueReceiveFileKilledReceive(void)
 
 TEST(KillingAProgram, QueueReceiveFileKilled)
 {
+    mq_unlink("/CopyDataThroughQueue");
     std::string fileinput = "input.dat";
     
     CreateRandomFile randomFile {fileinput,5, 1};
 
     pthread_t mThreadID1, mThreadID2;
-    start_pthread(&mThreadID1,ThreadQueueReceiveFileKilledSend);
     start_pthread(&mThreadID2,ThreadQueueReceiveFileKilledReceive);
+    usleep(50);
+    start_pthread(&mThreadID1,ThreadQueueReceiveFileKilledSend);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
 
+}
+
+
+//////////////////////////// IPC Channel already exist ///////////////////////
+
+
+
+void QueueReceiveFileSend(void)
+{
+    ASSERT_THROW(QueueSendFile myQueueObject, ipc_exception);
+}
+
+void QueueReceiveFileReceive(void)
+{
+    QueueReceiveFile myQueueReceive{1};
+    ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), ipc_exception);
+}
+
+
+TEST(ipcAlreadyExists, QueueExistWithMsg)
+{
+    std::string queueName = "/CopyDataThroughQueue";
+    mqd_t queueTest = mq_open(
+        queueName.c_str(),
+            O_CREAT | O_WRONLY,
+            S_IRWXG |S_IRWXU,NULL); //queue is open
+    std::string data = "data";
+    mq_send(queueTest, &data[0], data.size(), 5); //sending a message in the queue
+
+    pthread_t mThreadID1, mThreadID2;
+    start_pthread(&mThreadID1,QueueReceiveFileSend);
+    usleep(500);
+    start_pthread(&mThreadID2,QueueReceiveFileReceive);
+    ::pthread_join(mThreadID1, nullptr);
+    ::pthread_join(mThreadID2, nullptr); 
+
+    mq_close(queueTest);
+    mq_unlink("/CopyDataThroughQueue");
+    remove("output.dat");
 }
