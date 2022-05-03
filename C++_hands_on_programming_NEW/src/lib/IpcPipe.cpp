@@ -102,6 +102,7 @@ void sendPipeHandler::connect()
     }
 
     std::cout << "Pipe is opened in both sides." << std::endl;
+
 }
 
 void sendPipeHandler::sendData(void *data, size_t data_size_bytes)

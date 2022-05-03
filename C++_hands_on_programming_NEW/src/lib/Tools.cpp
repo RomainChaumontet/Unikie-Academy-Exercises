@@ -149,6 +149,29 @@ void handyFunctions::printFileSize(size_t fileSize) const
     std::cout << "Transferring a file which size: " << Gb << "GB " << Mb << "MB " << Kb << "KB " << b << "B." << std::endl; 
 }
 
+void handyFunctions::checkIf2FilesAreTheSame(const std::string& file1, const std::string& file2) const
+{
+    char currentDir[PATH_MAX];
+    getcwd(currentDir, PATH_MAX);
+    std::string completePath1 = "";
+    std::string completePath2 = "";
+
+    if (file1[0] != '/')
+    {
+        completePath1 = std::string(currentDir) + '/';
+    }
+    if (file2[0] != '/')
+    {
+        completePath2 = std::string(currentDir) + '/';
+    }
+
+    if ((completePath1+file1) == (completePath2+file2))
+    {
+        throw arguments_exception("Error, the name of the file is the same as the ipc channel name.\n");
+    }
+
+}
+
 #pragma endregion handyFunction
 
 

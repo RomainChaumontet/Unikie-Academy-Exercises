@@ -5,6 +5,7 @@
 
 #include "Tools.h"
 #include "IpcPipe.h"
+#include "IpcQueue.h"
 
 
 
@@ -44,16 +45,6 @@ class sendShmHandler : public ipcHandler
 };
 
 class receiveShmHandler : public ipcHandler
-{
-
-};
-
-class sendQueueHandler : public ipcHandler
-{
-
-};
-
-class receiveQueueHandler : public ipcHandler
 {
 
 };

@@ -146,6 +146,18 @@ TEST(handyFunctions, printFileSize)
     }
 }
 
+TEST(handyFunctions, checkIf2FilesAreTheSame)
+{
+    handyFunctions ToolBox;
+
+    EXPECT_THROW(ToolBox.checkIf2FilesAreTheSame("test", "test"), arguments_exception);
+    EXPECT_NO_THROW(ToolBox.checkIf2FilesAreTheSame("test1", "test2"));
+
+    char currentDir[PATH_MAX];
+    getcwd(currentDir, PATH_MAX);
+    EXPECT_THROW(ToolBox.checkIf2FilesAreTheSame(std::string(currentDir) + '/' + "test", "test"), arguments_exception);
+}
+
 TEST(fileHandler, constructors)
 {
     handyFunctions toolBox;

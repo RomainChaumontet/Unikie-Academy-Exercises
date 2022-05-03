@@ -22,6 +22,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <atomic>
+#include <mqueue.h>
+#include <future>
 
 class handyFunctions // Wrap all free functions and global variables
 {
@@ -53,6 +55,7 @@ class handyFunctions // Wrap all free functions and global variables
         virtual void nap(int timeInMs) const; //time in milliseconds
         virtual void getTime(struct timespec &ts) const;
         virtual void printFileSize(size_t fileSize) const;
+        virtual void checkIf2FilesAreTheSame(const std::string& file1, const std::string& file2) const;
 };
 
 

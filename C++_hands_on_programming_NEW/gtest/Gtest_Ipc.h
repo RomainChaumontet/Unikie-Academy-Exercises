@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <limits>
 #include <future>
+#include <cstring>
 
 struct inputLineOpt{
   protocolList protocol;
@@ -145,6 +146,12 @@ class MockToolBox : public handyFunctions
         MOCK_METHOD(size_t, returnFileSize, (const std::string &filepath), (const));
         MOCK_METHOD(void, updatePrintingElements, (std::string info, bool forcePrint), (override));
         MOCK_METHOD(void, nap, (int), (const, override));
+};
+
+class MockToolBoxAttempt : public handyFunctions
+{
+    public:
+        MOCK_METHOD(int, getMaxAttempt, (), (const));
 };
 
 #endif

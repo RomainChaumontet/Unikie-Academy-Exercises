@@ -175,25 +175,25 @@ void copyFileThroughIPC::initSharedPtr()
             myIpcHandler_ = std::make_shared<sendPipeHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
         else
             myIpcHandler_ = std::make_shared<receivePipeHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
-    }/*
+    }
     else if (myParameters_.getProtocol() == protocolList::QUEUE)
     {
         if (myTypeOfProgram_ == program::SENDER)
-            myIpcHandler_ = std::make_shared<sendQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_shared<sendQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
         else
-            myIpcHandler_ = std::make_shared<receiveQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
-    }
+            myIpcHandler_ = std::make_shared<receiveQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
+    }/*
     else if (myParameters_.getProtocol() == protocolList::SHM)
     {
         if (myTypeOfProgram_ == program::SENDER)
             myIpcHandler_ = std::make_shared<sendShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
         else
             myIpcHandler_ = std::make_shared<receiveShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
-    }
+    }*/
     else
     {
         throw arguments_exception("Error, unknown protocols.\n");
-    }*/
+    }
 }
 
 int copyFileThroughIPC::launch()
@@ -204,6 +204,9 @@ int copyFileThroughIPC::launch()
         return EXIT_SUCCESS;
     }
 
+    //check that the filename and the ipcname are not the same
+    myToolBox_->checkIf2FilesAreTheSame(myParameters_.getFilePath(), myParameters_.getIpcNames().at(myParameters_.getProtocol()));
+    
     initSharedPtr();
 
     myIpcHandler_->connect();

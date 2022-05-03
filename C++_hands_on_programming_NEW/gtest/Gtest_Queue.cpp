@@ -17,65 +17,28 @@ using ::testing::A;
 using ::testing::Return;
 
 
-TEST(FifoHandler, ConstructorAndDestructor)
-{
-    handyFunctions myToolBox;
-    {
-        fifoHandler myFifo(&myToolBox, "HelloFifo");
-        myFifo.createFifo();
-        EXPECT_THAT(myToolBox.checkIfFileExists("HelloFifo"), IsTrue());
-    }
-    EXPECT_THAT(myToolBox.checkIfFileExists("HelloFifo"), IsFalse());
-}
 
-TEST(PipeHandler, ConstructorSender)
+TEST(QueueHandler, Constructors)
 {
+    handyFunctions toolBox;
+
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
-    handyFunctions myToolBox;
-    
-    EXPECT_THROW(sendPipeHandler(&myToolBox,"myPipe","FileDoesNotExists"),file_exception);
 
-    ASSERT_NO_THROW(sendPipeHandler(&myToolBox,"myPipe",fileName));
-    EXPECT_THAT(myToolBox.checkIfFileExists("myPipe"), IsFalse());
+    EXPECT_NO_THROW(sendQueueHandler(&toolBox, "/myQueue", fileName));
+    EXPECT_NO_THROW(receiveQueueHandler(&toolBox, "/myQueue", "myFile"));
+
+    remove("myFile");
 }
 
-TEST(PipeHandler, ConstructorSenderSignalHandler)
-{
-    std::string fileName = "myFileName";
-    CreateRandomFile myFile(fileName,1,1);
-    handyFunctions myToolBox;
 
-    sendPipeHandler myPipeHandler(&myToolBox,"myPipe",fileName);
-    ASSERT_THAT(sigpipe_received, IsFalse());
-    raise(SIGPIPE);
-    EXPECT_THAT(sigpipe_received, IsTrue()); 
-}
-
-TEST(PipeHandler, ConstructorReceiver)
+TEST(QueueHandler, SenderConnectAlone)
 {
-    std::string fileName = "myFileName";
     MockToolBox mockedTB;
 
-    EXPECT_CALL(mockedTB,checkIfFileExists(A<const std::string&>()))
-        .WillOnce(Return(false))
-        .WillOnce(Return(true))
-        .WillRepeatedly(Return(false));
-    EXPECT_CALL(mockedTB,getMaxAttempt())
-        .WillOnce(Return(10))
-        .WillOnce(Return(0));
 
-    ASSERT_NO_THROW(receivePipeHandler(&mockedTB, "myPipe", fileName)); //mocked the pipe exists
-    ASSERT_THROW(receivePipeHandler(&mockedTB, "myPipe", fileName), ipc_exception); //mocked the pipe doesn't exists
-
-    remove(fileName.c_str());  
-}
-
-TEST(PipeHandler, SenderConnectAlone)
-{
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
-    MockToolBox mockedTB;
 
     EXPECT_CALL(mockedTB,checkIfFileExists(A<const std::string&>()))
         .WillRepeatedly(Return(true));
@@ -85,24 +48,45 @@ TEST(PipeHandler, SenderConnectAlone)
         .WillRepeatedly(Return(true));
     EXPECT_CALL(mockedTB,getMaxAttempt())
         .WillOnce(Return(0));
+
     
-    sendPipeHandler myPipeHandler(&mockedTB,"myPipe",fileName);
-    ASSERT_THROW(myPipeHandler.connect(), ipc_exception);
+    sendQueueHandler mySender(&mockedTB, "/myQueue", fileName);
+
+    ASSERT_THROW(mySender.connect(), ipc_exception);
 }
 
-TEST(PipeHandler, ConnectTogether)
+TEST(QueueHandler, ReceiverConnectAlone)
+{
+    MockToolBox mockedTB;
+
+
+    EXPECT_CALL(mockedTB,getMaxAttempt())
+        .WillOnce(Return(0));
+    EXPECT_CALL(mockedTB,checkIfFileExists(A<const std::string&>()))
+        .WillRepeatedly(Return(false));
+
+    
+    receiveQueueHandler myReceiver(&mockedTB, "/myQueue", "myFileName");
+
+    ASSERT_NO_THROW(myReceiver.connect());
+    ASSERT_THROW(myReceiver.transferHeader(), ipc_exception);
+
+    remove("myFileName");
+}
+
+TEST(QueueHandler, ConnectTogether)
 {
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
-    std::string pipeName = "myPipe";
+    std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
     handyFunctions myToolBox;
 
     ASSERT_NO_THROW(
         {
-            sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
-            receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){Sender.connect();});
             usleep(50);
@@ -113,17 +97,20 @@ TEST(PipeHandler, ConnectTogether)
         }
     );
 
+
     remove(ReceiverfileName.c_str());
 }
 
-TEST(PipeHandler, SendandReceiveData)
+
+TEST(QueueHandler, SendandReceiveData)
 {
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
-    std::string pipeName = "myPipe";
+    std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
     handyFunctions myToolBox;
+
     srand (time(NULL));
     std::vector<char> sendVector = getRandomData();
     std::vector<char> receiveVector;
@@ -131,20 +118,20 @@ TEST(PipeHandler, SendandReceiveData)
 
     ASSERT_NO_THROW(
         {
-            auto senderConnect = std::async(std::launch::async, [&]()
-            {
-                sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
+            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+
+            auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
                 Sender.sendData(sendVector.data(), sendVector.size());
             });
-            auto receiverConnect = std::async(std::launch::async, [&]()
-            {
-                receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+            usleep(50);
+            auto receiverConnect = std::async(std::launch::async, [&](){
                 Receiver.connect();
                 size_t bytesInPipe = Receiver.receiveData(receiveVector.data(), myToolBox.getDefaultBufferSize());
                 receiveVector.resize(bytesInPipe);
-
             });
+
             senderConnect.get();
             receiverConnect.get();
         }
@@ -154,11 +141,12 @@ TEST(PipeHandler, SendandReceiveData)
     remove(ReceiverfileName.c_str());
 }
 
-TEST(PipeHandler, SendReceiveHeader)
+
+TEST(QueueHandler, SendReceiveHeader)
 {
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
-    std::string pipeName = "myPipe";
+    std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
     handyFunctions myToolBox;
@@ -166,19 +154,19 @@ TEST(PipeHandler, SendReceiveHeader)
 
     ASSERT_NO_THROW(
         {
-            auto senderConnect = std::async(std::launch::async, [&]()
-            {
-                sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
+            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+
+            auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
                 Sender.transferHeader();
             });
-            auto receiverConnect = std::async(std::launch::async, [&]()
-            {
-                receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+            usleep(50);
+            auto receiverConnect = std::async(std::launch::async, [&](){
                 Receiver.connect();
                 fileSize = Receiver.transferHeader();
-
             });
+
             senderConnect.get();
             receiverConnect.get();
         }
@@ -186,16 +174,17 @@ TEST(PipeHandler, SendReceiveHeader)
 
     EXPECT_THAT(fileSize,Eq(myToolBox.returnFileSize(SenderfileName)));
     remove(ReceiverfileName.c_str());
+
 }
 
-TEST(PipeHandler, TransferData)
+TEST(QueueHandler, TransferData)
 {
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
-    std::string pipeName = "myPipe";
+    std::string queueName = "/myQueue";
 
     handyFunctions myToolBox;
-    
+
     //creating a file of less than 4096 bytes
     std::vector<char> sendVector = getRandomData();
     std::fstream tempFile(SenderfileName, std::ios::out | std::ios::binary);
@@ -203,29 +192,27 @@ TEST(PipeHandler, TransferData)
     tempFile.close();
     ASSERT_THAT(myToolBox.checkIfFileExists(SenderfileName), IsTrue());
 
-
-
     size_t fileSize;
     std::vector<char> senderBuffer;
     std::vector<char> receiverBuffer;
 
     ASSERT_NO_THROW(
         {
-            auto senderConnect = std::async(std::launch::async, [&]()
-            {
-                sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
+            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+
+            auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
                 Sender.transferHeader();
                 Sender.transferData(senderBuffer);
             });
-            auto receiverConnect = std::async(std::launch::async, [&]()
-            {
-                receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+            usleep(50);
+            auto receiverConnect = std::async(std::launch::async, [&](){
                 Receiver.connect();
                 fileSize = Receiver.transferHeader();
                 Receiver.transferData(receiverBuffer);
-
             });
+
             senderConnect.get();
             receiverConnect.get();
         }
@@ -234,22 +221,21 @@ TEST(PipeHandler, TransferData)
     EXPECT_THAT(compareFiles(SenderfileName, ReceiverfileName), IsTrue());
     remove(ReceiverfileName.c_str());
     remove(SenderfileName.c_str());
-
 }
 
-TEST(PipeHandler, copyFile)
+TEST(QueueHandler, copyFile)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
-    
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName" ;
+
+    handyFunctions myToolBox1;
+    handyFunctions myToolBox2;
     
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
 
-    std::vector<const char*> SenderArguments {"--pipe", "--file", "myFileName"};
-    std::vector<const char*> ReceiverArguments {"--pipe", "--file", "myRFileName"};
+    std::vector<const char*> SenderArguments {"--queue", "--file", "myFileName"};
+    std::vector<const char*> ReceiverArguments {"--queue", "--file", "myRFileName"};
     FakeCmdLineOpt SenderFakeOpt(SenderArguments.begin(), SenderArguments.end());
     FakeCmdLineOpt ReceiverFakeOpt(ReceiverArguments.begin(), ReceiverArguments.end());
     
@@ -275,10 +261,14 @@ TEST(PipeHandler, copyFile)
     remove(ReceiverfileName.c_str());
 }
 
-TEST(PipeHandler, SenderCrashed)
+
+TEST(QueueHandler, SenderCrashed)
 {
     handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    MockToolBoxAttempt myToolBox2;
+
+    EXPECT_CALL(myToolBox2, getMaxAttempt())
+        .WillRepeatedly(Return(1));
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
@@ -286,7 +276,7 @@ TEST(PipeHandler, SenderCrashed)
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
 
-    std::vector<const char*> ReceiverArguments {"--pipe", "--file", "myRFileName"};
+    std::vector<const char*> ReceiverArguments {"--queue", "--file", "myRFileName"};
     FakeCmdLineOpt ReceiverFakeOpt(ReceiverArguments.begin(), ReceiverArguments.end());
     std::vector<char> senderBuffer;
 
@@ -294,7 +284,7 @@ TEST(PipeHandler, SenderCrashed)
     {
         auto senderThread = std::async(std::launch::async, [&]()
         {
-            sendPipeHandler Sender(&myToolBox1, "PipeIPC", SenderfileName);
+            sendQueueHandler Sender(&myToolBox1, "/QueueIPC", SenderfileName);
             Sender.connect();
             Sender.transferHeader();
             int nbOfLoop = rand() %20+1;
@@ -317,18 +307,22 @@ TEST(PipeHandler, SenderCrashed)
     remove(ReceiverfileName.c_str());
 }
 
-TEST(PipeHandler, ReceiverCrashed)
+
+TEST(QueueHandler, ReceiverCrashed)
 {
-    handyFunctions myToolBox1;
+    MockToolBoxAttempt myToolBox1;
     handyFunctions myToolBox2;
-    
+
+    EXPECT_CALL(myToolBox1, getMaxAttempt())
+        .WillRepeatedly(Return(1));
+
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
     
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
 
-    std::vector<const char*> SenderArguments {"--pipe", "--file", "myFileName"};
+    std::vector<const char*> SenderArguments {"--queue", "--file", "myFileName"};
     FakeCmdLineOpt SenderFakeOpt(SenderArguments.begin(), SenderArguments.end());
     std::vector<char> ReceiverBuffer;
 
@@ -342,7 +336,7 @@ TEST(PipeHandler, ReceiverCrashed)
         usleep(50);
         auto receiverThread = std::async(std::launch::async, [&]()
         {
-            receivePipeHandler Receiver(&myToolBox2, "PipeIPC", ReceiverfileName);
+            receiveQueueHandler Receiver(&myToolBox2, "/QueueIPC", ReceiverfileName);
             Receiver.connect();
             Receiver.transferHeader();
             int nbOfLoop = rand() %10+1;
@@ -360,11 +354,19 @@ TEST(PipeHandler, ReceiverCrashed)
 }
 
 
-TEST(PipeHandler, DoubleSenders)
+
+TEST(QueueHandler, DoubleSenders)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
-    handyFunctions myToolBox3;
+    MockToolBoxAttempt myToolBox1;
+    MockToolBoxAttempt myToolBox2;
+    MockToolBoxAttempt myToolBox3;
+
+    EXPECT_CALL(myToolBox1, getMaxAttempt())
+        .WillRepeatedly(Return(1));
+    EXPECT_CALL(myToolBox2, getMaxAttempt())
+        .WillRepeatedly(Return(1));
+    EXPECT_CALL(myToolBox3, getMaxAttempt())
+        .WillRepeatedly(Return(1));
     
     std::string SenderfileName = "myFileName" ;
     std::string ReceiverfileName = "myRFileName";
@@ -372,8 +374,8 @@ TEST(PipeHandler, DoubleSenders)
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
 
-    std::vector<const char*> SenderArguments {"--pipe", "--file", "myFileName"};
-    std::vector<const char*> ReceiverArguments {"--pipe", "--file", "myRFileName"};
+    std::vector<const char*> SenderArguments {"--queue", "--file", "myFileName"};
+    std::vector<const char*> ReceiverArguments {"--queue", "--file", "myRFileName"};
     FakeCmdLineOpt SenderFakeOpt(SenderArguments.begin(), SenderArguments.end());
     FakeCmdLineOpt ReceiverFakeOpt(ReceiverArguments.begin(), ReceiverArguments.end());
     
@@ -409,11 +411,19 @@ TEST(PipeHandler, DoubleSenders)
 }
 
 
-TEST(PipeHandler, DoubleReceivers)
+
+TEST(QueueHandler, DoubleReceivers)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
-    handyFunctions myToolBox3;
+    MockToolBoxAttempt myToolBox1;
+    MockToolBoxAttempt myToolBox2;
+    MockToolBoxAttempt myToolBox3;
+
+    EXPECT_CALL(myToolBox1, getMaxAttempt())
+        .WillRepeatedly(Return(1));
+    EXPECT_CALL(myToolBox2, getMaxAttempt())
+        .WillRepeatedly(Return(1));
+    EXPECT_CALL(myToolBox3, getMaxAttempt())
+        .WillRepeatedly(Return(1));
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
@@ -421,8 +431,8 @@ TEST(PipeHandler, DoubleReceivers)
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
 
-    std::vector<const char*> SenderArguments {"--pipe", "--file", "myFileName"};
-    std::vector<const char*> ReceiverArguments {"--pipe", "--file", "myRFileName"};
+    std::vector<const char*> SenderArguments {"--queue", "--file", "myFileName"};
+    std::vector<const char*> ReceiverArguments {"--queue", "--file", "myRFileName"};
     FakeCmdLineOpt SenderFakeOpt(SenderArguments.begin(), SenderArguments.end());
     FakeCmdLineOpt ReceiverFakeOpt(ReceiverArguments.begin(), ReceiverArguments.end());
     

@@ -2,10 +2,10 @@
 
 handyFunctions myToolBox;
 
-bool compareFiles(const std::string& fileName1, const std::string& fileName2) // https://stackoverflow.com/questions/6163611/compare-two-files
+bool compareFiles(const std::string& fileName1, const std::string& fileName2) // http://www.cplusplus.com/forum/general/94032/#msg504910
 {
-  std::ifstream f1(fileName1, std::ifstream::binary|std::ifstream::ate);
-  std::ifstream f2(fileName2, std::ifstream::binary|std::ifstream::ate);
+  std::ifstream f1(fileName1, std::ifstream::binary|std::ifstream::in);
+  std::ifstream f2(fileName2, std::ifstream::binary|std::ifstream::in);
 
   if (f1.fail() || f2.fail()) {
     std::cout << "file fail" <<std::endl;
@@ -20,13 +20,25 @@ bool compareFiles(const std::string& fileName1, const std::string& fileName2) //
     return false; //size mismatch
   }
 
-  //seek back to beginning and use std::equal to compare contents
-  f1.seekg(0, std::ifstream::beg);
-  f2.seekg(0, std::ifstream::beg);
-  return std::equal(std::istreambuf_iterator<char>(f1.rdbuf()),
-                    std::istreambuf_iterator<char>(),
-                    std::istreambuf_iterator<char>(f2.rdbuf()));
+  int bufferSize = 4096;
+  char Buffer1[bufferSize];
+  char Buffer2[bufferSize];
 
+  do {
+        f1.read(Buffer1, bufferSize);
+        f2.read(Buffer2, bufferSize);
+	      int numberOfRead = f1.gcount();
+        if (numberOfRead != f2.gcount())
+        {
+          return false;
+        }
+        if (std::memcmp(Buffer1, Buffer2, numberOfRead) != 0)
+        {
+          return false;
+        }
+    } while (f1.good() || f2.good());
+
+  return true;
 }
 
 std::vector<char> getRandomData()
