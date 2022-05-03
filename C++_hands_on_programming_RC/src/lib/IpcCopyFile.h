@@ -7,7 +7,7 @@
 #include <fstream>
 #include <vector>
 
-const size_t identificationNumber = 156886431; //for the header to be sure that the program recognize each other
+const size_t identificationNumber = 156886431; //It's a random-ish number used as a key from the programs to recognize each others.
 
 enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
 void checkFilePath(const std::string &filepath);

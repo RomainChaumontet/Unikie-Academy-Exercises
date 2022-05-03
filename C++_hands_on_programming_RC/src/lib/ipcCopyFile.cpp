@@ -240,7 +240,7 @@ void Writer::syncFileWithIPC(const std::string &filepath)
     buffer_.resize(defaultBufferSize_);
     size_t dataReceived = 0;
 
-    while (dataReceived < fileSize_ && bufferSize_ > 0)
+    while (dataReceived < fileSize_ && bufferSize_ == defaultBufferSize_)
     {
         syncIPCAndBuffer();
         buffer_.resize(bufferSize_);
@@ -251,7 +251,7 @@ void Writer::syncFileWithIPC(const std::string &filepath)
     file_.close();
     if (fileSize_ != returnFileSize(filepath))
     {
-        throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC.\n");
+        throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC. Or the sender crashed.\n");
     }
 }
 
@@ -326,6 +326,7 @@ void Reader::syncFileWithIPC(const std::string &filepath)
 
 int receiverMain(int argc, char* const argv[])
 {
+    ipcParameters parameters {argc, argv};
     try
     {
         ipcParameters parameters {argc, argv};
@@ -404,7 +405,8 @@ int receiverMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cerr << "caught :" << e.what() << std::endl;
+        std::cout << "caught :" << e.what() << std::endl;
+        remove(parameters.getFilePath());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
@@ -494,7 +496,7 @@ int senderMain(int argc, char* const argv[])
         return EXIT_FAILURE;
     }
     
-    std::cout << "Data send with success\n";
+    std::cout << "Data sent with success\n";
 
     return EXIT_SUCCESS;
 }
