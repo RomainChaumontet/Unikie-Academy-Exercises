@@ -405,7 +405,7 @@ int receiverMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cout << "caught :" << e.what() << std::endl;
+        std::cerr << "caught :" << e.what() << std::endl;
         remove(parameters.getFilePath());
         return EXIT_FAILURE;
     }
