@@ -56,9 +56,9 @@ void* TimerThread(void* arg)
 {
     ThreadInfo* info = static_cast<ThreadInfo*>(arg);
     int attempt = 0;
-    while (attempt++ < info->toolbox->getMaxAttempt()*20) //one loop every 50ms -> *20 to get getMaxAttempt seconds
+    while (attempt++ < info->toolbox->getMaxAttempt()*100) //one loop every 10ms -> *100 to get getMaxAttempt seconds
     {
-        info->toolbox->nap(50);
+        info->toolbox->nap(10);
         info->toolbox->updatePrintingElements("Waiting for ipc_receivefile.");
     }
     pthread_cancel(info->thread1);
@@ -179,10 +179,10 @@ receivePipeHandler::receivePipeHandler(
     int attempt = 0;
     int max_attempt = myToolBox_->getMaxAttempt();
     while(!myToolBox_->checkIfFileExists(pipeName_)
-        && attempt++ < max_attempt*20)
+        && attempt++ < max_attempt*100)
     {
         myToolBox_->updatePrintingElements("Waiting for ipc_sendfile.");
-        myToolBox_->nap(50);
+        myToolBox_->nap(10);
     }
     if (attempt >= max_attempt)
     {

@@ -32,18 +32,20 @@ void handyFunctions::checkFilePath(const std::string &filepath) const
     {
         if (filepath.size() > NAME_MAX)
         {
-            throw arguments_exception("Error, the name of the file provided is too long.");
+            throw arguments_exception("Error, filename \"" + filepath + "\" exceed 255 bytes, the maximum length for a filename given the shared memory layout");
         }
     }
     else
     {
         if (filepath.size()-slashPosition > NAME_MAX)
         {
-            throw arguments_exception("Error, the name of the file provided is too long.");
+            std::string filename =  filepath.substr(slashPosition);
+            throw arguments_exception("Error, filename \"" + filename  + "\" exceed 255 bytes, the maximum length for a filename given the shared memory layout");
         }
         if (slashPosition > PATH_MAX-strlen(currentDir))
         {
-            throw arguments_exception("Error, the name of the path provided is too long.");
+            std::string filename =  filepath.substr(slashPosition);
+            throw arguments_exception("Error, the path to \"" + filename + "\" exceed 4096 bytes long, which exceed the max length of 23 bytes");
         }
     }
 }
@@ -172,6 +174,15 @@ void handyFunctions::checkIf2FilesAreTheSame(const std::string& file1, const std
 
 }
 
+SemName handyFunctions::getSemName(const std::string& IpcName) const
+{
+    SemName retval;
+    retval.senderSemaphoreName = IpcName + "senderSem";
+    retval.receiverSemaphoreName = IpcName + "receiverSem";
+    
+    return retval;
+}
+
 #pragma endregion handyFunction
 
 
@@ -225,13 +236,13 @@ void fileHandler::writeFile(void* buffer, size_t sizeToWrite)
 
     if (state == std::ios_base::failbit)
     {
-        throw file_exception("syncFileWithBuffer(). Failbit error. May be set if construction of sentry failed.");
+        throw file_exception("writeFile(). Failbit error. May be set if construction of sentry failed.");
     }
     if (state == std::ios_base::badbit)
     {
-        throw file_exception("Writer syncFileWithBuffer(). Badbit error.");
+        throw file_exception("Writer writeFile(). Badbit error. Packagesize: " + std::to_string(sizeToWrite));
     }
-    throw file_exception("Writer syncFileWithBuffer(). Unknown error.");
+    throw file_exception("Writer writeFile(). Unknown error.");
 }
 
 size_t fileHandler::fileSize()

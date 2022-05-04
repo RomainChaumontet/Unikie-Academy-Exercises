@@ -182,14 +182,14 @@ void copyFileThroughIPC::initSharedPtr()
             myIpcHandler_ = std::make_shared<sendQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
         else
             myIpcHandler_ = std::make_shared<receiveQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
-    }/*
+    }
     else if (myParameters_.getProtocol() == protocolList::SHM)
     {
         if (myTypeOfProgram_ == program::SENDER)
-            myIpcHandler_ = std::make_shared<sendShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_shared<sendShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::SHM), myParameters_.getFilePath());
         else
-            myIpcHandler_ = std::make_shared<receiveShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
-    }*/
+            myIpcHandler_ = std::make_shared<receiveShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::SHM), myParameters_.getFilePath());
+    }
     else
     {
         throw arguments_exception("Error, unknown protocols.\n");

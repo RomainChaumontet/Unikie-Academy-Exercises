@@ -15,7 +15,7 @@ These programs have the aim to take a file and copy it. To do it, the program ip
 The IPC methods implemented are:
 - [x] Queue message passing
 - [x] Pipe
-- [] Shared memory 
+- [x] Shared memory 
 
 # Setup environment, build and test
 
@@ -35,7 +35,7 @@ $ ./build_and_run_tests.sh
 The binary and the test report will be in the folder `output`.
 
 # How to use the program
-You can use the program with the argument `--help` and command `--pipe --file myFile`, `--queue --file myFile`. You can specify a name for the IPC channel: `--pipe myPipe --file myFile` or `--queue /myQueue --file myFile`.
+You can use the program with the argument `--help` and command `--pipe --file myFile`,`--shm --file myFile` or `--queue --file myFile`. You can specify a name for the IPC channel: `--pipe myPipe --file myFile`, `--shm /myShm --file myFile` or `--queue /myQueue --file myFile`.
 
 # Design
 ![Design](Documentation/Current%20Design.PNG)

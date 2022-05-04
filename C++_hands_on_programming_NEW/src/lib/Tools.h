@@ -24,6 +24,15 @@
 #include <atomic>
 #include <mqueue.h>
 #include <future>
+#include <semaphore.h>
+#include <sys/mman.h>
+#include <cstring>
+
+struct SemName
+{
+    std::string senderSemaphoreName;
+    std::string receiverSemaphoreName;
+};
 
 class handyFunctions // Wrap all free functions and global variables
 {
@@ -56,6 +65,7 @@ class handyFunctions // Wrap all free functions and global variables
         virtual void getTime(struct timespec &ts) const;
         virtual void printFileSize(size_t fileSize) const;
         virtual void checkIf2FilesAreTheSame(const std::string& file1, const std::string& file2) const;
+        virtual SemName getSemName(const std::string& IpcName) const;
 };
 
 

@@ -6,6 +6,7 @@
 #include "Tools.h"
 #include "IpcPipe.h"
 #include "IpcQueue.h"
+#include "IpcShm.h"
 
 
 
@@ -35,18 +36,6 @@ class ipcParameters
             {protocolList::PIPE, "PipeIPC"},
             {protocolList::SHM, "/ShmIPC"}
         };
-};
-
-
-
-class sendShmHandler : public ipcHandler
-{
-
-};
-
-class receiveShmHandler : public ipcHandler
-{
-
 };
 
 class copyFileThroughIPC
