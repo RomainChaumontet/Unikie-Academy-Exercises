@@ -68,6 +68,7 @@ PipeSendFile::PipeSendFile(int maxAttempt, toolBox* myToolBox)
     toolBox_ = myToolBox;
     sa.sa_handler = sigpipe_handler;
     sa.sa_flags = 0;
+    signum_received = 0;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGPIPE, &sa, NULL)==-1)
     {
