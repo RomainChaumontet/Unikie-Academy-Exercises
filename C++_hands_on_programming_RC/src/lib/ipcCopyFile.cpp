@@ -7,9 +7,33 @@
 #include "../lib/IpcQueue.h"
 #include "../lib/IpcPipe.h"
 #include "../lib/IpcShm.h"
+#include <limits.h>
 #include <chrono>
 #include <thread>
+#include <string>
 
+void checkFilePath(const std::string &filepath)
+{
+    std::string::size_type slashPosition = filepath.rfind('/');
+    if (slashPosition == std::string::npos) // no slash in filepath
+    {
+        if (filepath.size() > NAME_MAX)
+        {
+            throw file_exception("Error, the name of the file provided is too long.");
+        }
+    }
+    else // slash in filepath
+    {
+        if (filepath.size()-slashPosition > NAME_MAX) // check the length of the name of the file (after the last /)
+        {
+            throw file_exception("Error, the name of the file provided is too long.");
+        }
+        if (slashPosition > PATH_MAX) // check the length of the path to the file (before the last /)
+        {
+            throw file_exception("Error, the name of the path provided is too long.");
+        }
+    }
+}
 
 bool checkIfFileExists(const std::string &filepath)
 {
@@ -305,6 +329,17 @@ int receiverMain(int argc, char* const argv[])
     ipcParameters parameters {argc, argv};
     try
     {
+        ipcParameters parameters {argc, argv};
+        //check filepath
+        if  (
+                parameters.getProtocol() == protocolList::SHM
+                || parameters.getProtocol() == protocolList::QUEUE
+                || parameters.getProtocol() == protocolList::PIPE
+            )
+        {
+            checkFilePath(parameters.getFilePath());
+        }
+
         switch (parameters.getProtocol())
         {
             case protocolList::NONE:
@@ -370,7 +405,7 @@ int receiverMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cout << "caught :" << e.what() << std::endl;
+        std::cerr << "caught :" << e.what() << std::endl;
         remove(parameters.getFilePath());
         return EXIT_FAILURE;
     }
@@ -391,7 +426,7 @@ int senderMain(int argc, char* const argv[])
             )
             && !checkIfFileExists(parameters.getFilePath()))
         {
-            std::cout << "Error, the file specified does not exist. Abord." << std::endl;
+            std::cerr << "Error, the file specified does not exist. Abord." << std::endl;
             return EXIT_FAILURE;
         }
         switch (parameters.getProtocol())
@@ -457,7 +492,7 @@ int senderMain(int argc, char* const argv[])
     }
     catch (const std::exception &e)
     {
-        std::cout << "caught :" << e.what() << std::endl;
+        std::cerr << "caught :" << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     

@@ -10,6 +10,7 @@
 const size_t identificationNumber = 156886431; //It's a random-ish number used as a key from the programs to recognize each others.
 
 enum class protocolList {NONE, QUEUE, PIPE, SHM, HELP, TOOMUCHARG, WRONGARG, NOFILE, NOFILEOPT};
+void checkFilePath(const std::string &filepath);
 bool checkIfFileExists (const std::string &filepath);
 size_t returnFileSize(const std::string &filepath) ;
 

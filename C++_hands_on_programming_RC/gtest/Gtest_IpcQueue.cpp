@@ -421,7 +421,7 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
     EXPECT_NO_THROW(myQueueObj.syncIPCAndBuffer());
     output = myQueueObj.getBuffer();
     output.shrink_to_fit();
-    EXPECT_TRUE(std::equal(randomData.begin(), randomData.end(), output.begin()));
+    EXPECT_THAT(std::equal(randomData.begin(), randomData.end(), output.begin()), IsTrue);
 
     mq_close(queueTest);
 }

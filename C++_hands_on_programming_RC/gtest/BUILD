@@ -12,7 +12,7 @@ cc_test(
     ],
     linkopts = ["-lrt", "-pthread"],
     copts = COPTS,
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"]
 )
 
 
