@@ -18,10 +18,12 @@ using ::testing::StartsWith;
 
 void ThreadExceedMaxMsgSend(void);  
 void ThreadExceedMaxMsgReceive(void); 
+toolBox myQueueToolBox;
 
 class QueueTestSendFile : public QueueSendFile
 {
     public:
+        QueueTestSendFile(toolBox* myQueueToolBox):QueueSendFile(myQueueToolBox){};
         void modifyBuffer(std::vector<char> &input)
         {
             bufferSize_ = input.size();
@@ -41,6 +43,7 @@ class QueueTestSendFile : public QueueSendFile
 class QueueTestReceiveFile : public QueueReceiveFile
 {
     public:
+        QueueTestReceiveFile(toolBox* myQueueToolBox):QueueReceiveFile(myQueueToolBox){};
 
         std::vector<char> getBuffer()
         {
@@ -49,15 +52,15 @@ class QueueTestReceiveFile : public QueueReceiveFile
 };
 
 
-FileManipulationClassReader getSomeInfoQueue;
+FileManipulationClassReader getSomeInfoQueue{&myQueueToolBox};
 
 TEST(NoOtherProgram, SendQueueAlone)
 {
-    ASSERT_THROW(QueueSendFile myQueueObject(1),ipc_exception);
+    ASSERT_THROW(QueueSendFile myQueueObject(1, &myQueueToolBox),ipc_exception);
 }
 TEST(NoOtherProgram, ReceiveQueueAlone)
 {
-    QueueReceiveFile myQueueObject(1);
+    QueueReceiveFile myQueueObject(1, &myQueueToolBox);
     ASSERT_THROW(myQueueObject.syncIPCAndBuffer(),ipc_exception);
 }
 
@@ -65,8 +68,8 @@ TEST(BasicQueueCmd, OpenCloseQueue)
 {
     std::string queueName = "/CopyDataThroughQueue";
     {
-        QueueReceiveFile myRQueue;
-        ASSERT_NO_THROW(QueueSendFile myQueueObject);
+        QueueReceiveFile myRQueue(&myQueueToolBox);
+        ASSERT_NO_THROW(QueueSendFile myQueueObject(&myQueueToolBox));
     } // Queue should not be opened anywhere (destructor)
 
     mqd_t queueTest = mq_open(queueName.c_str(),O_RDONLY);
@@ -89,7 +92,7 @@ TEST(BasicQueueCmd, QueueAlreadyOpened)
                 S_IRWXG |S_IRWXU,NULL); //queue is open
         ASSERT_THAT(queueTest, Ne(-1));
 
-        EXPECT_NO_THROW(QueueReceiveFile myQueueObject;);
+        EXPECT_NO_THROW(QueueReceiveFile myQueueObject(&myQueueToolBox););
         mq_close(queueTest);
         mq_unlink(queueName.c_str());
     }
@@ -112,8 +115,8 @@ TEST(BasicQueueCmd, QueueAlreadyOpened)
     ASSERT_THAT(status, Ne(-1));
     ASSERT_THAT(queueAttrs.mq_curmsgs,Eq(1));
 
-    EXPECT_NO_THROW(QueueReceiveFile myQueueObject);
-    QueueReceiveFile myQueueObject;
+    EXPECT_NO_THROW(QueueReceiveFile myQueueObject(&myQueueToolBox));
+    QueueReceiveFile myQueueObject(&myQueueToolBox);
     status = mq_getattr(myQueueObject.getQueueDescriptor(), &queueAttrs);
     ASSERT_THAT(status, Ne(-1));
     ASSERT_THAT(queueAttrs.mq_curmsgs,Eq(0));
@@ -129,7 +132,7 @@ TEST(BasicQueueCmd, QueueAlreadyOpened)
     
 TEST(SyncBuffAndQueue, SendQueue)
 {
-    QueueReceiveFile myRQueue; // just to create the queue
+    QueueReceiveFile myRQueue(&myQueueToolBox); // just to create the queue
     std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
     struct mq_attr queueAttrs;
@@ -139,7 +142,7 @@ TEST(SyncBuffAndQueue, SendQueue)
     unsigned int prio = 5;
 
     //Open the queue
-    QueueTestSendFile MyQueueSend;
+    QueueTestSendFile MyQueueSend(&myQueueToolBox);
     queueTest = mq_open(queueName.c_str(), O_RDONLY);
     ASSERT_THAT(queueTest, Ne(-1));
     MyQueueSend.modifyBuffer(message);
@@ -208,7 +211,7 @@ TEST(SyncBuffAndQueue, ExceedMaxMsg)
 {
     pthread_t mThreadID1, mThreadID2;
 
-    QueueReceiveFile myRQueue; // just to create the queue
+    QueueReceiveFile myRQueue(&myQueueToolBox); // just to create the queue
     start_pthread(&mThreadID1,ThreadExceedMaxMsgSend);
     usleep(50000);
     start_pthread(&mThreadID2,ThreadExceedMaxMsgReceive);
@@ -218,7 +221,7 @@ TEST(SyncBuffAndQueue, ExceedMaxMsg)
 
 void ThreadExceedMaxMsgSend(void)
 {
-    QueueTestSendFile MyQueueSend;
+    QueueTestSendFile MyQueueSend(&myQueueToolBox);
     std::string message = "This is a test.";
     struct mq_attr queueAttrs;
 
@@ -278,9 +281,9 @@ void ThreadExceedMaxMsgReceive(void)
 
 TEST(SyncBuffAndQueue, ReadSendQueueSimpleMessage)
 {
-    QueueReceiveFile myRQueue; // just to create the queue
-    FileManipulationClassWriter writingToAFile;
-    QueueSendFile myQueueSend;
+    QueueReceiveFile myRQueue(&myQueueToolBox); // just to create the queue
+    FileManipulationClassWriter writingToAFile{&myQueueToolBox};
+    QueueSendFile myQueueSend(&myQueueToolBox);
     std::string data = "I expect these data will be send in the Queue.\n";
     std::string filename = "TmpFile.txt";
     writingToAFile.modifyBufferToWrite(data);
@@ -321,12 +324,12 @@ TEST(SyncBuffAndQueue, ReadSendQueueSimpleMessage)
 
 TEST(SyncBuffAndQueue, ReadSendQueueComplexMessage)
 {
-    QueueReceiveFile myRQueue; // just to create the queue
-    QueueSendFile myQueueSend;
-    FileManipulationClassWriter writingToAFile;
+    QueueReceiveFile myRQueue(&myQueueToolBox); // just to create the queue
+    QueueSendFile myQueueSend(&myQueueToolBox);
+    FileManipulationClassWriter writingToAFile{&myQueueToolBox};
     std::string fileinput = "input.dat";
     CreateRandomFile randomFile {fileinput,5, 1};
-    ASSERT_THAT(checkIfFileExists(fileinput), IsTrue());
+    ASSERT_THAT(myQueueToolBox.checkIfFileExists(fileinput), IsTrue());
     std::string fileoutput = "output.dat";
     std::string queueName = "/CopyDataThroughQueue";
     mqd_t queueTest;
@@ -334,7 +337,7 @@ TEST(SyncBuffAndQueue, ReadSendQueueComplexMessage)
     std::vector<char> buffer;
     size_t msgSize;
     unsigned int prio = 5;
-    ssize_t fileSize = returnFileSize(fileinput);
+    ssize_t fileSize = myQueueToolBox.returnFileSize(fileinput);
     ssize_t datasent = 0;
 
     ASSERT_NO_THROW(myQueueSend.openFile(fileinput));
@@ -379,7 +382,7 @@ TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
         queueTest = mq_open(queueName.c_str(), O_CREAT | O_WRONLY,S_IRWXG |S_IRWXU,NULL);
         ASSERT_THAT(queueTest, Ne(-1));
 
-        EXPECT_NO_THROW(QueueSendFile myQueueObject);
+        EXPECT_NO_THROW(QueueSendFile myQueueObject(&myQueueToolBox));
 
         mq_close(queueTest);
     }
@@ -391,7 +394,7 @@ TEST(BasicQueueCmd, SendQueueOpenCloseQueue)
 
     {
         CaptureStream stdcout{std::cout};
-        EXPECT_THROW(QueueSendFile myQueueObject{1},ipc_exception);
+        EXPECT_THROW(QueueSendFile myQueueObject(1, &myQueueToolBox),ipc_exception);
         EXPECT_THAT(stdcout.str(),StartsWith("Waiting to the ipc_receivefile.\n"));
     }
 
@@ -402,7 +405,7 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 {
     mqd_t queueTest;
     std::string queueName = "/CopyDataThroughQueue";
-    QueueTestReceiveFile myQueueObj;
+    QueueTestReceiveFile myQueueObj(&myQueueToolBox);
     //open
     queueTest = mq_open(queueName.c_str(), O_WRONLY);
     ASSERT_THAT(queueTest, Ne(-1));
@@ -428,24 +431,24 @@ TEST(SyncBuffAndQueue, ReceiveQueue)
 
 TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
 {
-    FileManipulationClassReader Reader;
+    FileManipulationClassReader Reader{&myQueueToolBox};
 
     //files param
     std::string fileinput = "input.dat";
     CreateRandomFile randomFile {fileinput,5, 1};
-    ASSERT_THAT(checkIfFileExists(fileinput), IsTrue());
+    ASSERT_THAT(myQueueToolBox.checkIfFileExists(fileinput), IsTrue());
     std::string fileoutput = "output.dat";
 
     //the sender param
     mqd_t queueTest;
     std::string queueName = "/CopyDataThroughQueue";
     std::vector<char> buffer;
-    ssize_t fileSize = returnFileSize(fileinput);
+    ssize_t fileSize = myQueueToolBox.returnFileSize(fileinput);
     ssize_t datasent = 0;
 
     //Opening
     ASSERT_NO_THROW(Reader.openFile(fileinput));
-    QueueReceiveFile myQueueObj;
+    QueueReceiveFile myQueueObj(&myQueueToolBox);
     queueTest = mq_open(queueName.c_str(),O_WRONLY);
     ASSERT_THAT(queueTest, Ne(-1));
     ASSERT_NO_THROW(myQueueObj.openFile(fileoutput));
@@ -474,10 +477,10 @@ TEST(SyncBuffandQueue, ReceiveQueueAndWrite)
 
 void ThreadQueueSendManual(void)
 {
-    QueueSendFile myQueueSend;
-    ASSERT_THAT(checkIfFileExists("input.dat"), IsTrue());
+    QueueSendFile myQueueSend{&myQueueToolBox};
+    ASSERT_THAT(myQueueToolBox.checkIfFileExists("input.dat"), IsTrue());
     ASSERT_NO_THROW(myQueueSend.openFile("input.dat"));
-    ssize_t fileSize = returnFileSize("input.dat");
+    ssize_t fileSize = myQueueToolBox.returnFileSize("input.dat");
     ssize_t datasent = 0;
 
     while (datasent < fileSize)
@@ -493,7 +496,7 @@ void ThreadQueueSendManual(void)
 
 void ThreadQueueReceiveManual(void)
 {
-    QueueReceiveFile myQueueReceive;
+    QueueReceiveFile myQueueReceive{&myQueueToolBox};
     ASSERT_NO_THROW(myQueueReceive.openFile("output.dat"));
 
     while (myQueueReceive.getBufferSize() > 0)
@@ -524,13 +527,13 @@ TEST(QueueSendAndReceive, ManualLoop)
 
 void ThreadQueueSendAuto(void)
 {
-    QueueSendFile myQueueSend;
+    QueueSendFile myQueueSend{&myQueueToolBox};
     ASSERT_NO_THROW(myQueueSend.syncFileWithIPC("input.dat"));
 }
 
 void ThreadQueueReceiveAuto(void)
 {
-    QueueReceiveFile myQueueReceive;
+    QueueReceiveFile myQueueReceive{&myQueueToolBox};
     ASSERT_NO_THROW(myQueueReceive.syncFileWithIPC("output.dat"));
 }
 TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
@@ -559,7 +562,7 @@ TEST(QueueSendAndReceive, UsingsyncFileWithIPC)
 
 void ThreadQueueSendFileKilledSend(void)
 {
-    QueueSendFile myQueueSend;
+    QueueSendFile myQueueSend{&myQueueToolBox};
     myQueueSend.openFile("input.dat");
     myQueueSend.sendHeader("input.dat");
     srand (time(NULL));
@@ -573,7 +576,7 @@ void ThreadQueueSendFileKilledSend(void)
 
 void ThreadQueueSendFileKilledReceive(void)
 {
-    QueueReceiveFile myQueueReceive(2);
+    QueueReceiveFile myQueueReceive(2, &myQueueToolBox);
     ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), ipc_exception);
 }
 
@@ -600,13 +603,13 @@ TEST(KillingAProgram, QueueSendFileKilled)
 
 void ThreadQueueReceiveFileKilledSend(void)
 {
-    QueueSendFile myQueueSend(3);
+    QueueSendFile myQueueSend(3,&myQueueToolBox);
     ASSERT_THROW(myQueueSend.syncFileWithIPC("input.dat"), ipc_exception);
 }
 
 void ThreadQueueReceiveFileKilledReceive(void)
 {
-    QueueReceiveFile myQueueReceive;
+    QueueReceiveFile myQueueReceive{&myQueueToolBox};
     srand (time(NULL));
     int numberOfMessage = rand() % 20 +10; //will end after a random number of message
     for (int i = 0; i<numberOfMessage; i++)
@@ -638,12 +641,12 @@ TEST(KillingAProgram, QueueReceiveFileKilled)
 
 void QueueReceiveFileSend(void)
 {
-    ASSERT_THROW(QueueSendFile myQueueObject, ipc_exception);
+    ASSERT_THROW(QueueSendFile myQueueObject{&myQueueToolBox}, ipc_exception);
 }
 
 void QueueReceiveFileReceive(void)
 {
-    QueueReceiveFile myQueueReceive{1};
+    QueueReceiveFile myQueueReceive{1,&myQueueToolBox};
     ASSERT_THROW(myQueueReceive.syncFileWithIPC("output.dat"), ipc_exception);
 }
 

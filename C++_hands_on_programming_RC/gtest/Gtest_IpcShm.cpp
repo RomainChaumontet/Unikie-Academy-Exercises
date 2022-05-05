@@ -31,9 +31,12 @@ std::string shmfileName1 = "shminput.dat";
 std::string shmfileName2 = "shmoutput.dat";
 std::vector<char> ShmrandomData = getRandomData();
 
+toolBox myShmToolBox;
+
 class IpcShmSendFileTest : public ShmSendFile
 {
     public:
+        IpcShmSendFileTest(toolBox* myToolBox):ShmSendFile(myToolBox){};
         char* get_buffer() {return shm_.data;};
 
         void MokeSync(const std::string &filepath)
@@ -51,7 +54,7 @@ class IpcShmSendFileTest : public ShmSendFile
                 throw ipc_exception("Error, can't connect to the other program.\n");
             }
             //sending header
-            Header header(filepath, defaultBufferSize_);
+            Header header(filepath, defaultBufferSize_, &myShmToolBox);
             std::memcpy(shm_.data, header.getHeader().data(), defaultBufferSize_);
             shm_.main->data_size = defaultBufferSize_;
 
@@ -99,6 +102,7 @@ class IpcShmSendFileTest : public ShmSendFile
 class IpcShmReceiveFileTest : public ShmReceiveFile
 {
     public:
+        IpcShmReceiveFileTest(toolBox* myToolBox):ShmReceiveFile(myToolBox){};
         void setBufferSize(size_t size)
         {
             bufferSize_ = size;
@@ -167,9 +171,9 @@ class IpcShmReceiveFileTest : public ShmReceiveFile
 ////////////// ShmSendFile Constructor and Destructor ///////////////////
 TEST(IpcShmSendFile, ConstructorDestructor)
 {
-    ASSERT_NO_THROW(ShmSendFile myShmObject);
+    ASSERT_NO_THROW(ShmSendFile myShmObject(&myShmToolBox));
     {
-        ShmSendFile myShmObject;
+        ShmSendFile myShmObject(&myShmToolBox);
         EXPECT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Ne(-1));
         EXPECT_THAT(sem_open(semSName.c_str(), 0), Ne(SEM_FAILED));
         EXPECT_THAT(sem_open(semRName.c_str(), 0), Ne(SEM_FAILED));
@@ -184,7 +188,7 @@ TEST(IpcShmSendFile, ConstructorDestructor)
 TEST(NoOtherProgram, ShmSendFile)
 { 
     EXPECT_THROW({
-        ShmSendFile myShmObject(1);
+        ShmSendFile myShmObject(1, &myShmToolBox);
         CreateRandomFile myFile("input.dat", 1, 1);
         myShmObject.syncFileWithIPC("input.dat");
         }, ipc_exception);
@@ -199,12 +203,12 @@ TEST(IpcShmSendFile, syncFileWithBuffer)
         sem_t* semaphorePtr = sem_open(semSName.c_str(), 0);
         ASSERT_THAT(shmFd, Eq(-1));
         ASSERT_THAT(semaphorePtr, Eq(SEM_FAILED));
-        IpcShmSendFileTest myShmObject;
+        IpcShmSendFileTest myShmObject(&myShmToolBox);
 
         //creating the file
         ASSERT_NO_THROW(
             {
-                FileManipulationClassWriter writingToAFile;
+                FileManipulationClassWriter writingToAFile(&myShmToolBox);
                 writingToAFile.modifyBufferToWrite(ShmrandomData);
                 writingToAFile.openFile(shmfileName1.c_str());
                 writingToAFile.syncFileWithBuffer();
@@ -230,7 +234,7 @@ TEST(IpcShmSendFile, syncFileWithBuffer)
 //////////////////// ShmSendFile syncFileWithIPC/////////////////
 void IpcShmSendFilesyncFileWithIPC(void)
 {
-    ShmSendFile myShmObject;
+    ShmSendFile myShmObject(&myShmToolBox);
     myShmObject.syncFileWithIPC(shmfileName1);
 
 }
@@ -242,7 +246,7 @@ void IpcShmSendFilesyncFileWithIPC2(void)
     sem_t* receiverSemaphorePtr;
     size_t size = 0;
     int wait = 0;
-    FileManipulationClassReader GettingSomeInfo;
+    FileManipulationClassReader GettingSomeInfo{&myShmToolBox};
 
 
     do
@@ -334,15 +338,15 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
     ASSERT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));
     ASSERT_THAT(sem_open(semRName.c_str(), 0), Eq(SEM_FAILED));
     {
-        ShmSendFile myShmSendObject;
-        ASSERT_NO_THROW(ShmReceiveFile myShmReceiveObject);
+        ShmSendFile myShmSendObject(&myShmToolBox);
+        ASSERT_NO_THROW(ShmReceiveFile myShmReceiveObject(&myShmToolBox));
         EXPECT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
     }
     EXPECT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));
 
     {
         CaptureStream stdcout(std::cout);
-        ASSERT_THROW(ShmReceiveFile myShmReceiveObject(1), ipc_exception);
+        ASSERT_THROW(ShmReceiveFile myShmReceiveObject(1, &myShmToolBox), ipc_exception);
         EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_sendfile.\n"));
     }
 
@@ -350,7 +354,7 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
         sem_t* fdPtr = sem_open(semSName.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
         sem_t* fdPtr2 = sem_open(semRName.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
         ASSERT_THAT(fdPtr,Ne(SEM_FAILED));
-        ASSERT_THROW(ShmReceiveFile myShmReceiveObject, ipc_exception);
+        ASSERT_THROW(ShmReceiveFile myShmReceiveObject(&myShmToolBox), ipc_exception);
         sem_close(fdPtr);
         sem_unlink(semSName.c_str());
         sem_close(fdPtr2);
@@ -362,7 +366,7 @@ TEST(IpcShmReceiveFile, ConstructorDestructor)
 TEST(NoOtherProgram, ShmReceivefile)
 { 
     EXPECT_THROW({
-        ShmReceiveFile myShmObject(1);
+        ShmReceiveFile myShmObject(1,&myShmToolBox);
         CreateRandomFile myFile("input.dat", 1, 1);
         myShmObject.syncFileWithIPC("input.dat");
         }, ipc_exception);
@@ -376,8 +380,8 @@ TEST(IpcShmReceiveFile,syncFileWithBuffer)
         EXPECT_THAT(shm_open(ipcName.c_str(), O_RDWR,0), Eq(-1));
         EXPECT_THAT(sem_open(semSName.c_str(), 0), Eq(SEM_FAILED));
         EXPECT_THAT(sem_open(semRName.c_str(), 0), Eq(SEM_FAILED));
-        ShmSendFile myShmSendObject;
-        IpcShmReceiveFileTest myShmReceiveObject;
+        ShmSendFile myShmSendObject(&myShmToolBox);
+        IpcShmReceiveFileTest myShmReceiveObject(&myShmToolBox);
         myShmReceiveObject.openFile(shmfileName2);
         myShmReceiveObject.setBufferSize(someRandomData.size());
         myShmReceiveObject.syncFileWithBuffer(someRandomData.data());
@@ -401,7 +405,7 @@ TEST(IpcShmReceiveFile,syncFileWithBuffer)
 void ThreadSendFile(void)
 {
 
-    ShmSendFile myShmSendObject1;
+    ShmSendFile myShmSendObject1(&myShmToolBox);
     myShmSendObject1.syncFileWithIPC(shmfileName1);
     
 }
@@ -409,7 +413,7 @@ void ThreadSendFile(void)
 void ThreadReceiveFile(void)
 {
     
-    ShmReceiveFile myShmReceiveObject1;
+    ShmReceiveFile myShmReceiveObject1(&myShmToolBox);
     myShmReceiveObject1.syncFileWithIPC(shmfileName2);
     
 }
@@ -443,14 +447,14 @@ TEST(ShmReceivefileAndShmSendfile, copyfileSendFileFirst)
 void ThreadSendFile2(void)
 {
 
-    ShmSendFile myShmSendObject1;
+    ShmSendFile myShmSendObject1(&myShmToolBox);
     myShmSendObject1.syncFileWithIPC("copyfileSendFileLast");
     
 }
 
 void ThreadReceiveFile2(void)
 {
-    ShmReceiveFile myShmReceiveObject1;
+    ShmReceiveFile myShmReceiveObject1(&myShmToolBox);
     myShmReceiveObject1.syncFileWithIPC("copyfileSendFileLast2");
 
 }
@@ -481,13 +485,13 @@ TEST(ShmReceivefileAndShmSendfile, copyfileSendFileLast)
 
 void ThreadShmSendFileKilledSend(void)
 {
-    IpcShmSendFileTest myShmSendObject1;
+    IpcShmSendFileTest myShmSendObject1(&myShmToolBox);
     myShmSendObject1.MokeSync("input.dat");
 }
 
 void ThreadShmSendFileKilledReceive(void)
 {
-    ShmReceiveFile myShmReceiveObject1{3};
+    ShmReceiveFile myShmReceiveObject1{3,&myShmToolBox};
     ASSERT_THROW(myShmReceiveObject1.syncFileWithIPC("output2.dat"), ipc_exception);
 }
 
@@ -516,14 +520,14 @@ TEST(KillingAProgram, ShmSendFileKilled)
 
 void ThreadShmReceiveFileKilledSend(void)
 {
-    ShmSendFile myShmSendObject1{3};
+    ShmSendFile myShmSendObject1{3,&myShmToolBox};
     ASSERT_THROW(myShmSendObject1.syncFileWithIPC("input.dat"), ipc_exception);
 }
 
 void ThreadShmReceiveFileKilledReceive(void)
 {
     CaptureStream stdcout(std::cout); //mute std::cout
-    IpcShmReceiveFileTest myShmReceiveObject1;
+    IpcShmReceiveFileTest myShmReceiveObject1(&myShmToolBox);
     myShmReceiveObject1.MokeSync();
 }
 
@@ -550,13 +554,13 @@ TEST(KillingAProgram, ShmReceiveFileKilled)
 
 void ThreadShmDoubleReceiverReceive(void)
 {
-    ShmReceiveFile myReceiver{2};
+    ShmReceiveFile myReceiver{2,&myShmToolBox};
     ASSERT_THROW(myReceiver.syncFileWithIPC("output_pipe.dat"), ipc_exception);
 }
 
 void ThreadShmDoubleReceiverSend(void)
 {
-    ShmSendFile mySender{2};
+    ShmSendFile mySender{2,&myShmToolBox};
     try 
     {
         mySender.syncFileWithIPC("input_pipe.dat");
@@ -588,19 +592,19 @@ TEST(IPCUsedByAnotherProgram,ShmDoubleReceiver)
 
 void ThreadShmDoubleSenderReceive(void)
 {
-    ShmReceiveFile myReceiver{2};
+    ShmReceiveFile myReceiver{2,&myShmToolBox};
     ASSERT_THROW(myReceiver.syncFileWithIPC("output_pipe.dat"), ipc_exception);
 }
 
 void ThreadShmDoubleSenderSend(void)
 {
-    ShmSendFile mySender{2};
+    ShmSendFile mySender{2,&myShmToolBox};
     EXPECT_THROW(mySender.syncFileWithIPC("input_pipe.dat"),ipc_exception);
     
 }
 void ThreadShmDoubleSenderSend2(void)
 {
-    ShmSendFile mySender{2};
+    ShmSendFile mySender{2,&myShmToolBox};
     EXPECT_THROW(mySender.syncFileWithIPC("input_pipe2.dat"),ipc_exception);
 }
 

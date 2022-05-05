@@ -41,8 +41,8 @@ class Shm : public virtual copyFilethroughIPC
 class ShmSendFile : public Shm, public Reader
 {
     public:
-        ShmSendFile(int maxAttempt);
-        ShmSendFile():ShmSendFile(30){};
+        ShmSendFile(int maxAttempt, toolBox* myToolBox);
+        ShmSendFile(toolBox* myToolBox):ShmSendFile(30, myToolBox){};
         ~ShmSendFile();
         void syncFileWithIPC(const std::string &filepath);
         void syncFileWithBuffer(char* bufferPtr);
@@ -54,8 +54,8 @@ class ShmSendFile : public Shm, public Reader
 class ShmReceiveFile : public Shm, public Writer
 {
     public:
-        ShmReceiveFile(int maxAttempt);
-        ShmReceiveFile():ShmReceiveFile(30){};
+        ShmReceiveFile(int maxAttempt, toolBox* myToolBox);
+        ShmReceiveFile(toolBox* myToolBox):ShmReceiveFile(30, myToolBox){};
         ~ShmReceiveFile();
         void syncFileWithIPC(const std::string &filepath);
         void syncFileWithBuffer(char* bufferPtr);

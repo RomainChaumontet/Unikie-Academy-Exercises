@@ -19,8 +19,8 @@ class PipeSendFile : public Pipe, public Reader
     struct sigaction sa;
 
     public:
-        PipeSendFile(int maxAttempt);
-        PipeSendFile():PipeSendFile(30){};
+        PipeSendFile(int maxAttempt, toolBox* myToolBox);
+        PipeSendFile(toolBox* myToolBox):PipeSendFile(30, myToolBox){};
         ~PipeSendFile();
 
         void syncIPCAndBuffer(void *data, size_t &data_size_bytes);
@@ -35,8 +35,8 @@ class PipeSendFile : public Pipe, public Reader
 class PipeReceiveFile : public Pipe, public Writer
 {
     public:
-        PipeReceiveFile(int maxAttempt);
-        PipeReceiveFile():PipeReceiveFile(60){};
+        PipeReceiveFile(int maxAttempt, toolBox* myToolBox);
+        PipeReceiveFile(toolBox* myToolBox):PipeReceiveFile(60, myToolBox){};
         ~PipeReceiveFile();
         void syncIPCAndBuffer(void *data, size_t &data_size_bytes);
         void syncIPCAndBuffer()

@@ -1,6 +1,7 @@
 #include "Gtest_Ipc.h"
 #include <pthread.h>
 
+toolBox myGeneralToolBox;
 
 bool compareFiles(const std::string& fileName1, const std::string& fileName2) // https://stackoverflow.com/questions/6163611/compare-two-files
 {
@@ -12,11 +13,11 @@ bool compareFiles(const std::string& fileName1, const std::string& fileName2) //
     return false; //file problem
   }
 
-  if (returnFileSize(fileName1) != returnFileSize(fileName2)) {
+  if (myGeneralToolBox.returnFileSize(fileName1) != myGeneralToolBox.returnFileSize(fileName2)) {
 
     std::cout << "size mismatch" <<std::endl;
-    std::cout << "First file size: " << returnFileSize(fileName1);
-    std::cout << ". Second file size: " << returnFileSize(fileName2) <<std::endl;
+    std::cout << "First file size: " << myGeneralToolBox.returnFileSize(fileName1);
+    std::cout << ". Second file size: " << myGeneralToolBox.returnFileSize(fileName2) <<std::endl;
     return false; //size mismatch
   }
 

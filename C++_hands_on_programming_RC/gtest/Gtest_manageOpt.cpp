@@ -15,6 +15,24 @@ using ::testing::IsTrue;
 using ::testing::IsFalse;
 using ::testing::StartsWith;
 using ::testing::EndsWith;
+using ::testing::Return;
+using ::testing::_;
+using ::testing::A;
+
+
+toolBox MyToolBox;
+ipcRun myIpcRun{&MyToolBox};
+
+class MockTB : public toolBox
+{
+  public:
+    
+    MOCK_METHOD(bool, enoughSpaceAvailable, (const size_t fileSize));
+    MOCK_METHOD(void, checkFilePath, (const std::string &filepath));
+    MOCK_METHOD(bool, checkIfFileExists, (const std::string &filepath));
+    MOCK_METHOD(size_t, returnFileSize, (const std::string &filepath));
+};
+
 
 std::map<std::string, inputLineOpt> inputMap =
 {
@@ -184,20 +202,20 @@ TEST_P(FakeCmdLineOptTest, MainTest) // Test the main() function with wrong use 
   {
     {
       CaptureStream stdcout(std::cout);
-      EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
     }
 
     {
       CaptureStream stdcout(std::cout);
-      EXPECT_THAT(receiverMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.receiverMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcout.str(), StrEq(statements[inputStruct.protocol]));
     }
   }
   else //correct arguments, but the file does not exist
   {
     CaptureStream stdcerr(std::cerr);
-    EXPECT_THAT(senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
+    EXPECT_THAT(myIpcRun.senderMain(FakeOpt.argc(), FakeOpt.argv()), Eq(EXIT_FAILURE));
     EXPECT_THAT(stdcerr.str(), StrEq("Error, the file specified does not exist. Abord.\n"));
   }
 }
@@ -218,47 +236,47 @@ std::map<std::string, std::vector<const char*>> FileNameOrPathTooLongArguments=
   {"Queue", std::vector<const char*> {"--queue", "--file"}},
 };
 
-class FileNameOrPathTooLong : public ::testing::TestWithParam<std::pair<const std::string, std::vector<const char*>>> {};
+class AllProtocolAsArgument : public ::testing::TestWithParam<std::pair<const std::string, std::vector<const char*>>> {};
 
 
-TEST_P(FileNameOrPathTooLong,FilePathTooLong)
+TEST_P(AllProtocolAsArgument,FileNameOrPathTooLong)
 {
   {
     std::string filepath(PATH_MAX+1, 'c');
     filepath.append("/myFile.txt");
 
-    EXPECT_THROW(checkFilePath(filepath), file_exception);
+    EXPECT_THROW(MyToolBox.checkFilePath(filepath), file_exception);
 
     std::vector<const char*> arguments = GetParam().second;
     arguments.emplace_back(filepath.c_str());
     FakeCmdLineOpt FakeArg (arguments.begin(), arguments.end());
     {
       CaptureStream stdcerr(std::cerr);
-      EXPECT_THAT(receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcerr.str(), EndsWith("Error, the name of the path provided is too long.\n"));
     }
     {
       CaptureStream stdcerr(std::cerr);
-      EXPECT_THAT(senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcerr.str(), EndsWith("Error, the file specified does not exist. Abord.\n"));
     }
   }
   {
     std::string filepath(NAME_MAX+1, 'c');
 
-    EXPECT_THROW(checkFilePath(filepath), file_exception);
+    EXPECT_THROW(MyToolBox.checkFilePath(filepath), file_exception);
 
     std::vector<const char*> arguments = GetParam().second;
     arguments.emplace_back(filepath.c_str());
     FakeCmdLineOpt FakeArg (arguments.begin(), arguments.end());
     {
       CaptureStream stdcerr(std::cerr);
-      EXPECT_THAT(receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcerr.str(), EndsWith("Error, the name of the file provided is too long.\n"));
     }
     {
       CaptureStream stdcerr(std::cerr);
-      EXPECT_THAT(senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcerr.str(), EndsWith("Error, the file specified does not exist. Abord.\n"));
     }
   }
@@ -267,19 +285,19 @@ TEST_P(FileNameOrPathTooLong,FilePathTooLong)
     std::string filename(NAME_MAX+1, 'c');
     filepath.append(filename);
 
-    EXPECT_THROW(checkFilePath(filepath), file_exception);
+    EXPECT_THROW(MyToolBox.checkFilePath(filepath), file_exception);
 
     std::vector<const char*> arguments = GetParam().second;
     arguments.emplace_back(filepath.c_str());
     FakeCmdLineOpt FakeArg (arguments.begin(), arguments.end());
     {
       CaptureStream stdcerr(std::cerr);
-      EXPECT_THAT(receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.receiverMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcerr.str(), EndsWith("Error, the name of the file provided is too long.\n"));
     }
     {
       CaptureStream stdcerr(std::cerr);
-      EXPECT_THAT(senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
+      EXPECT_THAT(myIpcRun.senderMain(FakeArg.argc(),FakeArg.argv()), Eq(EXIT_FAILURE));
       EXPECT_THAT(stdcerr.str(), EndsWith("Error, the file specified does not exist. Abord.\n"));
     }
   }
@@ -287,10 +305,42 @@ TEST_P(FileNameOrPathTooLong,FilePathTooLong)
 }
 
 
+
+TEST_P(AllProtocolAsArgument, enoughSpaceAvailable)
+{
+  size_t maxSize = -1; //== the max value of size_t
+  EXPECT_THAT(MyToolBox.enoughSpaceAvailable(maxSize),IsFalse);
+  EXPECT_THAT(MyToolBox.enoughSpaceAvailable(0), IsTrue);
+
+  MockTB myTB;
+
+  EXPECT_CALL(myTB, checkIfFileExists(A<const std::string&>()))
+    .WillRepeatedly(Return(true));
+  EXPECT_CALL(myTB, returnFileSize(A<const std::string&>()))
+    .WillRepeatedly(Return(50000));
+  EXPECT_CALL(myTB, enoughSpaceAvailable(A<size_t>()))
+    .WillRepeatedly(Return(false));
+  
+  ipcRun myTest(&myTB);
+  std::vector<const char*> arguments = GetParam().second;
+  std::string filepath = "test.txt";
+  arguments.emplace_back(filepath.c_str());
+  FakeCmdLineOpt FakeArg (arguments.begin(), arguments.end());
+  
+  {
+    CaptureStream stdcerr(std::cerr);
+    EXPECT_THAT(myTest.senderMain(FakeArg.argc(), FakeArg.argv()), Eq(EXIT_FAILURE));
+    EXPECT_THAT(stdcerr.str(), EndsWith("Error, not enough space on the disk to copy the file.\n"));
+  }
+
+}
+
 INSTANTIATE_TEST_SUITE_P(
-  TestWithFileNameOrPathTooLong,
-  FileNameOrPathTooLong,
+  TestAllProtocol,
+  AllProtocolAsArgument,
   ::testing::ValuesIn(FileNameOrPathTooLongArguments),
-  [](const ::testing::TestParamInfo<FileNameOrPathTooLong::ParamType> &info) {
+  [](const ::testing::TestParamInfo<AllProtocolAsArgument::ParamType> &info) {
     return info.param.first;
 });
+
+

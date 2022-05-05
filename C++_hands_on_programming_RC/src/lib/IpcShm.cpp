@@ -17,8 +17,9 @@ using namespace std::chrono_literals;
 
 Shm::~Shm(){}
 
-ShmSendFile::ShmSendFile(int maxAttempt)
+ShmSendFile::ShmSendFile(int maxAttempt, toolBox* myToolBox)
 {
+    toolBox_ = myToolBox;
     maxAttempt_ = maxAttempt;
     //Opening shared memory
 
@@ -144,7 +145,7 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
         throw ipc_exception("Error, can't connect to ipc_receivefile.\n");
     }
     //sending header
-    Header header(filepath, defaultBufferSize_);
+    Header header(filepath, defaultBufferSize_, toolBox_);
     std::memcpy(shm_.data, header.getHeader().data(), defaultBufferSize_);
     shm_.main->data_size = defaultBufferSize_;
 
@@ -194,8 +195,9 @@ void ShmSendFile::syncFileWithIPC(const std::string &filepath)
 
 
 //////////////////// ShmReceiveFile ///////////////
-ShmReceiveFile :: ShmReceiveFile(int maxAttempt)
+ShmReceiveFile :: ShmReceiveFile(int maxAttempt, toolBox* myToolBox)
 {
+    toolBox_ = myToolBox;
     maxAttempt_ = maxAttempt;
     int tryNumber = 0;
     //Connecting to the semaphore
@@ -362,7 +364,7 @@ void ShmReceiveFile::syncFileWithIPC(const std::string &filepath)
     } while (bufferSize_ > 0 && dataReceived <= fileSize_);
 
     file_.close();
-    if (fileSize_ != returnFileSize(filepath))
+    if (fileSize_ != toolBox_->returnFileSize(filepath))
     {
         throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC.\n");
     }
