@@ -15,20 +15,20 @@
 void checkFilePath(const std::string &filepath)
 {
     std::string::size_type slashPosition = filepath.rfind('/');
-    if (slashPosition == std::string::npos)
+    if (slashPosition == std::string::npos) // no slash in filepath
     {
         if (filepath.size() > NAME_MAX)
         {
             throw file_exception("Error, the name of the file provided is too long.");
         }
     }
-    else
+    else // slash in filepath
     {
-        if (filepath.size()-slashPosition > NAME_MAX)
+        if (filepath.size()-slashPosition > NAME_MAX) // check the length of the name of the file (after the last /)
         {
             throw file_exception("Error, the name of the file provided is too long.");
         }
-        if (slashPosition > PATH_MAX)
+        if (slashPosition > PATH_MAX) // check the length of the path to the file (before the last /)
         {
             throw file_exception("Error, the name of the path provided is too long.");
         }
