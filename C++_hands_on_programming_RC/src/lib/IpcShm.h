@@ -47,7 +47,7 @@ class ShmSendFile : public Shm, public Reader
         void syncFileWithIPC(const std::string &filepath);
         void syncFileWithBuffer(char* bufferPtr);
         void syncIPCAndBuffer(){};
-        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){};// no use in this class
+        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){};// empty because there is no use cases in the tests
 
 };
 
@@ -59,7 +59,7 @@ class ShmReceiveFile : public Shm, public Writer
         ~ShmReceiveFile();
         void syncFileWithIPC(const std::string &filepath);
         void syncFileWithBuffer(char* bufferPtr);
-        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}; // no use in this class
+        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}; // empty because there is no use cases in the tests
         void syncIPCAndBuffer(){};
 
 };
