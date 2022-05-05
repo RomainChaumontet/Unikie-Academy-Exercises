@@ -5,15 +5,14 @@
   - [Giving a file to copy that does not exist](#giving-a-file-to-copy-that-does-not-exist)
   - [Giving different protocols between the two programs](#giving-different-protocols-between-the-two-programs)
   - [Killing a program while running](#killing-a-program-while-running)
-  - [Case if the IPC channel already exists](#case-if-the-ipc-channel-already-exists)
+  - [Case if the IPC channel already exists / Another program uses the IPC channel](#case-if-the-ipc-channel-already-exists--another-program-uses-the-ipc-channel)
   - [Case if an argument is given after the protocol name](#case-if-an-argument-is-given-after-the-protocol-name)
   - [Max filename length is reached](#max-filename-length-is-reached)
-  - [Other programs are using the protocol with the same name](#other-programs-are-using-the-protocol-with-the-same-name)
 - [Hardware-related issues](#hardware-related-issues)
   - [Not enough space in the disk](#not-enough-space-in-the-disk)
   - [Not enough RAM](#not-enough-ram)
   - [Max path length is reached](#max-path-length-is-reached)
-  - [Writing file or Reading file become not reachable](#writing-file-or-reading-file-become-not-reachable)
+  - [Writing file or Reading file becomes not reachable](#writing-file-or-reading-file-becomes-not-reachable)
 
 # Program misuse
 ## Incorrect arguments
@@ -44,20 +43,34 @@ If the user or the system kills one program while the exchange of data is runnni
 
 The test case for this handling error is named `KillingAProgram` and is in the Gtest file corresponding to each protocol.
 
-## Case if the IPC channel already exists
+## Case if the IPC channel already exists / Another program uses the IPC channel
+The receiver is supposed to receive a header, in case the first message received is not a header the ipc_receivefile program will end with EXIT_FAILURE and print `Error. Another message is present. Maybe another program uses this IPC.`.
+
+This header gives the receiver the size of the file, and at the end of the transfer, the receiver will compare this size with the actual size of the copy, if there is a mismatch, the receiver will end with EXIT_FAILURE and print `Error, filesize mismatch. Maybe another program uses the IPC.`.
+
+Special feature for queues:
+If a queue is already opened and has some messages on it:
+* ipc_sendfile will throw with the statement: ` Error. A queue with some messages already exists.\n"`
+* ipc_receivefile will throw only because ipc_sendfile won't connect.
+
+The test suite for this error is named `IPCUsedByAnotherProgram`.
+In some cases, the receiver can receive exactly the same amount of data than expected. If that happened, it won't end with EXIT_FAILURE but with EXIT_SUCCESS, whereas the sender will end with EXIT_FAILURE.
+
 
 ## Case if an argument is given after the protocol name
-
+*Todo*
 ## Max filename length is reached
+If the length of the path (or the name of the file) exceeds PATH_MAX (or NAME_MAX). The program will end with EXIT_FAILURE and print:
+* if the path is too long: `Error. The path of the file is too long.`.
+* if the name is too long: `Error. The name of the file is too long.`.
 
-## Other programs are using the protocol with the same name
-
+The test case for this error handling is `FileNameOrPathTooLong`.
 # Hardware-related issues
 ## Not enough space in the disk
-
+*Todo*
 ## Not enough RAM
-
+*Todo*
 ## Max path length is reached
-
-## Writing file or Reading file become not reachable
-
+*Todo*
+## Writing file or Reading file becomes not reachable
+*Todo*

@@ -84,6 +84,8 @@ class CaptureStream
   ~CaptureStream() {
     to_swap_.rdbuf(old_buff_); //redirect the stream to the original buffer
   }
+  CaptureStream(const CaptureStream &) = delete;
+  CaptureStream &operator=(const CaptureStream &) = delete;
 
   std::string str()
   {
@@ -93,7 +95,7 @@ class CaptureStream
   protected:
    std::ostream &to_swap_;
    std::stringstream buffer_;
-   std::streambuf *old_buff_;
+   std::streambuf *old_buff_ = nullptr;
 };
 
 
@@ -155,6 +157,9 @@ class FileManipulationClassReader : public Reader
         }
 
         void syncIPCAndBuffer(){}
+
+        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}
+
 };
 
 class FileManipulationClassWriter : public Writer
@@ -163,6 +168,7 @@ class FileManipulationClassWriter : public Writer
         void modifyBufferToWrite(const std::string &data)
         {
             bufferSize_ = data.size();
+            std::vector<char>(data.size()).swap(buffer_);
             buffer_ = std::vector<char> (data.begin(), data.end());
             return;
         }
@@ -184,5 +190,6 @@ class FileManipulationClassWriter : public Writer
         }
         
         void syncIPCAndBuffer(){}
+        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}
 };
 #endif /*GTEST_IPC_H */

@@ -1,6 +1,7 @@
 #ifndef IPCPIPE_H
 #define IPCPIPE_H
 #include "IpcCopyFile.h"
+#include <signal.h>
 
 class Pipe : public virtual copyFilethroughIPC
 {
@@ -15,11 +16,19 @@ class Pipe : public virtual copyFilethroughIPC
 
 class PipeSendFile : public Pipe, public Reader
 {
+    struct sigaction sa;
+
     public:
         PipeSendFile(int maxAttempt);
         PipeSendFile():PipeSendFile(30){};
         ~PipeSendFile();
-        void syncIPCAndBuffer();
+
+        void syncIPCAndBuffer(void *data, size_t &data_size_bytes);
+        void syncIPCAndBuffer()
+        {
+            return syncIPCAndBuffer(buffer_.data(), bufferSize_);
+        };
+        void sendHeader(const std::string &filepath);
 
 };
 
@@ -29,7 +38,11 @@ class PipeReceiveFile : public Pipe, public Writer
         PipeReceiveFile(int maxAttempt);
         PipeReceiveFile():PipeReceiveFile(60){};
         ~PipeReceiveFile();
-        void syncIPCAndBuffer();
+        void syncIPCAndBuffer(void *data, size_t &data_size_bytes);
+        void syncIPCAndBuffer()
+        {
+            syncIPCAndBuffer(buffer_.data(), bufferSize_);
+        };
 
 };
 
