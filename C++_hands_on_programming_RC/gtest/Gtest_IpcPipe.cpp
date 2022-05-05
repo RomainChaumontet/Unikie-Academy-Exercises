@@ -503,7 +503,6 @@ void ThreadPipeReceiveFileKilledSend(void)
 
 TEST(KillingAProgram,PipeReceiveFileKilled)
 {
-    CaptureStream stderr(std::cerr);
     remove("CopyDataThroughPipe");
     CreateRandomFile Randomfile("input_pipe.dat",1,1);
     pthread_t mThreadID1, mThreadID2;
@@ -513,7 +512,6 @@ TEST(KillingAProgram,PipeReceiveFileKilled)
     ::pthread_join(mThreadID1, nullptr);
     remove("output_pipe.dat");
     remove("CopyDataThroughPipe");
-    EXPECT_THAT(stderr.str(),StrEq("Error. Can't find the other program. Did it crash ?\n"));
 }
 
 /////////////////////// Killing a program: sendFile//////////////////
@@ -522,6 +520,7 @@ void ThreadPipeSendFileKilledReceive(void)
 {
     PipeReceiveFile myReceiver(3,&myPipeToolBox);
     ASSERT_THROW(myReceiver.syncFileWithIPC("input_pipe.dat"), ipc_exception);
+
 }
 
 void ThreadPipeSendFileKilledSend(void)
@@ -529,6 +528,11 @@ void ThreadPipeSendFileKilledSend(void)
     srand (time(NULL));
     PipeSendFile mySender(3,&myPipeToolBox);
     mySender.openFile("input_pipe.dat");
+    mySender.openFile(filepath);
+    size_t headerSize = mySender.getDefaultBufferSize();
+    Header header(filepath, headerSize);
+    mySender.syncIPCAndBuffer(header.getHeader().data(), headerSize);
+
     int numberOfMessage = rand() % 20; //will end after a random number of message
     for (int i = 0; i<numberOfMessage; i++)
     {
@@ -539,9 +543,8 @@ void ThreadPipeSendFileKilledSend(void)
 
 TEST(KillingAProgram,PipeSendFileKilled)
 {
-    CaptureStream stdout(std::cout);
     remove("CopyDataThroughPipe");
-    CreateRandomFile Randomfile("input_pipe.dat",10,10);
+    CreateRandomFile Randomfile("input_pipe.dat",1,1);
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadPipeSendFileKilledReceive);
     start_pthread(&mThreadID2,ThreadPipeSendFileKilledSend);

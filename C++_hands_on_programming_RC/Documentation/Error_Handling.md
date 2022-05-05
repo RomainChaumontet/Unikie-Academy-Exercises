@@ -54,6 +54,9 @@ If a queue is already opened and has some messages on it:
 * ipc_receivefile will throw only because ipc_sendfile won't connect.
 
 The test suite for this error is named `IPCUsedByAnotherProgram`.
+In some cases, the receiver can receive exactly the same amount of data than expected. If that happened, it won't end with EXIT_FAILURE but with EXIT_SUCCESS, whereas the sender will end with EXIT_FAILURE.
+
+
 ## Case if an argument is given after the protocol name
 *Todo*
 ## Max filename length is reached

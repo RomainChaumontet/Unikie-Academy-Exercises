@@ -17,20 +17,20 @@
 void toolBox::checkFilePath(const std::string &filepath)
 {
     std::string::size_type slashPosition = filepath.rfind('/');
-    if (slashPosition == std::string::npos)
+    if (slashPosition == std::string::npos) // no slash in filepath
     {
         if (filepath.size() > NAME_MAX)
         {
             throw file_exception("Error, the name of the file provided is too long.");
         }
     }
-    else
+    else // slash in filepath
     {
-        if (filepath.size()-slashPosition > NAME_MAX)
+        if (filepath.size()-slashPosition > NAME_MAX) // check the length of the name of the file (after the last /)
         {
             throw file_exception("Error, the name of the file provided is too long.");
         }
-        if (slashPosition > PATH_MAX)
+        if (slashPosition > PATH_MAX) // check the length of the path to the file (before the last /)
         {
             throw file_exception("Error, the name of the path provided is too long.");
         }
@@ -256,7 +256,7 @@ void Writer::syncFileWithIPC(const std::string &filepath)
     buffer_.resize(defaultBufferSize_);
     size_t dataReceived = 0;
 
-    while (dataReceived < fileSize_ && bufferSize_ > 0)
+    while (dataReceived < fileSize_ && bufferSize_ == defaultBufferSize_)
     {
         syncIPCAndBuffer();
         buffer_.resize(bufferSize_);
@@ -267,7 +267,7 @@ void Writer::syncFileWithIPC(const std::string &filepath)
     file_.close();
     if (fileSize_ != toolBox_->returnFileSize(filepath))
     {
-        throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC.\n");
+        throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC. Or the sender crashed.\n");
     }
 }
 
@@ -342,6 +342,7 @@ void Reader::syncFileWithIPC(const std::string &filepath)
 
 int ipcRun::receiverMain(int argc, char* const argv[])
 {
+    ipcParameters parameters {argc, argv};
     try
     {
         ipcParameters parameters {argc, argv};
@@ -421,6 +422,7 @@ int ipcRun::receiverMain(int argc, char* const argv[])
     catch (const std::exception &e)
     {
         std::cerr << "caught :" << e.what() << std::endl;
+        remove(parameters.getFilePath());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
@@ -516,7 +518,7 @@ int ipcRun::senderMain(int argc, char* const argv[])
         return EXIT_FAILURE;
     }
     
-    std::cout << "Data send with success\n";
+    std::cout << "Data sent with success\n";
 
     return EXIT_SUCCESS;
 }
