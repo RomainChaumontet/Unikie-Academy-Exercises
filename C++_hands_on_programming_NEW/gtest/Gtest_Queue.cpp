@@ -20,13 +20,13 @@ using ::testing::Return;
 
 TEST(QueueHandler, Constructors)
 {
-    handyFunctions toolBox;
+    HandyFunctions toolBox;
 
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
 
-    EXPECT_NO_THROW(sendQueueHandler(&toolBox, "/myQueue", fileName));
-    EXPECT_NO_THROW(receiveQueueHandler(&toolBox, "/myQueue", "myFile"));
+    EXPECT_NO_THROW(SendQueueHandler(&toolBox, "/myQueue", fileName));
+    EXPECT_NO_THROW(ReceiveQueueHandler(&toolBox, "/myQueue", "myFile"));
 
     remove("myFile");
 }
@@ -50,7 +50,7 @@ TEST(QueueHandler, SenderConnectAlone)
         .WillOnce(Return(0));
 
     
-    sendQueueHandler mySender(&mockedTB, "/myQueue", fileName);
+    SendQueueHandler mySender(&mockedTB, "/myQueue", fileName);
 
     ASSERT_THROW(mySender.connect(), ipc_exception);
 }
@@ -66,7 +66,7 @@ TEST(QueueHandler, ReceiverConnectAlone)
         .WillRepeatedly(Return(false));
 
     
-    receiveQueueHandler myReceiver(&mockedTB, "/myQueue", "myFileName");
+    ReceiveQueueHandler myReceiver(&mockedTB, "/myQueue", "myFileName");
 
     ASSERT_NO_THROW(myReceiver.connect());
     ASSERT_THROW(myReceiver.transferHeader(), ipc_exception);
@@ -81,12 +81,12 @@ TEST(QueueHandler, ConnectTogether)
     std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){Sender.connect();});
             usleep(50);
@@ -109,7 +109,7 @@ TEST(QueueHandler, SendandReceiveData)
     std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     srand (time(NULL));
     std::vector<char> sendVector = getRandomData();
@@ -118,8 +118,8 @@ TEST(QueueHandler, SendandReceiveData)
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -149,13 +149,13 @@ TEST(QueueHandler, SendReceiveHeader)
     std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     size_t fileSize;
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -183,7 +183,7 @@ TEST(QueueHandler, TransferData)
     std::string ReceiverfileName = "myRFileName";
     std::string queueName = "/myQueue";
 
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     //creating a file of less than 4096 bytes
     std::vector<char> sendVector = getRandomData();
@@ -198,8 +198,8 @@ TEST(QueueHandler, TransferData)
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -228,8 +228,8 @@ TEST(QueueHandler, copyFile)
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName" ;
 
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
@@ -243,13 +243,13 @@ TEST(QueueHandler, copyFile)
         {
             auto senderThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             usleep(50);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 
@@ -264,7 +264,7 @@ TEST(QueueHandler, copyFile)
 
 TEST(QueueHandler, SenderCrashed)
 {
-    handyFunctions myToolBox1;
+    HandyFunctions myToolBox1;
     MockToolBoxAttempt myToolBox2;
 
     EXPECT_CALL(myToolBox2, getMaxAttempt())
@@ -284,7 +284,7 @@ TEST(QueueHandler, SenderCrashed)
     {
         auto senderThread = std::async(std::launch::async, [&]()
         {
-            sendQueueHandler Sender(&myToolBox1, "/QueueIPC", SenderfileName);
+            SendQueueHandler Sender(&myToolBox1, "/QueueIPC", SenderfileName);
             Sender.connect();
             Sender.transferHeader();
             int nbOfLoop = rand() %20+1;
@@ -294,7 +294,7 @@ TEST(QueueHandler, SenderCrashed)
         usleep(50);
         auto receiverThread = std::async(std::launch::async, [&]()
         {
-            copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+            CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
             Receiver.launch();
         });
 
@@ -311,7 +311,7 @@ TEST(QueueHandler, SenderCrashed)
 TEST(QueueHandler, ReceiverCrashed)
 {
     MockToolBoxAttempt myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox2;
 
     EXPECT_CALL(myToolBox1, getMaxAttempt())
         .WillRepeatedly(Return(1));
@@ -330,13 +330,13 @@ TEST(QueueHandler, ReceiverCrashed)
     {
         auto senderThread = std::async(std::launch::async, [&]()
         {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
         });
         usleep(50);
         auto receiverThread = std::async(std::launch::async, [&]()
         {
-            receiveQueueHandler Receiver(&myToolBox2, "/QueueIPC", ReceiverfileName);
+            ReceiveQueueHandler Receiver(&myToolBox2, "/QueueIPC", ReceiverfileName);
             Receiver.connect();
             Receiver.transferHeader();
             int nbOfLoop = rand() %10+1;
@@ -383,20 +383,20 @@ TEST(QueueHandler, DoubleSenders)
         {
             auto sender1Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             usleep(50);
             auto sender2Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox3, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox3, program::SENDER);
                 Sender.launch();
             });
 
             usleep(1000);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 
@@ -440,21 +440,21 @@ TEST(QueueHandler, DoubleReceivers)
         {
             auto sender1Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             
             usleep(1000);
             auto receiver2Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox3, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox3, program::RECEIVER);
                 Receiver.launch();
             });
 
             usleep(1000);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 

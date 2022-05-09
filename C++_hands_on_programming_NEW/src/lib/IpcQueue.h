@@ -6,10 +6,10 @@
 
 volatile extern std::atomic_bool Rwaiting;
 
-class sendQueueHandler : public ipcHandler
+class SendQueueHandler : public IpcHandler
 {
     private:
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Reader myFileHandler_;
         mqd_t queueFd_ = -1;
         std::string queueName_;
@@ -19,8 +19,8 @@ class sendQueueHandler : public ipcHandler
 
 
     public:
-        sendQueueHandler(handyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
-        virtual ~sendQueueHandler();
+        SendQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
+        virtual ~SendQueueHandler();
         virtual void connect() override;
         virtual void sendData(void* data, size_t data_size_bytes);
         virtual size_t transferHeader() override;
@@ -28,10 +28,10 @@ class sendQueueHandler : public ipcHandler
 };
 
 
-class receiveQueueHandler : public ipcHandler
+class ReceiveQueueHandler : public IpcHandler
 {
     private:
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Writer myFileHandler_;
         mqd_t queueFd_ = -1;
         std::string queueName_;
@@ -40,8 +40,8 @@ class receiveQueueHandler : public ipcHandler
 
 
     public:
-        receiveQueueHandler(handyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
-        virtual ~receiveQueueHandler();
+        ReceiveQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
+        virtual ~ReceiveQueueHandler();
         virtual void connect() override;
         virtual size_t receiveData(void* data, size_t bufferSize);
         virtual size_t transferHeader() override;
