@@ -4,22 +4,22 @@
 ///////////////// handyfunction ///////////////////////////
 #pragma region handyFunction
 
-size_t handyFunctions::getDefaultBufferSize() const
+size_t HandyFunctions::getDefaultBufferSize() const
 {
     return defaultBufferSize;
 }
 
-size_t handyFunctions::getKey() const
+size_t HandyFunctions::getKey() const
 {
     return key;
 }
 
-int handyFunctions::getMaxAttempt() const
+int HandyFunctions::getMaxAttempt() const
 {
     return maxAttempt_;
 }
 
-void handyFunctions::checkFilePath(const std::string &filepath) const
+void HandyFunctions::checkFilePath(const std::string &filepath) const
 {
     char currentDir[PATH_MAX];
     if (getcwd(currentDir, PATH_MAX) == NULL)
@@ -50,13 +50,13 @@ void handyFunctions::checkFilePath(const std::string &filepath) const
     }
 }
 
-bool handyFunctions::checkIfFileExists (const std::string &filepath) const
+bool HandyFunctions::checkIfFileExists (const std::string &filepath) const
 {
-    struct stat buffer;
-    return (stat(filepath.c_str(), &buffer) == 0);
+    struct stat64 buffer;
+    return (stat64(filepath.c_str(), &buffer) == 0);
 }
 
-size_t handyFunctions::returnFileSize(const std::string &filepath) const
+size_t HandyFunctions::returnFileSize(const std::string &filepath) const
 {
     if (checkIfFileExists(filepath) == false)
         throw file_exception("returnFileSize(). File does not exist.");
@@ -65,7 +65,7 @@ size_t handyFunctions::returnFileSize(const std::string &filepath) const
     return buffer.st_size;
 }
 
-bool handyFunctions::enoughSpaceAvailable(size_t fileSize) const
+bool HandyFunctions::enoughSpaceAvailable(size_t fileSize) const
 {
     struct statvfs systemStat;
     int status = statvfs("/", &systemStat);
@@ -81,7 +81,7 @@ bool handyFunctions::enoughSpaceAvailable(size_t fileSize) const
         return false;
 }
 
-void handyFunctions::printInstructions() const
+void HandyFunctions::printInstructions() const
 {
     std::cout << "Welcome to this incredible program!" <<std::endl; 
     std::cout << "It can do magic: copy a file in a completely ineffective way." <<std::endl;
@@ -102,7 +102,7 @@ void handyFunctions::printInstructions() const
     std::cout << "      * ipc channel name should not be more than NAME_MAX character (usually 255)." <<std::endl;
 }
 
-void handyFunctions::updatePrintingElements(std::string toPrint, bool forcePrint)
+void HandyFunctions::updatePrintingElements(std::string toPrint, bool forcePrint)
 {
     std::chrono::time_point<std::chrono::steady_clock> now =
         std::chrono::steady_clock::now();
@@ -128,12 +128,12 @@ void handyFunctions::updatePrintingElements(std::string toPrint, bool forcePrint
     }
 }
 
-void handyFunctions::nap(int timeInMs) const
+void HandyFunctions::nap(int timeInMs) const
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(timeInMs));
 }
 
-void handyFunctions::getTime(struct timespec &ts) const
+void HandyFunctions::getTime(struct timespec &ts) const
 {
     if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
     {
@@ -141,7 +141,7 @@ void handyFunctions::getTime(struct timespec &ts) const
     }
 }
 
-void handyFunctions::printFileSize(size_t fileSize) const
+void HandyFunctions::printFileSize(size_t fileSize) const
 {
     size_t Gb = fileSize/(1024*1024*1024);
     size_t Mb = (fileSize-Gb*1024*1024*1024)/(1024*1024);
@@ -151,10 +151,14 @@ void handyFunctions::printFileSize(size_t fileSize) const
     std::cout << "Transferring a file which size: " << Gb << "GB " << Mb << "MB " << Kb << "KB " << b << "B." << std::endl; 
 }
 
-void handyFunctions::checkIf2FilesAreTheSame(const std::string& file1, const std::string& file2) const
+void HandyFunctions::compareFileNames(const std::string& file1, const std::string& file2) const
 {
     char currentDir[PATH_MAX];
-    getcwd(currentDir, PATH_MAX);
+    if (getcwd(currentDir, PATH_MAX) == NULL)
+    {
+        std::cout << "Unable to get the current directory, proceeding without checking if the IpcChannel and the FileName are equivalent." << std::endl;
+        return;
+    }
     std::string completePath1 = "";
     std::string completePath2 = "";
 
@@ -186,10 +190,10 @@ SemName handyFunctions::getSemName(const std::string& IpcName) const
 #pragma endregion handyFunction
 
 
-/////////////////// fileHandler ///////////////////////////
-#pragma region fileHandler
+/////////////////// FileHandler ///////////////////////////
+#pragma region FileHandler
 
-size_t fileHandler::readFile(void* buffer, size_t maxSizeToRead)
+size_t FileHandler::readFile(void* buffer, size_t maxSizeToRead)
 {
     size_t dataRead;
 
@@ -221,7 +225,7 @@ size_t fileHandler::readFile(void* buffer, size_t maxSizeToRead)
     return dataRead;
 }
 
-void fileHandler::writeFile(void* buffer, size_t sizeToWrite)
+void FileHandler::writeFile(void* buffer, size_t sizeToWrite)
 {
     if (!file_.is_open())
     {
@@ -245,16 +249,16 @@ void fileHandler::writeFile(void* buffer, size_t sizeToWrite)
     throw file_exception("Writer writeFile(). Unknown error.");
 }
 
-size_t fileHandler::fileSize()
+size_t FileHandler::fileSize()
 {
     return myToolBox->returnFileSize(filepath_);
 }
 
-#pragma endregion fileHandler
+#pragma endregion FileHandler
 
 /////////////////// Writer ////////////////////////////
 #pragma region Writer
-Writer::Writer(const std::string&filepath, handyFunctions* toolBox):fileHandler(filepath, toolBox)
+Writer::Writer(const std::string&filepath, HandyFunctions* toolBox):FileHandler(filepath, toolBox)
 {
     if (myToolBox->checkIfFileExists(filepath))
         std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
@@ -279,7 +283,7 @@ void Writer::cleanInCaseOfThrow()
 
 /////////////////// Reader ////////////////////////////
 #pragma region Reader
-Reader::Reader(const std::string& filepath, handyFunctions* toolBox):fileHandler(filepath,toolBox)
+Reader::Reader(const std::string& filepath, HandyFunctions* toolBox):FileHandler(filepath,toolBox)
 {
     if (!myToolBox->checkIfFileExists(filepath))
     {
@@ -308,7 +312,7 @@ Reader::~Reader()
 ////////////////// IpcHandler /////////////////////////
 #pragma region IpcHandler
 
-ipcHandler::~ipcHandler()
+IpcHandler::~IpcHandler()
 {}
 
 #pragma endregion IpcHandler
@@ -317,14 +321,14 @@ ipcHandler::~ipcHandler()
 ////////////////// Header ////////////
 #pragma region Header
 
-Header::Header(size_t key, size_t fileSize, handyFunctions* toolbox):myToolBox_(toolbox),key_(key)
+Header::Header(size_t key, size_t fileSize, HandyFunctions* toolbox):myToolBox_(toolbox),key_(key)
 {
     headerVector.emplace_back(key);
     headerVector.emplace_back(fileSize);
     headerVector.resize(myToolBox_->getDefaultBufferSize());
 }
 
-Header::Header(size_t key, handyFunctions* toolbox):myToolBox_(toolbox),key_(key)
+Header::Header(size_t key, HandyFunctions* toolbox):myToolBox_(toolbox),key_(key)
 {
     headerVector.emplace_back(key);
     headerVector.resize(myToolBox_->getDefaultBufferSize());

@@ -137,7 +137,7 @@ class CreateRandomFile
 
 
 
-class MockToolBox : public handyFunctions
+class MockToolBox : public HandyFunctions
 {
     public:
         MOCK_METHOD(int, getMaxAttempt, (), (const));
@@ -148,7 +148,7 @@ class MockToolBox : public handyFunctions
         MOCK_METHOD(void, nap, (int), (const, override));
 };
 
-class MockToolBoxAttempt : public handyFunctions
+class MockToolBoxAttempt : public HandyFunctions
 {
     public:
         MOCK_METHOD(int, getMaxAttempt, (), (const));
