@@ -188,9 +188,9 @@ size_t ReceiveQueueHandler::transferData(std::vector<char> &buffer)
 {
     size_t bufferSize = myToolBox_->getDefaultBufferSize();
     buffer.resize(bufferSize);
-    size_t sizeReadfromPipe = receiveData(buffer.data(), bufferSize);
-    myFileHandler_.writeFile(buffer.data(), sizeReadfromPipe);
-    return sizeReadfromPipe;
+    size_t sizeReadfromQueue = receiveData(buffer.data(), bufferSize);
+    myFileHandler_.writeFile(buffer.data(), sizeReadfromQueue);
+    return sizeReadfromQueue;
 }
 
 
