@@ -19,7 +19,7 @@ using ::testing::Return;
 
 TEST(ShmHandler, Constructors)
 {
-    handyFunctions toolBox;
+    HandyFunctions toolBox;
 
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
@@ -80,7 +80,7 @@ TEST(ShmHandler, ConnectTogether)
     std::string shmName = "/myShm";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     ASSERT_NO_THROW(
         {
@@ -108,7 +108,7 @@ TEST(ShmHandler, SendReceiveHeader)
     std::string shmName = "/myShm";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     size_t fileSize;
 
     ASSERT_NO_THROW(
@@ -142,7 +142,7 @@ TEST(ShmHandler, TransferData)
     std::string ReceiverfileName = "myRFileName";
     std::string shmName = "/myShm";
 
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     //creating a file of less than 4096 bytes
     std::vector<char> sendVector = getRandomData();
@@ -188,8 +188,8 @@ TEST(ShmHandler, copyFile)
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName2" ;
 
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
@@ -224,7 +224,7 @@ TEST(ShmHandler, copyFile)
 
 TEST(ShmHandler, SenderCrashed)
 {
-    handyFunctions myToolBox1;
+    HandyFunctions myToolBox1;
     MockToolBoxAttempt myToolBox2;
 
     EXPECT_CALL(myToolBox2, getMaxAttempt())

@@ -34,7 +34,7 @@ static void sigpipe_handler(int signum)
 }
 
 sendPipeHandler::sendPipeHandler(
-    handyFunctions* toolBox,
+    HandyFunctions* toolBox,
     const std::string &pipeName,
     const std::string &filepath
     ):
@@ -167,7 +167,7 @@ size_t sendPipeHandler::transferData(std::vector<char> &buffer)
 #pragma region receivePipeHandler
 
 receivePipeHandler::receivePipeHandler(
-    handyFunctions* toolBox,
+    HandyFunctions* toolBox,
     const std::string &pipeName,
     const std::string &filepath
     ):

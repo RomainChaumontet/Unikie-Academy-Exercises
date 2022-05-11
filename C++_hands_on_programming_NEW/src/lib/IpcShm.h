@@ -25,11 +25,11 @@ class semaphoreHandler
     private:
         std::string semName_;
         sem_t* semPtr_ = SEM_FAILED;
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         struct timespec ts_;
     
     public:
-        semaphoreHandler(const std::string &name, handyFunctions* toolBox):semName_(name), myToolBox_(toolBox){};
+        semaphoreHandler(const std::string &name, HandyFunctions* toolBox):semName_(name), myToolBox_(toolBox){};
         ~semaphoreHandler();
         void semCreate();
         void semConnect(std::string& PrintElements);
@@ -39,7 +39,7 @@ class semaphoreHandler
 
 class sharedMemoryHandler
 {
-    handyFunctions* myToolBox_;
+    HandyFunctions* myToolBox_;
     int shmFileDescriptor_ = -1;
     std::string shmName_;
     char* bufferPtr = nullptr;
@@ -47,7 +47,7 @@ class sharedMemoryHandler
     ShmData shm_;
 
     public:
-        sharedMemoryHandler(handyFunctions* toolBox, const std::string &ShmName);
+        sharedMemoryHandler(HandyFunctions* toolBox, const std::string &ShmName);
         ~sharedMemoryHandler();
         void shmCreate();
         void shmConnect();
@@ -57,7 +57,7 @@ class sharedMemoryHandler
 class sendShmHandler : public ipcHandler
 {
     private:
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Reader myFileHandler_;
         std::string filepath_;
         std::string shmName_;
@@ -66,7 +66,7 @@ class sendShmHandler : public ipcHandler
         sharedMemoryHandler myShm_;
 
     public:
-        sendShmHandler(handyFunctions* toolBox, const std::string &ShmName, const std::string &filepath);
+        sendShmHandler(HandyFunctions* toolBox, const std::string &ShmName, const std::string &filepath);
         ~sendShmHandler(){};
         virtual void connect() override;
         virtual size_t transferHeader() override;
@@ -77,7 +77,7 @@ class sendShmHandler : public ipcHandler
 class receiveShmHandler : public ipcHandler
 {
     private:
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Writer myFileHandler_;
         std::string filepath_;
         std::string shmName_;
@@ -86,7 +86,7 @@ class receiveShmHandler : public ipcHandler
         sharedMemoryHandler myShm_;
 
     public:
-        receiveShmHandler(handyFunctions* toolBox, const std::string &ShmName, const std::string &filepath);
+        receiveShmHandler(HandyFunctions* toolBox, const std::string &ShmName, const std::string &filepath);
         ~receiveShmHandler(){};
         virtual void connect() override;
         virtual size_t transferHeader() override;

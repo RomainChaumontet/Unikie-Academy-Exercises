@@ -229,7 +229,7 @@ class FakeCmdLineOptTest : public ::testing::TestWithParam<std::pair<const std::
 
 TEST_P(FakeCmdLineOptTest, ipcParameters) // Test the process from commande line arguments to protocol and filepath
 {
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     auto inputStruct = GetParam().second;
     FakeCmdLineOpt FakeOpt(inputStruct.arguments.begin(),inputStruct.arguments.end());
     if (inputStruct.protocol == protocolList::ERROR || inputStruct.protocol == protocolList::NONE)

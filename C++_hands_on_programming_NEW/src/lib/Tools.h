@@ -34,7 +34,7 @@ struct SemName
     std::string receiverSemaphoreName;
 };
 
-class handyFunctions // Wrap all free functions and global variables
+class HandyFunctions // Wrap all free functions and global variables
 {
     protected:
         size_t key = 151563468; // a randomish number to be used as a key
@@ -48,7 +48,7 @@ class handyFunctions // Wrap all free functions and global variables
 
 
     public:
-        virtual ~handyFunctions(){};
+        virtual ~HandyFunctions(){};
 
         virtual size_t getDefaultBufferSize() const;
         virtual size_t getKey() const;
@@ -104,9 +104,9 @@ class fileHandler
     protected:
         std::fstream file_;
         std::string filepath_;
-        handyFunctions* myToolBox;
+        HandyFunctions* myToolBox;
     public:
-        fileHandler(const std::string&filepath, handyFunctions* toolBox):filepath_(filepath),myToolBox(toolBox){};
+        fileHandler(const std::string&filepath, HandyFunctions* toolBox):filepath_(filepath),myToolBox(toolBox){};
         virtual ~fileHandler(){};
         size_t readFile(void* buffer, size_t maxSizeToRead); //buffer is supposed to point into a space allocated for at least maxSizeToRead bytes.
         void writeFile(void* buffer, size_t sizeToWrite); //the data pointed by the buffer are supposed to be at least sizeToWrite bytes
@@ -116,7 +116,7 @@ class fileHandler
 class Writer : public fileHandler
 {
     public:
-        Writer(const std::string&filepath, handyFunctions* toolBox); //open file
+        Writer(const std::string&filepath, HandyFunctions* toolBox); //open file
         ~Writer(); //close file
         void cleanInCaseOfThrow();
 };
@@ -124,7 +124,7 @@ class Writer : public fileHandler
 class Reader : public fileHandler
 {
     public:
-        Reader(const std::string&filepath, handyFunctions* toolBox); //open file
+        Reader(const std::string&filepath, HandyFunctions* toolBox); //open file
         ~Reader(); //close file
 };
 
@@ -143,11 +143,11 @@ class Header
 {
     protected:
         std::vector<size_t> headerVector;
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         size_t key_;
     public:
-        Header(size_t key, size_t fileSize, handyFunctions* toolbox);
-        Header(size_t key, handyFunctions* toolbox);
+        Header(size_t key, size_t fileSize, HandyFunctions* toolbox);
+        Header(size_t key, HandyFunctions* toolbox);
         void* getData();
         size_t getKey();
         size_t getFileSize();

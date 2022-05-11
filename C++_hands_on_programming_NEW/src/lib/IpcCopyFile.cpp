@@ -15,7 +15,7 @@ struct option long_options[]=
 	  {0, 0, 0, 0}
 };
 
-ipcParameters::ipcParameters(int argc, char* const argv[], handyFunctions* toolBox):myToolBox_(toolBox)
+ipcParameters::ipcParameters(int argc, char* const argv[], HandyFunctions* toolBox):myToolBox_(toolBox)
 {
     opterr = 0; //getopt_long won't print errors
     optind = 0; //reset the index of getopt_long

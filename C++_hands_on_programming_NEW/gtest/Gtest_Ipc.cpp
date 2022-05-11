@@ -1,6 +1,6 @@
 #include "Gtest_Ipc.h"
 
-handyFunctions myToolBox;
+HandyFunctions myToolBox;
 
 bool compareFiles(const std::string& fileName1, const std::string& fileName2) // http://www.cplusplus.com/forum/general/94032/#msg504910
 {

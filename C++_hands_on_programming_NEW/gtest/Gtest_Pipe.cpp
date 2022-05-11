@@ -19,7 +19,7 @@ using ::testing::Return;
 
 TEST(FifoHandler, ConstructorAndDestructor)
 {
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     {
         fifoHandler myFifo(&myToolBox, "HelloFifo");
         myFifo.createFifo();
@@ -32,7 +32,7 @@ TEST(PipeHandler, ConstructorSender)
 {
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     
     EXPECT_THROW(sendPipeHandler(&myToolBox,"myPipe","FileDoesNotExists"),file_exception);
 
@@ -44,7 +44,7 @@ TEST(PipeHandler, ConstructorSenderSignalHandler)
 {
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     sendPipeHandler myPipeHandler(&myToolBox,"myPipe",fileName);
     ASSERT_THAT(sigpipe_received, IsFalse());
@@ -97,7 +97,7 @@ TEST(PipeHandler, ConnectTogether)
     std::string pipeName = "myPipe";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     ASSERT_NO_THROW(
         {
@@ -123,7 +123,7 @@ TEST(PipeHandler, SendandReceiveData)
     std::string pipeName = "myPipe";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     srand (time(NULL));
     std::vector<char> sendVector = getRandomData();
     std::vector<char> receiveVector;
@@ -161,7 +161,7 @@ TEST(PipeHandler, SendReceiveHeader)
     std::string pipeName = "myPipe";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     size_t fileSize;
 
     ASSERT_NO_THROW(
@@ -194,7 +194,7 @@ TEST(PipeHandler, TransferData)
     std::string ReceiverfileName = "myRFileName";
     std::string pipeName = "myPipe";
 
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     
     //creating a file of less than 4096 bytes
     std::vector<char> sendVector = getRandomData();
@@ -239,8 +239,8 @@ TEST(PipeHandler, TransferData)
 
 TEST(PipeHandler, copyFile)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName" ;
@@ -277,8 +277,8 @@ TEST(PipeHandler, copyFile)
 
 TEST(PipeHandler, SenderCrashed)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
@@ -319,8 +319,8 @@ TEST(PipeHandler, SenderCrashed)
 
 TEST(PipeHandler, ReceiverCrashed)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
@@ -362,9 +362,9 @@ TEST(PipeHandler, ReceiverCrashed)
 
 TEST(PipeHandler, DoubleSenders)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
-    handyFunctions myToolBox3;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
+    HandyFunctions myToolBox3;
     
     std::string SenderfileName = "myFileName" ;
     std::string ReceiverfileName = "myRFileName";
@@ -411,9 +411,9 @@ TEST(PipeHandler, DoubleSenders)
 
 TEST(PipeHandler, DoubleReceivers)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
-    handyFunctions myToolBox3;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
+    HandyFunctions myToolBox3;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";

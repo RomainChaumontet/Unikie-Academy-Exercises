@@ -64,7 +64,7 @@ void semaphoreHandler::semWait(bool print, const std::string& message)
 
         auto printwaiting = std::async(std::launch::async, [&]()
         {
-            handyFunctions toolBox;
+            HandyFunctions toolBox;
             while(SemWaiting)
             {
                 toolBox.updatePrintingElements(message);
@@ -100,7 +100,7 @@ void semaphoreHandler::semWait(bool print, const std::string& message)
 #pragma region sharedMemoryHandler
 
 sharedMemoryHandler::sharedMemoryHandler(
-    handyFunctions* toolBox,
+    HandyFunctions* toolBox,
     const std::string &ShmName
     ): myToolBox_(toolBox),
     shmName_(ShmName),
@@ -184,7 +184,7 @@ ShmData& sharedMemoryHandler::shmGetShmStruct()
 #pragma region sendShmHandler
 
 sendShmHandler::sendShmHandler(
-    handyFunctions* toolBox,
+    HandyFunctions* toolBox,
     const std::string &ShmName,
     const std::string &filepath
     ):myToolBox_(toolBox),
@@ -231,7 +231,7 @@ size_t sendShmHandler::transferData(std::vector<char>& buffer)
 #pragma region receiveShmHandler
 
 receiveShmHandler::receiveShmHandler(
-    handyFunctions* toolBox,
+    HandyFunctions* toolBox,
     const std::string &ShmName,
     const std::string &filepath
     ):myToolBox_(toolBox),

@@ -8,10 +8,10 @@ volatile extern std::atomic_bool sigpipe_received;
 class fifoHandler
 {
     private:
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         std::string pipeName_;
     public:
-        fifoHandler(handyFunctions* toolBox, const std::string &pipeName):myToolBox_(toolBox), pipeName_(pipeName){};
+        fifoHandler(HandyFunctions* toolBox, const std::string &pipeName):myToolBox_(toolBox), pipeName_(pipeName){};
         ~fifoHandler();
         void createFifo() const;
 };
@@ -47,7 +47,7 @@ struct ThreadInfo
     pthread_t timer;
     std::fstream* pipeFilePtr;
     std::string pipeName;
-    handyFunctions* toolbox;
+    HandyFunctions* toolbox;
 };
 
 
@@ -56,14 +56,14 @@ class sendPipeHandler : public ipcHandler
 {
     private:
         fifoHandler myFifo_;
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Reader myFileHandler_;
         std::fstream pipeFile_;
         std::string pipeName_;
         SigHandler mySigHandler_;
 
     public:
-        sendPipeHandler(handyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
+        sendPipeHandler(HandyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
         virtual ~sendPipeHandler();
         virtual void connect() override;
         virtual void sendData(void *data, size_t data_size_bytes);
@@ -75,12 +75,12 @@ class receivePipeHandler : public ipcHandler
 {
     private:
         fifoHandler myFifo_;
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Writer myFileHandler_;
         std::fstream pipeFile_;
         std::string pipeName_;
     public:
-        receivePipeHandler(handyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
+        receivePipeHandler(HandyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
         virtual ~receivePipeHandler();
         virtual size_t receiveData(void* data, size_t bufferSize); //data should have bufferSize space allocated
         virtual void connect() override;

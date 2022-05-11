@@ -3,7 +3,7 @@
 
 #pragma region sendQueueHandler
 sendQueueHandler::sendQueueHandler(
-    handyFunctions* toolBox,
+    HandyFunctions* toolBox,
     const std::string &QueueName,
     const std::string &filepath
     ):myToolBox_(toolBox),
@@ -103,7 +103,7 @@ size_t sendQueueHandler::transferData(std::vector<char>& buffer)
 
 #pragma region receiveQueueHandler
 receiveQueueHandler::receiveQueueHandler(
-    handyFunctions* toolBox,
+    HandyFunctions* toolBox,
     const std::string &QueueName,
     const std::string &filepath
     ):myToolBox_(toolBox),
@@ -168,7 +168,7 @@ size_t receiveQueueHandler::transferHeader()
     Rwaiting = true;
     auto printwaiting = std::async(std::launch::async, [&]()
     {
-        handyFunctions toolBox;
+        HandyFunctions toolBox;
         while(Rwaiting)
         {
             toolBox.updatePrintingElements("Waiting for ipc_sendfile.");

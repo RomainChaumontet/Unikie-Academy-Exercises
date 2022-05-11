@@ -20,7 +20,7 @@ using ::testing::Return;
 
 TEST(QueueHandler, Constructors)
 {
-    handyFunctions toolBox;
+    HandyFunctions toolBox;
 
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
@@ -81,7 +81,7 @@ TEST(QueueHandler, ConnectTogether)
     std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     ASSERT_NO_THROW(
         {
@@ -109,7 +109,7 @@ TEST(QueueHandler, SendandReceiveData)
     std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     srand (time(NULL));
     std::vector<char> sendVector = getRandomData();
@@ -149,7 +149,7 @@ TEST(QueueHandler, SendReceiveHeader)
     std::string queueName = "/myQueue";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     size_t fileSize;
 
     ASSERT_NO_THROW(
@@ -183,7 +183,7 @@ TEST(QueueHandler, TransferData)
     std::string ReceiverfileName = "myRFileName";
     std::string queueName = "/myQueue";
 
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     //creating a file of less than 4096 bytes
     std::vector<char> sendVector = getRandomData();
@@ -228,8 +228,8 @@ TEST(QueueHandler, copyFile)
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName" ;
 
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
     ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
@@ -264,7 +264,7 @@ TEST(QueueHandler, copyFile)
 
 TEST(QueueHandler, SenderCrashed)
 {
-    handyFunctions myToolBox1;
+    HandyFunctions myToolBox1;
     MockToolBoxAttempt myToolBox2;
 
     EXPECT_CALL(myToolBox2, getMaxAttempt())
@@ -311,7 +311,7 @@ TEST(QueueHandler, SenderCrashed)
 TEST(QueueHandler, ReceiverCrashed)
 {
     MockToolBoxAttempt myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox2;
 
     EXPECT_CALL(myToolBox1, getMaxAttempt())
         .WillRepeatedly(Return(1));

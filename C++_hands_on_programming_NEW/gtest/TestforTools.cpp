@@ -20,17 +20,17 @@ using ::testing::Return;
 
 
 
-TEST(handyFunctions, ToolBoxMemberAccess)
+TEST(HandyFunctions, ToolBoxMemberAccess)
 {
-    handyFunctions ToolBox;
+    HandyFunctions ToolBox;
     EXPECT_THAT(ToolBox.getDefaultBufferSize(),Eq(4096));
     EXPECT_THAT(ToolBox.getKey(),Eq(151563468));
     EXPECT_THAT(ToolBox.getMaxAttempt(),Eq(30));
 }
 
-TEST(handyFunctions, checkFilePath)
+TEST(HandyFunctions, checkFilePath)
 {
-    handyFunctions ToolBox;
+    HandyFunctions ToolBox;
     std::string normalFilePath = "myfilePath/";
     std::string exceedFilePath(PATH_MAX+1, 'c');
     exceedFilePath.append("/");
@@ -46,9 +46,9 @@ TEST(handyFunctions, checkFilePath)
     EXPECT_THROW(ToolBox.checkFilePath("/"+normalFilePath+exceedFileName), arguments_exception);
 }
 
-TEST(handyFunctions, chefIfFileExists)
+TEST(HandyFunctions, chefIfFileExists)
 {
-    handyFunctions ToolBox; 
+    HandyFunctions ToolBox; 
     std::string fileName = "myFileName.dat";
     EXPECT_THAT(ToolBox.checkIfFileExists(fileName), IsFalse()) << ToolBox.checkIfFileExists(fileName) << std::endl;
     CreateRandomFile myRandomFile(fileName, 1,1);
@@ -58,36 +58,36 @@ TEST(handyFunctions, chefIfFileExists)
     EXPECT_THAT(ToolBox.checkIfFileExists(fileName), IsTrue()) << ToolBox.checkIfFileExists(fileName) << std::endl;
 }
 
-TEST(handyFunctions, returnFileSize)
+TEST(HandyFunctions, returnFileSize)
 {
     srand (time(NULL));
     int a = rand() % 10+1;
     int b = rand() % 10+1;
-    handyFunctions ToolBox; 
+    HandyFunctions ToolBox; 
     std::string fileName = "myFileName.dat";
     CreateRandomFile myRandomFile(fileName, a,b, false);
     EXPECT_THAT(ToolBox.returnFileSize(fileName), Eq(1024*1024*a*b));
 }
 
-TEST(handyFunctions, enoughSpaceAvailable)
+TEST(HandyFunctions, enoughSpaceAvailable)
 {
-    handyFunctions ToolBox; 
+    HandyFunctions ToolBox; 
     size_t maxSize = std::numeric_limits<size_t>::max();
     EXPECT_THAT(ToolBox.enoughSpaceAvailable(maxSize), IsFalse());
     EXPECT_THAT(ToolBox.enoughSpaceAvailable(10), IsTrue());
 }
 
-TEST(handyFunctions, printInstructions)
+TEST(HandyFunctions, printInstructions)
 {
-    handyFunctions ToolBox; 
+    HandyFunctions ToolBox; 
     CaptureStream stdcout(std::cout);
     ToolBox.printInstructions();
     EXPECT_THAT(stdcout.str(), EndsWith("ipc channel name should not be more than NAME_MAX character (usually 255).\n"));
 }
 
-TEST(handyFunctions, updatePrintingElements)
+TEST(HandyFunctions, updatePrintingElements)
 {
-    handyFunctions ToolBox; 
+    HandyFunctions ToolBox; 
     {
         CaptureStream stdcout(std::cout);
         ToolBox.updatePrintingElements("Testing.");
@@ -100,9 +100,9 @@ TEST(handyFunctions, updatePrintingElements)
     }
 }
 
-TEST(handyFunctions, nap)
+TEST(HandyFunctions, nap)
 {
-    handyFunctions ToolBox; 
+    HandyFunctions ToolBox; 
     std::chrono::time_point<std::chrono::steady_clock> start =std::chrono::steady_clock::now();
     EXPECT_NO_THROW(ToolBox.nap(10));
     std::chrono::time_point<std::chrono::steady_clock> now =std::chrono::steady_clock::now();
@@ -110,20 +110,20 @@ TEST(handyFunctions, nap)
     EXPECT_THAT(std::chrono::duration_cast<std::chrono::milliseconds>(now-start).count(),Le(20));//sleep less than 20ms
 }
 
-TEST(handyFunctions, getTime)
+TEST(HandyFunctions, getTime)
 {
     struct timespec ts;
     struct timespec ts2;
-    handyFunctions ToolBox; 
+    HandyFunctions ToolBox; 
     
     EXPECT_NO_THROW(ToolBox.getTime(ts));
     EXPECT_NO_THROW(ToolBox.getTime(ts2));
     EXPECT_THAT(ts2.tv_nsec-ts.tv_nsec, Le(10000000)); // less than 10ms (actually it's around 120ns but in case of RoundRobin...)
 }
 
-TEST(handyFunctions, printFileSize)
+TEST(HandyFunctions, printFileSize)
 {
-    handyFunctions ToolBox;
+    HandyFunctions ToolBox;
     {
         CaptureStream stdcout(std::cout);
         EXPECT_NO_THROW(ToolBox.printFileSize(84597970829312));
@@ -146,9 +146,9 @@ TEST(handyFunctions, printFileSize)
     }
 }
 
-TEST(handyFunctions, checkIf2FilesAreTheSame)
+TEST(HandyFunctions, checkIf2FilesAreTheSame)
 {
-    handyFunctions ToolBox;
+    HandyFunctions ToolBox;
 
     EXPECT_THROW(ToolBox.checkIf2FilesAreTheSame("test", "test"), arguments_exception);
     EXPECT_NO_THROW(ToolBox.checkIf2FilesAreTheSame("test1", "test2"));
@@ -160,7 +160,7 @@ TEST(handyFunctions, checkIf2FilesAreTheSame)
 
 TEST(fileHandler, constructors)
 {
-    handyFunctions toolBox;
+    HandyFunctions toolBox;
     std::string fileName = "myFile";
 
     EXPECT_THROW(Reader(fileName, &toolBox), file_exception); //file does not exists
@@ -192,7 +192,7 @@ TEST(fileHandler, constructors)
 
 TEST(fileHandler, ReadAndWrite)
 {
-    handyFunctions toolBox;
+    HandyFunctions toolBox;
     std::string fileName = "myFile";
     std::vector<char> buffer(toolBox.getDefaultBufferSize(),'c');
     std::vector<char> buffer2(toolBox.getDefaultBufferSize(),'d');
@@ -251,8 +251,8 @@ TEST(fileHandler, ReadAndWrite)
 class HeaderTester : public Header
 {
     public:
-        HeaderTester(size_t key, size_t fileSize, handyFunctions* toolbox):Header(key,fileSize,toolbox){};
-        HeaderTester(size_t key, handyFunctions* toolbox):Header(key,toolbox){};
+        HeaderTester(size_t key, size_t fileSize, HandyFunctions* toolbox):Header(key,fileSize,toolbox){};
+        HeaderTester(size_t key, HandyFunctions* toolbox):Header(key,toolbox){};
         
         std::vector<size_t>& getVector()
         {
@@ -262,7 +262,7 @@ class HeaderTester : public Header
 
 TEST(Header, ConstructorAndMethod)
 {
-    handyFunctions toolBox;
+    HandyFunctions toolBox;
     size_t key = rand() %1000000;
     size_t fileSize = rand() %1000000;
 

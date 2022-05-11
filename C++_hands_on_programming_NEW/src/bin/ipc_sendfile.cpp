@@ -7,7 +7,7 @@ int main(int argc, char* const argv[])
 {
     try
     {
-        handyFunctions myToolBox;
+        HandyFunctions myToolBox;
         copyFileThroughIPC IpcWrapper(argc, argv, &myToolBox, program::SENDER);
         IpcWrapper.launch();
     }

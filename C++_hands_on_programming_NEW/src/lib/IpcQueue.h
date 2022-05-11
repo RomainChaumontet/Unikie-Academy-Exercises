@@ -9,7 +9,7 @@ volatile extern std::atomic_bool Rwaiting;
 class sendQueueHandler : public ipcHandler
 {
     private:
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Reader myFileHandler_;
         mqd_t queueFd_ = -1;
         std::string queueName_;
@@ -19,7 +19,7 @@ class sendQueueHandler : public ipcHandler
 
 
     public:
-        sendQueueHandler(handyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
+        sendQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
         virtual ~sendQueueHandler();
         virtual void connect() override;
         virtual void sendData(void* data, size_t data_size_bytes);
@@ -31,7 +31,7 @@ class sendQueueHandler : public ipcHandler
 class receiveQueueHandler : public ipcHandler
 {
     private:
-        handyFunctions* myToolBox_;
+        HandyFunctions* myToolBox_;
         Writer myFileHandler_;
         mqd_t queueFd_ = -1;
         std::string queueName_;
@@ -40,7 +40,7 @@ class receiveQueueHandler : public ipcHandler
 
 
     public:
-        receiveQueueHandler(handyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
+        receiveQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
         virtual ~receiveQueueHandler();
         virtual void connect() override;
         virtual size_t receiveData(void* data, size_t bufferSize);
