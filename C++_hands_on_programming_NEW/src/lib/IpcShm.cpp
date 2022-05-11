@@ -1,17 +1,17 @@
 #include "IpcShm.h"
 
-#pragma region semaphoreHandler
+#pragma region SemaphoreHandler
 
 volatile std::atomic_bool SemWaiting;
 
-semaphoreHandler::~semaphoreHandler()
+SemaphoreHandler::~SemaphoreHandler()
 {
     if (semPtr_ != SEM_FAILED)
         sem_close(semPtr_);
     sem_unlink(semName_.c_str());
 }
 
-void semaphoreHandler::semCreate()
+void SemaphoreHandler::semCreate()
 {
     semPtr_ = sem_open(semName_.c_str(), O_CREAT , S_IRWXU | S_IRWXG, 0);
     if (semPtr_ == SEM_FAILED)
@@ -23,7 +23,7 @@ void semaphoreHandler::semCreate()
     }
 }
 
-void semaphoreHandler::semConnect(std::string& PrintElements)
+void SemaphoreHandler::semConnect(std::string& PrintElements)
 {
     int numberOfTries = 0;
     
@@ -42,7 +42,7 @@ void semaphoreHandler::semConnect(std::string& PrintElements)
     }
 }
 
-void semaphoreHandler::semPost()
+void SemaphoreHandler::semPost()
 {
     int status = sem_post(semPtr_);
     if (status == -1)
@@ -52,7 +52,7 @@ void semaphoreHandler::semPost()
 }
 
 
-void semaphoreHandler::semWait(bool print, const std::string& message)
+void SemaphoreHandler::semWait(bool print, const std::string& message)
 {
     myToolBox_->getTime(ts_);
     ts_.tv_sec += myToolBox_->getMaxAttempt();
@@ -95,11 +95,11 @@ void semaphoreHandler::semWait(bool print, const std::string& message)
     }
 }
 
-#pragma endregion semaphoreHandler
+#pragma endregion SemaphoreHandler
 
-#pragma region sharedMemoryHandler
+#pragma region SharedMemoryHandler
 
-sharedMemoryHandler::sharedMemoryHandler(
+SharedMemoryHandler::SharedMemoryHandler(
     HandyFunctions* toolBox,
     const std::string &ShmName
     ): myToolBox_(toolBox),
@@ -107,14 +107,14 @@ sharedMemoryHandler::sharedMemoryHandler(
     shmSize_(sizeof(ShmData_Header) + toolBox->getDefaultBufferSize())
 {}
 
-sharedMemoryHandler::~sharedMemoryHandler()
+SharedMemoryHandler::~SharedMemoryHandler()
 {
     close(shmFileDescriptor_);
     munmap(bufferPtr, shmSize_);
     shm_unlink(shmName_.c_str());
 }
 
-void sharedMemoryHandler::shmCreate()
+void SharedMemoryHandler::shmCreate()
 {
     shmFileDescriptor_ = shm_open(shmName_.c_str(), O_RDWR | O_CREAT, 0660);
     if (shmFileDescriptor_ == -1)
@@ -147,7 +147,7 @@ void sharedMemoryHandler::shmCreate()
     close(shmFileDescriptor_);
 }
 
-void sharedMemoryHandler::shmConnect()
+void SharedMemoryHandler::shmConnect()
 {
     std::cout << "Try to open shared memory with the name " << shmName_ << std::endl;
     shmFileDescriptor_ = shm_open(shmName_.c_str(), O_RDWR, 0);
@@ -174,16 +174,16 @@ void sharedMemoryHandler::shmConnect()
     close(shmFileDescriptor_);
 }
 
-ShmData& sharedMemoryHandler::shmGetShmStruct()
+ShmData& SharedMemoryHandler::shmGetShmStruct()
 {
     return shm_;
 }
 
-#pragma endregion sharedMemoryHandler
+#pragma endregion SharedMemoryHandler
 
-#pragma region sendShmHandler
+#pragma region SendShmHandler
 
-sendShmHandler::sendShmHandler(
+SendShmHandler::SendShmHandler(
     HandyFunctions* toolBox,
     const std::string &ShmName,
     const std::string &filepath
@@ -196,7 +196,7 @@ sendShmHandler::sendShmHandler(
     myShm_(toolBox,ShmName)
 {}
 
-void sendShmHandler::connect()
+void SendShmHandler::connect()
 {
     myShm_.shmCreate();
     std::cout << "Shared memory created" << std::endl;
@@ -206,7 +206,7 @@ void sendShmHandler::connect()
     senderSem_.semWait(true, "Waiting for ipc_receivefile");
 }
 
-size_t sendShmHandler::transferHeader()
+size_t SendShmHandler::transferHeader()
 {
     Header header(myToolBox_->getKey(),myToolBox_->returnFileSize(filepath_), myToolBox_);
     std::memcpy(myShm_.shmGetShmStruct().data, header.getData(), myToolBox_->getDefaultBufferSize());
@@ -216,7 +216,7 @@ size_t sendShmHandler::transferHeader()
     return header.getFileSize();
 }
 
-size_t sendShmHandler::transferData(std::vector<char>& buffer)
+size_t SendShmHandler::transferData(std::vector<char>& buffer)
 {
     senderSem_.semWait();
     size_t dataRead = myFileHandler_.readFile(myShm_.shmGetShmStruct().data, myToolBox_->getDefaultBufferSize());
@@ -226,11 +226,11 @@ size_t sendShmHandler::transferData(std::vector<char>& buffer)
     return dataRead;
 }
 
-#pragma endregion sendShmHandler
+#pragma endregion SendShmHandler
 
-#pragma region receiveShmHandler
+#pragma region ReceiveShmHandler
 
-receiveShmHandler::receiveShmHandler(
+ReceiveShmHandler::ReceiveShmHandler(
     HandyFunctions* toolBox,
     const std::string &ShmName,
     const std::string &filepath
@@ -243,7 +243,7 @@ receiveShmHandler::receiveShmHandler(
     myShm_(toolBox,ShmName)
 {}
 
-void receiveShmHandler::connect()
+void ReceiveShmHandler::connect()
 {
     std::string message = "Waiting for ipc_sendfile.";
     receiverSem_.semConnect(message);
@@ -254,7 +254,7 @@ void receiveShmHandler::connect()
     senderSem_.semPost();
 }
 
-size_t receiveShmHandler::transferHeader()
+size_t ReceiveShmHandler::transferHeader()
 {
     Header header(myToolBox_->getKey(),myToolBox_);
     std::vector<size_t> headerReceived;
@@ -278,7 +278,7 @@ size_t receiveShmHandler::transferHeader()
     return headerReceived[1];
 }
 
-size_t receiveShmHandler::transferData(std::vector<char>& buffer)
+size_t ReceiveShmHandler::transferData(std::vector<char>& buffer)
 {
     receiverSem_.semWait();
     size_t dataReceived = myShm_.shmGetShmStruct().main->data_size;
@@ -289,4 +289,4 @@ size_t receiveShmHandler::transferData(std::vector<char>& buffer)
     return dataReceived;
 }
 
-#pragma endregion receiveShmHandler
+#pragma endregion ReceiveShmHandler

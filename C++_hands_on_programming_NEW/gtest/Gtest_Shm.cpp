@@ -24,8 +24,8 @@ TEST(ShmHandler, Constructors)
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
 
-    EXPECT_NO_THROW(sendShmHandler(&toolBox, "/myQueue", fileName));
-    EXPECT_NO_THROW(receiveShmHandler(&toolBox, "/myQueue", "myFile"));
+    EXPECT_NO_THROW(SendShmHandler(&toolBox, "/myQueue", fileName));
+    EXPECT_NO_THROW(ReceiveShmHandler(&toolBox, "/myQueue", "myFile"));
 
     remove("myFile");
 }
@@ -46,7 +46,7 @@ TEST(ShmHandler, SenderConnectAlone)
     EXPECT_CALL(mockedTB,getMaxAttempt())
         .WillOnce(Return(0));
 
-    sendShmHandler mySender(&mockedTB, "myShm", fileName);
+    SendShmHandler mySender(&mockedTB, "myShm", fileName);
 
     ASSERT_THROW(mySender.connect(), ipc_exception);
 
@@ -66,7 +66,7 @@ TEST(ShmHandler, ReceiverConnectAlone)
     EXPECT_CALL(mockedTB,updatePrintingElements(A<std::string>(), A<bool>()))
         .WillOnce(Return());
 
-    receiveShmHandler myReceiver(&mockedTB, "myShm", "myFileName");
+    ReceiveShmHandler myReceiver(&mockedTB, "myShm", "myFileName");
     
     ASSERT_THROW(myReceiver.connect(), ipc_exception);
 
@@ -84,8 +84,8 @@ TEST(ShmHandler, ConnectTogether)
 
     ASSERT_NO_THROW(
         {
-            sendShmHandler Sender(&myToolBox, shmName, SenderfileName);
-            receiveShmHandler Receiver(&myToolBox, shmName, ReceiverfileName);
+            SendShmHandler Sender(&myToolBox, shmName, SenderfileName);
+            ReceiveShmHandler Receiver(&myToolBox, shmName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){Sender.connect();});
             usleep(50);
@@ -113,8 +113,8 @@ TEST(ShmHandler, SendReceiveHeader)
 
     ASSERT_NO_THROW(
         {
-            sendShmHandler Sender(&myToolBox, shmName, SenderfileName);
-            receiveShmHandler Receiver(&myToolBox, shmName, ReceiverfileName);
+            SendShmHandler Sender(&myToolBox, shmName, SenderfileName);
+            ReceiveShmHandler Receiver(&myToolBox, shmName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -157,8 +157,8 @@ TEST(ShmHandler, TransferData)
 
     ASSERT_NO_THROW(
         {
-            sendShmHandler Sender(&myToolBox, shmName, SenderfileName);
-            receiveShmHandler Receiver(&myToolBox, shmName, ReceiverfileName);
+            SendShmHandler Sender(&myToolBox, shmName, SenderfileName);
+            ReceiveShmHandler Receiver(&myToolBox, shmName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -201,8 +201,8 @@ TEST(ShmHandler, copyFile)
     
     ASSERT_NO_THROW(
         {
-            copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
-            copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+            CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+            CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
             
             auto senderThread = std::async(std::launch::async, [&]()
             {
@@ -242,8 +242,8 @@ TEST(ShmHandler, SenderCrashed)
 
     ASSERT_THROW(
     {
-        sendShmHandler Sender(&myToolBox1, "/ShmIPC", SenderfileName);
-        copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+        SendShmHandler Sender(&myToolBox1, "/ShmIPC", SenderfileName);
+        CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
         auto senderThread = std::async(std::launch::async, [&]()
         {
             Sender.connect();

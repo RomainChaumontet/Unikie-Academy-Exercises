@@ -52,8 +52,8 @@ void HandyFunctions::checkFilePath(const std::string &filepath) const
 
 bool HandyFunctions::checkIfFileExists (const std::string &filepath) const
 {
-    struct stat buffer;
-    return (stat(filepath.c_str(), &buffer) == 0);
+    struct stat64 buffer;
+    return (stat64(filepath.c_str(), &buffer) == 0);
 }
 
 size_t HandyFunctions::returnFileSize(const std::string &filepath) const
@@ -151,10 +151,14 @@ void HandyFunctions::printFileSize(size_t fileSize) const
     std::cout << "Transferring a file which size: " << Gb << "GB " << Mb << "MB " << Kb << "KB " << b << "B." << std::endl; 
 }
 
-void HandyFunctions::checkIf2FilesAreTheSame(const std::string& file1, const std::string& file2) const
+void HandyFunctions::compareFileNames(const std::string& file1, const std::string& file2) const
 {
     char currentDir[PATH_MAX];
-    getcwd(currentDir, PATH_MAX);
+    if (getcwd(currentDir, PATH_MAX) == NULL)
+    {
+        std::cout << "Unable to get the current directory, proceeding without checking if the IpcChannel and the FileName are equivalent." << std::endl;
+        return;
+    }
     std::string completePath1 = "";
     std::string completePath2 = "";
 
@@ -186,10 +190,10 @@ SemName HandyFunctions::getSemName(const std::string& IpcName) const
 #pragma endregion HandyFunction
 
 
-/////////////////// fileHandler ///////////////////////////
-#pragma region fileHandler
+/////////////////// FileHandler ///////////////////////////
+#pragma region FileHandler
 
-size_t fileHandler::readFile(void* buffer, size_t maxSizeToRead)
+size_t FileHandler::readFile(void* buffer, size_t maxSizeToRead)
 {
     size_t dataRead;
 
@@ -221,7 +225,7 @@ size_t fileHandler::readFile(void* buffer, size_t maxSizeToRead)
     return dataRead;
 }
 
-void fileHandler::writeFile(void* buffer, size_t sizeToWrite)
+void FileHandler::writeFile(void* buffer, size_t sizeToWrite)
 {
     if (!file_.is_open())
     {
@@ -245,16 +249,16 @@ void fileHandler::writeFile(void* buffer, size_t sizeToWrite)
     throw file_exception("Writer writeFile(). Unknown error.");
 }
 
-size_t fileHandler::fileSize()
+size_t FileHandler::fileSize()
 {
     return myToolBox->returnFileSize(filepath_);
 }
 
-#pragma endregion fileHandler
+#pragma endregion FileHandler
 
 /////////////////// Writer ////////////////////////////
 #pragma region Writer
-Writer::Writer(const std::string&filepath, HandyFunctions* toolBox):fileHandler(filepath, toolBox)
+Writer::Writer(const std::string&filepath, HandyFunctions* toolBox):FileHandler(filepath, toolBox)
 {
     if (myToolBox->checkIfFileExists(filepath))
         std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
@@ -279,7 +283,7 @@ void Writer::cleanInCaseOfThrow()
 
 /////////////////// Reader ////////////////////////////
 #pragma region Reader
-Reader::Reader(const std::string& filepath, HandyFunctions* toolBox):fileHandler(filepath,toolBox)
+Reader::Reader(const std::string& filepath, HandyFunctions* toolBox):FileHandler(filepath,toolBox)
 {
     if (!myToolBox->checkIfFileExists(filepath))
     {
@@ -308,7 +312,7 @@ Reader::~Reader()
 ////////////////// IpcHandler /////////////////////////
 #pragma region IpcHandler
 
-ipcHandler::~ipcHandler()
+IpcHandler::~IpcHandler()
 {}
 
 #pragma endregion IpcHandler

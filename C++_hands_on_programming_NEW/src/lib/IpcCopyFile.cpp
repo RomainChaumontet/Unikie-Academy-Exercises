@@ -2,8 +2,8 @@
 
 
 
-///////////////// ipcParameters //////////////////////////
-#pragma region ipcParameters
+///////////////// IpcParameters //////////////////////////
+#pragma region IpcParameters
 
 struct option long_options[]=
 {
@@ -15,7 +15,7 @@ struct option long_options[]=
 	  {0, 0, 0, 0}
 };
 
-ipcParameters::ipcParameters(int argc, char* const argv[], HandyFunctions* toolBox):myToolBox_(toolBox)
+IpcParameters::IpcParameters(int argc, char* const argv[], HandyFunctions* toolBox):myToolBox_(toolBox)
 {
     opterr = 0; //getopt_long won't print errors
     optind = 0; //reset the index of getopt_long
@@ -112,22 +112,22 @@ ipcParameters::ipcParameters(int argc, char* const argv[], HandyFunctions* toolB
     }
 }
 
-protocolList ipcParameters::getProtocol() const
+protocolList IpcParameters::getProtocol() const
 {
     return protocol_;
 }
 
-std::string ipcParameters::getFilePath() const
+std::string IpcParameters::getFilePath() const
 {
     return std::string(filepath_);
 }
 
-std::map<protocolList, std::string>  ipcParameters::getIpcNames() const
+std::map<protocolList, std::string>  IpcParameters::getIpcNames() const
 {
     return IpcNames_;
 }
 
-std::string ipcParameters::correctingIPCName(char* ipcName) const
+std::string IpcParameters::correctingIPCName(char* ipcName) const
 {
     std::string retval(ipcName);
     std::string::size_type slashPosition;
@@ -160,35 +160,35 @@ std::string ipcParameters::correctingIPCName(char* ipcName) const
 }
 
 
-#pragma endregion ipcParameters
+#pragma endregion IpcParameters
 
 
 
-////////////////// copyFileThroughIPC ////////////
-#pragma region copyFileThroughIPC
+////////////////// CopyFileThroughIPC ////////////
+#pragma region CopyFileThroughIPC
 
-void copyFileThroughIPC::initSharedPtr()
+void CopyFileThroughIPC::initSharedPtr()
 {
     if (myParameters_.getProtocol() == protocolList::PIPE)
     {
         if (myTypeOfProgram_ == program::SENDER)
-            myIpcHandler_ = std::make_shared<sendPipeHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_unique<SendPipeHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
         else
-            myIpcHandler_ = std::make_shared<receivePipeHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_unique<ReceivePipeHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::PIPE), myParameters_.getFilePath());
     }
     else if (myParameters_.getProtocol() == protocolList::QUEUE)
     {
         if (myTypeOfProgram_ == program::SENDER)
-            myIpcHandler_ = std::make_shared<sendQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_unique<SendQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
         else
-            myIpcHandler_ = std::make_shared<receiveQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_unique<ReceiveQueueHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::QUEUE), myParameters_.getFilePath());
     }
     else if (myParameters_.getProtocol() == protocolList::SHM)
     {
         if (myTypeOfProgram_ == program::SENDER)
-            myIpcHandler_ = std::make_shared<sendShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::SHM), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_unique<SendShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::SHM), myParameters_.getFilePath());
         else
-            myIpcHandler_ = std::make_shared<receiveShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::SHM), myParameters_.getFilePath());
+            myIpcHandler_ = std::make_unique<ReceiveShmHandler>(myToolBox_, myParameters_.getIpcNames().at(protocolList::SHM), myParameters_.getFilePath());
     }
     else
     {
@@ -196,7 +196,7 @@ void copyFileThroughIPC::initSharedPtr()
     }
 }
 
-int copyFileThroughIPC::launch()
+int CopyFileThroughIPC::launch()
 {
     if (myParameters_.getProtocol() == protocolList::HELP)
     {
@@ -205,7 +205,7 @@ int copyFileThroughIPC::launch()
     }
 
     //check that the filename and the ipcname are not the same
-    myToolBox_->checkIf2FilesAreTheSame(myParameters_.getFilePath(), myParameters_.getIpcNames().at(myParameters_.getProtocol()));
+    myToolBox_->compareFileNames(myParameters_.getFilePath(), myParameters_.getIpcNames().at(myParameters_.getProtocol()));
     
     initSharedPtr();
 
@@ -242,5 +242,5 @@ int copyFileThroughIPC::launch()
     return EXIT_SUCCESS;
 }
 
-#pragma endregion copyFileThroughIPC
+#pragma endregion CopyFileThroughIPC
 

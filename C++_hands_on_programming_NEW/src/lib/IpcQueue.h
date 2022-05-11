@@ -6,7 +6,7 @@
 
 volatile extern std::atomic_bool Rwaiting;
 
-class sendQueueHandler : public ipcHandler
+class SendQueueHandler : public IpcHandler
 {
     private:
         HandyFunctions* myToolBox_;
@@ -19,8 +19,8 @@ class sendQueueHandler : public ipcHandler
 
 
     public:
-        sendQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
-        virtual ~sendQueueHandler();
+        SendQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
+        virtual ~SendQueueHandler();
         virtual void connect() override;
         virtual void sendData(void* data, size_t data_size_bytes);
         virtual size_t transferHeader() override;
@@ -28,7 +28,7 @@ class sendQueueHandler : public ipcHandler
 };
 
 
-class receiveQueueHandler : public ipcHandler
+class ReceiveQueueHandler : public IpcHandler
 {
     private:
         HandyFunctions* myToolBox_;
@@ -40,8 +40,8 @@ class receiveQueueHandler : public ipcHandler
 
 
     public:
-        receiveQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
-        virtual ~receiveQueueHandler();
+        ReceiveQueueHandler(HandyFunctions* toolBox, const std::string &QueueName, const std::string &filepath);
+        virtual ~ReceiveQueueHandler();
         virtual void connect() override;
         virtual size_t receiveData(void* data, size_t bufferSize);
         virtual size_t transferHeader() override;

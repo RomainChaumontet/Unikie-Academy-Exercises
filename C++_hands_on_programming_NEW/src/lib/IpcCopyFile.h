@@ -15,11 +15,11 @@ enum class program {SENDER, RECEIVER};
 
 
 
-class ipcParameters
+class IpcParameters
 {
     public:
-        ipcParameters(protocolList protocol, const char* filepath, HandyFunctions* toolBox):protocol_(protocol), filepath_(std::string(filepath)), myToolBox_(toolBox){};
-        ipcParameters(int argc, char* const argv[], HandyFunctions* toolBox); 
+        IpcParameters(protocolList protocol, const char* filepath, HandyFunctions* toolBox):protocol_(protocol), filepath_(std::string(filepath)), myToolBox_(toolBox){};
+        IpcParameters(int argc, char* const argv[], HandyFunctions* toolBox); 
         protocolList getProtocol() const;
         std::string getFilePath() const;
         std::map<protocolList, std::string> getIpcNames() const;
@@ -38,18 +38,19 @@ class ipcParameters
         };
 };
 
-class copyFileThroughIPC
+
+class CopyFileThroughIPC
 {
     protected:
         HandyFunctions* myToolBox_;
-        ipcParameters myParameters_;
-        std::shared_ptr<ipcHandler> myIpcHandler_;
+        IpcParameters myParameters_;
+        std::unique_ptr<IpcHandler> myIpcHandler_;
         size_t currentBufferSize_;
         std::vector<char> buffer_;
         program myTypeOfProgram_;
         size_t fileSize;
     public:
-        copyFileThroughIPC(int argc, char* const argv[], HandyFunctions* toolBox, program whichProgram): myToolBox_(toolBox),myParameters_(ipcParameters(argc,argv, toolBox)),myTypeOfProgram_(whichProgram)
+        CopyFileThroughIPC(int argc, char* const argv[], HandyFunctions* toolBox, program whichProgram): myToolBox_(toolBox),myParameters_(IpcParameters(argc,argv, toolBox)),myTypeOfProgram_(whichProgram)
         {
             currentBufferSize_ = myToolBox_->getDefaultBufferSize();
         };

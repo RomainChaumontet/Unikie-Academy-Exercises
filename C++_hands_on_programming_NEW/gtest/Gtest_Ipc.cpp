@@ -7,7 +7,7 @@ bool compareFiles(const std::string& fileName1, const std::string& fileName2) //
   std::ifstream f1(fileName1, std::ifstream::binary|std::ifstream::in);
   std::ifstream f2(fileName2, std::ifstream::binary|std::ifstream::in);
 
-  if (f1.fail() || f2.fail()) {
+  if (f1.fail() && f2.fail()) {
     std::cout << "file fail" <<std::endl;
     return false; //file problem
   }

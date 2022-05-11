@@ -5,14 +5,14 @@
 
 volatile extern std::atomic_bool sigpipe_received;
 
-class fifoHandler
+class FifoHandler
 {
     private:
         HandyFunctions* myToolBox_;
         std::string pipeName_;
     public:
-        fifoHandler(HandyFunctions* toolBox, const std::string &pipeName):myToolBox_(toolBox), pipeName_(pipeName){};
-        ~fifoHandler();
+        FifoHandler(HandyFunctions* toolBox, const std::string &pipeName):myToolBox_(toolBox), pipeName_(pipeName){};
+        ~FifoHandler();
         void createFifo() const;
 };
 
@@ -52,10 +52,10 @@ struct ThreadInfo
 
 
 
-class sendPipeHandler : public ipcHandler
+class SendPipeHandler : public IpcHandler
 {
     private:
-        fifoHandler myFifo_;
+        FifoHandler myFifo_;
         HandyFunctions* myToolBox_;
         Reader myFileHandler_;
         std::fstream pipeFile_;
@@ -63,25 +63,25 @@ class sendPipeHandler : public ipcHandler
         SigHandler mySigHandler_;
 
     public:
-        sendPipeHandler(HandyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
-        virtual ~sendPipeHandler();
+        SendPipeHandler(HandyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
+        virtual ~SendPipeHandler();
         virtual void connect() override;
         virtual void sendData(void *data, size_t data_size_bytes);
         virtual size_t transferHeader() override;
         virtual size_t transferData(std::vector<char> &buffer) override;
 };
 
-class receivePipeHandler : public ipcHandler
+class ReceivePipeHandler : public IpcHandler
 {
     private:
-        fifoHandler myFifo_;
+        FifoHandler myFifo_;
         HandyFunctions* myToolBox_;
         Writer myFileHandler_;
         std::fstream pipeFile_;
         std::string pipeName_;
     public:
-        receivePipeHandler(HandyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
-        virtual ~receivePipeHandler();
+        ReceivePipeHandler(HandyFunctions* toolBox, const std::string &pipeName, const std::string &filepath);
+        virtual ~ReceivePipeHandler();
         virtual size_t receiveData(void* data, size_t bufferSize); //data should have bufferSize space allocated
         virtual void connect() override;
         virtual size_t transferHeader() override;

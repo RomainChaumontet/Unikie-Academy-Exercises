@@ -25,8 +25,8 @@ TEST(QueueHandler, Constructors)
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
 
-    EXPECT_NO_THROW(sendQueueHandler(&toolBox, "/myQueue", fileName));
-    EXPECT_NO_THROW(receiveQueueHandler(&toolBox, "/myQueue", "myFile"));
+    EXPECT_NO_THROW(SendQueueHandler(&toolBox, "/myQueue", fileName));
+    EXPECT_NO_THROW(ReceiveQueueHandler(&toolBox, "/myQueue", "myFile"));
 
     remove("myFile");
 }
@@ -50,7 +50,7 @@ TEST(QueueHandler, SenderConnectAlone)
         .WillOnce(Return(0));
 
     
-    sendQueueHandler mySender(&mockedTB, "/myQueue", fileName);
+    SendQueueHandler mySender(&mockedTB, "/myQueue", fileName);
 
     ASSERT_THROW(mySender.connect(), ipc_exception);
 }
@@ -66,7 +66,7 @@ TEST(QueueHandler, ReceiverConnectAlone)
         .WillRepeatedly(Return(false));
 
     
-    receiveQueueHandler myReceiver(&mockedTB, "/myQueue", "myFileName");
+    ReceiveQueueHandler myReceiver(&mockedTB, "/myQueue", "myFileName");
 
     ASSERT_NO_THROW(myReceiver.connect());
     ASSERT_THROW(myReceiver.transferHeader(), ipc_exception);
@@ -85,8 +85,8 @@ TEST(QueueHandler, ConnectTogether)
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){Sender.connect();});
             usleep(50);
@@ -118,8 +118,8 @@ TEST(QueueHandler, SendandReceiveData)
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -154,8 +154,8 @@ TEST(QueueHandler, SendReceiveHeader)
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -198,8 +198,8 @@ TEST(QueueHandler, TransferData)
 
     ASSERT_NO_THROW(
         {
-            sendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
-            receiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
+            SendQueueHandler Sender(&myToolBox, queueName, SenderfileName);
+            ReceiveQueueHandler Receiver(&myToolBox, queueName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){
                 Sender.connect();
@@ -243,13 +243,13 @@ TEST(QueueHandler, copyFile)
         {
             auto senderThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             usleep(50);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 
@@ -284,7 +284,7 @@ TEST(QueueHandler, SenderCrashed)
     {
         auto senderThread = std::async(std::launch::async, [&]()
         {
-            sendQueueHandler Sender(&myToolBox1, "/QueueIPC", SenderfileName);
+            SendQueueHandler Sender(&myToolBox1, "/QueueIPC", SenderfileName);
             Sender.connect();
             Sender.transferHeader();
             int nbOfLoop = rand() %20+1;
@@ -294,7 +294,7 @@ TEST(QueueHandler, SenderCrashed)
         usleep(50);
         auto receiverThread = std::async(std::launch::async, [&]()
         {
-            copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+            CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
             Receiver.launch();
         });
 
@@ -330,13 +330,13 @@ TEST(QueueHandler, ReceiverCrashed)
     {
         auto senderThread = std::async(std::launch::async, [&]()
         {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
         });
         usleep(50);
         auto receiverThread = std::async(std::launch::async, [&]()
         {
-            receiveQueueHandler Receiver(&myToolBox2, "/QueueIPC", ReceiverfileName);
+            ReceiveQueueHandler Receiver(&myToolBox2, "/QueueIPC", ReceiverfileName);
             Receiver.connect();
             Receiver.transferHeader();
             int nbOfLoop = rand() %10+1;
@@ -383,20 +383,20 @@ TEST(QueueHandler, DoubleSenders)
         {
             auto sender1Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             usleep(50);
             auto sender2Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox3, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox3, program::SENDER);
                 Sender.launch();
             });
 
             usleep(1000);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 
@@ -440,21 +440,21 @@ TEST(QueueHandler, DoubleReceivers)
         {
             auto sender1Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             
             usleep(1000);
             auto receiver2Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox3, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox3, program::RECEIVER);
                 Receiver.launch();
             });
 
             usleep(1000);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 

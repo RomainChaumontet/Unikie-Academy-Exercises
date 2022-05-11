@@ -1,8 +1,8 @@
 #include "IpcCopyFile.h"
 #include "IpcQueue.h"
 
-#pragma region sendQueueHandler
-sendQueueHandler::sendQueueHandler(
+#pragma region SendQueueHandler
+SendQueueHandler::SendQueueHandler(
     HandyFunctions* toolBox,
     const std::string &QueueName,
     const std::string &filepath
@@ -11,14 +11,14 @@ sendQueueHandler::sendQueueHandler(
     queueName_(QueueName)
 {};
 
-sendQueueHandler::~sendQueueHandler()
+SendQueueHandler::~SendQueueHandler()
 {
     mq_close(queueFd_);
     mq_unlink(queueName_.c_str());
 }
 
 
-void sendQueueHandler::connect()
+void SendQueueHandler::connect()
 {
     std::cout << "Connecting to a queue with the name: " << queueName_ << std::endl;
     int attempt = 0;
@@ -31,8 +31,6 @@ void sendQueueHandler::connect()
             mq_getattr(queueFd_, &queueAttrs_);
             if (queueAttrs_.mq_curmsgs > 0) // queue with message on it-> thrown
             {
-                mq_close(queueFd_);
-                mq_unlink(queueName_.c_str());
                 throw ipc_exception("Error. A queue with some messages already exists.\n");
             }
             else
@@ -52,7 +50,7 @@ void sendQueueHandler::connect()
     } while (1);
 }
 
-void sendQueueHandler::sendData(void* data, size_t data_size_bytes)
+void SendQueueHandler::sendData(void* data, size_t data_size_bytes)
 {
     struct timespec waitingtime;
     myToolBox_->getTime(waitingtime);
@@ -78,7 +76,7 @@ void sendQueueHandler::sendData(void* data, size_t data_size_bytes)
     }
 }
 
-size_t sendQueueHandler::transferHeader()
+size_t SendQueueHandler::transferHeader()
 {
     size_t fileSize = myFileHandler_.fileSize();
     Header myHeader(myToolBox_->getKey(), fileSize, myToolBox_);
@@ -88,7 +86,7 @@ size_t sendQueueHandler::transferHeader()
     return fileSize;
 }
 
-size_t sendQueueHandler::transferData(std::vector<char>& buffer)
+size_t SendQueueHandler::transferData(std::vector<char>& buffer)
 {
     size_t bufferSize = myToolBox_->getDefaultBufferSize();
     buffer.resize(bufferSize);
@@ -98,11 +96,11 @@ size_t sendQueueHandler::transferData(std::vector<char>& buffer)
     return dataRead;
 }
 
-#pragma endregion sendQueueHandler
+#pragma endregion SendQueueHandler
 
 
-#pragma region receiveQueueHandler
-receiveQueueHandler::receiveQueueHandler(
+#pragma region ReceiveQueueHandler
+ReceiveQueueHandler::ReceiveQueueHandler(
     HandyFunctions* toolBox,
     const std::string &QueueName,
     const std::string &filepath
@@ -111,7 +109,7 @@ receiveQueueHandler::receiveQueueHandler(
     queueName_(QueueName)
 {};
 
-void receiveQueueHandler::connect()
+void ReceiveQueueHandler::connect()
 {
     queueAttrs_.mq_maxmsg = mq_maxmsg_;
     queueAttrs_.mq_msgsize = myToolBox_->getDefaultBufferSize();
@@ -127,13 +125,13 @@ void receiveQueueHandler::connect()
     }
 }
 
-receiveQueueHandler::~receiveQueueHandler()
+ReceiveQueueHandler::~ReceiveQueueHandler()
 {
     mq_close(queueFd_);
     mq_unlink(queueName_.c_str());
 }
 
-size_t receiveQueueHandler::receiveData(void* data, size_t bufferSize)
+size_t ReceiveQueueHandler::receiveData(void* data, size_t bufferSize)
 {
     int sizeReceived;
     struct timespec waitingtime;
@@ -161,7 +159,7 @@ size_t receiveQueueHandler::receiveData(void* data, size_t bufferSize)
 
 volatile std::atomic_bool Rwaiting;
 
-size_t receiveQueueHandler::transferHeader()
+size_t ReceiveQueueHandler::transferHeader()
 {
     Header myHeader(myToolBox_->getKey(), myToolBox_);
 
@@ -186,14 +184,14 @@ size_t receiveQueueHandler::transferHeader()
     return myHeader.getFileSize();
 }
 
-size_t receiveQueueHandler::transferData(std::vector<char> &buffer) 
+size_t ReceiveQueueHandler::transferData(std::vector<char> &buffer) 
 {
     size_t bufferSize = myToolBox_->getDefaultBufferSize();
     buffer.resize(bufferSize);
-    size_t sizeReadfromPipe = receiveData(buffer.data(), bufferSize);
-    myFileHandler_.writeFile(buffer.data(), sizeReadfromPipe);
-    return sizeReadfromPipe;
+    size_t sizeReadfromQueue = receiveData(buffer.data(), bufferSize);
+    myFileHandler_.writeFile(buffer.data(), sizeReadfromQueue);
+    return sizeReadfromQueue;
 }
 
 
-#pragma endregion receiveQueueHandler
+#pragma endregion ReceiveQueueHandler

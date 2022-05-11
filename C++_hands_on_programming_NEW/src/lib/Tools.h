@@ -64,7 +64,7 @@ class HandyFunctions // Wrap all free functions and global variables
         virtual void nap(int timeInMs) const; //time in milliseconds
         virtual void getTime(struct timespec &ts) const;
         virtual void printFileSize(size_t fileSize) const;
-        virtual void checkIf2FilesAreTheSame(const std::string& file1, const std::string& file2) const;
+        virtual void compareFileNames(const std::string& file1, const std::string& file2) const;
         virtual SemName getSemName(const std::string& IpcName) const;
 };
 
@@ -99,21 +99,21 @@ class time_exception : public std::runtime_error
 };
 
 
-class fileHandler
+class FileHandler
 {
     protected:
         std::fstream file_;
         std::string filepath_;
         HandyFunctions* myToolBox;
     public:
-        fileHandler(const std::string&filepath, HandyFunctions* toolBox):filepath_(filepath),myToolBox(toolBox){};
-        virtual ~fileHandler(){};
+        FileHandler(const std::string&filepath, HandyFunctions* toolBox):filepath_(filepath),myToolBox(toolBox){};
+        virtual ~FileHandler(){};
         size_t readFile(void* buffer, size_t maxSizeToRead); //buffer is supposed to point into a space allocated for at least maxSizeToRead bytes.
         void writeFile(void* buffer, size_t sizeToWrite); //the data pointed by the buffer are supposed to be at least sizeToWrite bytes
         size_t fileSize();
 };
 
-class Writer : public fileHandler
+class Writer : public FileHandler
 {
     public:
         Writer(const std::string&filepath, HandyFunctions* toolBox); //open file
@@ -121,7 +121,7 @@ class Writer : public fileHandler
         void cleanInCaseOfThrow();
 };
 
-class Reader : public fileHandler
+class Reader : public FileHandler
 {
     public:
         Reader(const std::string&filepath, HandyFunctions* toolBox); //open file
@@ -129,14 +129,14 @@ class Reader : public fileHandler
 };
 
 
-class ipcHandler
+class IpcHandler
 {
     public:
-        ipcHandler(){};
+        IpcHandler(){};
         virtual void connect()=0;
         virtual size_t transferHeader()=0;
         virtual size_t transferData(std::vector<char> &buffer)=0;
-        virtual ~ipcHandler()=0;
+        virtual ~IpcHandler()=0;
 };
 
 class Header

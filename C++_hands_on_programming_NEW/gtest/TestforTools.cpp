@@ -146,19 +146,19 @@ TEST(HandyFunctions, printFileSize)
     }
 }
 
-TEST(HandyFunctions, checkIf2FilesAreTheSame)
+TEST(HandyFunctions, compareFileNames)
 {
     HandyFunctions ToolBox;
 
-    EXPECT_THROW(ToolBox.checkIf2FilesAreTheSame("test", "test"), arguments_exception);
-    EXPECT_NO_THROW(ToolBox.checkIf2FilesAreTheSame("test1", "test2"));
+    EXPECT_THROW(ToolBox.compareFileNames("test", "test"), arguments_exception);
+    EXPECT_NO_THROW(ToolBox.compareFileNames("test1", "test2"));
 
     char currentDir[PATH_MAX];
     getcwd(currentDir, PATH_MAX);
-    EXPECT_THROW(ToolBox.checkIf2FilesAreTheSame(std::string(currentDir) + '/' + "test", "test"), arguments_exception);
+    EXPECT_THROW(ToolBox.compareFileNames(std::string(currentDir) + '/' + "test", "test"), arguments_exception);
 }
 
-TEST(fileHandler, constructors)
+TEST(FileHandler, constructors)
 {
     HandyFunctions toolBox;
     std::string fileName = "myFile";
@@ -190,7 +190,7 @@ TEST(fileHandler, constructors)
 
 }
 
-TEST(fileHandler, ReadAndWrite)
+TEST(FileHandler, ReadAndWrite)
 {
     HandyFunctions toolBox;
     std::string fileName = "myFile";
@@ -198,10 +198,10 @@ TEST(fileHandler, ReadAndWrite)
     std::vector<char> buffer2(toolBox.getDefaultBufferSize(),'d');
 
     {
-        fileHandler myfileHandler(fileName, &toolBox);
+        FileHandler myFileHandler(fileName, &toolBox);
         //Assert throw because the file is not open.
-        ASSERT_THROW(myfileHandler.readFile(buffer.data(), toolBox.getDefaultBufferSize()), file_exception);
-        ASSERT_THROW(myfileHandler.writeFile(buffer.data(), toolBox.getDefaultBufferSize()), file_exception);
+        ASSERT_THROW(myFileHandler.readFile(buffer.data(), toolBox.getDefaultBufferSize()), file_exception);
+        ASSERT_THROW(myFileHandler.writeFile(buffer.data(), toolBox.getDefaultBufferSize()), file_exception);
     }
 
     {

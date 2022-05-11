@@ -227,18 +227,18 @@ std::map<std::string, inputLineOpt> inputMap =
 class FakeCmdLineOptTest : public ::testing::TestWithParam<std::pair<const std::string, inputLineOpt>> {};
 
 
-TEST_P(FakeCmdLineOptTest, ipcParameters) // Test the process from commande line arguments to protocol and filepath
+TEST_P(FakeCmdLineOptTest, IpcParameters) // Test the process from commande line arguments to protocol and filepath
 {
     HandyFunctions myToolBox;
     auto inputStruct = GetParam().second;
     FakeCmdLineOpt FakeOpt(inputStruct.arguments.begin(),inputStruct.arguments.end());
     if (inputStruct.protocol == protocolList::ERROR || inputStruct.protocol == protocolList::NONE)
     {
-        EXPECT_THROW(ipcParameters(FakeOpt.argc(), FakeOpt.argv(), &myToolBox), arguments_exception);
+        EXPECT_THROW(IpcParameters(FakeOpt.argc(), FakeOpt.argv(), &myToolBox), arguments_exception);
     }
     else
     {
-        ipcParameters testOptions(FakeOpt.argc(), FakeOpt.argv(), &myToolBox);
+        IpcParameters testOptions(FakeOpt.argc(), FakeOpt.argv(), &myToolBox);
         EXPECT_THAT(testOptions.getProtocol(), Eq(inputStruct.protocol));
         if (testOptions.getProtocol() != protocolList::HELP)
         {

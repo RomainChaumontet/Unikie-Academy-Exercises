@@ -8,7 +8,7 @@ int main(int argc, char* const argv[])
     try
     {
         HandyFunctions myToolBox;
-        copyFileThroughIPC IpcWrapper(argc, argv, &myToolBox, program::SENDER);
+        CopyFileThroughIPC IpcWrapper(argc, argv, &myToolBox, program::SENDER);
         IpcWrapper.launch();
     }
     catch (const std::exception &e)
