@@ -69,6 +69,11 @@ class copyFileThroughIPC
         program myTypeOfProgram_;
         size_t fileSize;
     public:
+        copyFileThroughIPC(int argc, char* const argv[], handyFunctions* toolBox, program whichProgram, std::string& filePath): myToolBox_(toolBox),myParameters_(ipcParameters(argc,argv, toolBox)),myTypeOfProgram_(whichProgram)
+        {
+            currentBufferSize_ = myToolBox_->getDefaultBufferSize();
+            filePath = myParameters_.getFilePath();
+        };
         copyFileThroughIPC(int argc, char* const argv[], handyFunctions* toolBox, program whichProgram): myToolBox_(toolBox),myParameters_(ipcParameters(argc,argv, toolBox)),myTypeOfProgram_(whichProgram)
         {
             currentBufferSize_ = myToolBox_->getDefaultBufferSize();

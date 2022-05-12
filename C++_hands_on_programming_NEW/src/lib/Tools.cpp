@@ -105,7 +105,7 @@ void handyFunctions::updatePrintingElements(std::string toPrint, bool forcePrint
     std::chrono::time_point<std::chrono::steady_clock> now =
         std::chrono::steady_clock::now();
 
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(now-last_update_).count()>50 || forcePrint) //do not refresh before 50ms
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now-last_update_).count()>100 || forcePrint) //do not refresh before 50ms
     {
         //getting the size of the terminal
         struct winsize size;
