@@ -90,7 +90,7 @@ TEST(handyFunctions, updatePrintingElements)
     handyFunctions ToolBox; 
     {
         CaptureStream stdcout(std::cout);
-        ToolBox.updatePrintingElements("Testing.");
+        ToolBox.updatePrintingElements("Testing.", true);
         EXPECT_THAT(stdcout.str(), ContainsRegex("Testing."));
     }
     {
