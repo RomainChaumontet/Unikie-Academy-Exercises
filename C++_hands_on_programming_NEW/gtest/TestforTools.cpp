@@ -37,6 +37,7 @@ TEST(handyFunctions, checkFilePath)
     std::string normalFileName = "myFileName";
     std::string exceedFileName(NAME_MAX+1, 'c');
     EXPECT_NO_THROW(ToolBox.checkFilePath(normalFilePath+normalFileName));
+    EXPECT_NO_THROW(ToolBox.checkFilePath('/'+normalFilePath+normalFileName));
     EXPECT_NO_THROW(ToolBox.checkFilePath(normalFileName));
     EXPECT_THROW(ToolBox.checkFilePath(exceedFilePath+normalFileName), arguments_exception);
     EXPECT_THROW(ToolBox.checkFilePath(exceedFilePath+exceedFileName), arguments_exception);
