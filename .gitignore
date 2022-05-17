@@ -31,8 +31,16 @@ C++_hands_on_programming_NEW/sample.txt
 C++_hands_on_programming_NEW/test
 C++_hands_on_programming_NEW/binfile
 C++_hands_on_programming_NEW/build_and_run_multiple_tests.sh
+<<<<<<< HEAD
 C++_hands_on_programming_NEW/bazel-bin
 C++_hands_on_programming_NEW/bazel-out
 C++_hands_on_programming_NEW/bazel-C++_hands_on_programming_NEW
 C++_hands_on_programming_NEW/bazel-testlogs
 C++_hands_on_programming_NEW/binfile
+=======
+C++_hands_on_programming_NEW/Documentation/Design.uxf
+C++_hands_on_programming_NEW/bazel-bin
+C++_hands_on_programming_NEW/bazel-C++_hands_on_programming_NEW
+C++_hands_on_programming_NEW/bazel-testlogs
+C++_hands_on_programming_NEW/bazel-out
+>>>>>>> b0cb4f534eb10a0dba48b8d78171a80539f35265

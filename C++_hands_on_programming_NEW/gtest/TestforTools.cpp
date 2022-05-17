@@ -37,6 +37,7 @@ TEST(HandyFunctions, checkFilePath)
     std::string normalFileName = "myFileName";
     std::string exceedFileName(NAME_MAX+1, 'c');
     EXPECT_NO_THROW(ToolBox.checkFilePath(normalFilePath+normalFileName));
+    EXPECT_NO_THROW(ToolBox.checkFilePath('/'+normalFilePath+normalFileName));
     EXPECT_NO_THROW(ToolBox.checkFilePath(normalFileName));
     EXPECT_THROW(ToolBox.checkFilePath(exceedFilePath+normalFileName), arguments_exception);
     EXPECT_THROW(ToolBox.checkFilePath(exceedFilePath+exceedFileName), arguments_exception);
@@ -90,7 +91,7 @@ TEST(HandyFunctions, updatePrintingElements)
     HandyFunctions ToolBox; 
     {
         CaptureStream stdcout(std::cout);
-        ToolBox.updatePrintingElements("Testing.");
+        ToolBox.updatePrintingElements("Testing.", true);
         EXPECT_THAT(stdcout.str(), ContainsRegex("Testing."));
     }
     {

@@ -184,7 +184,7 @@ ReceivePipeHandler::ReceivePipeHandler(
         myToolBox_->updatePrintingElements("Waiting for ipc_sendfile.");
         myToolBox_->nap(10);
     }
-    if (attempt >= max_attempt)
+    if (attempt >= max_attempt*20)
     {
         throw ipc_exception("Error, can't connect to ipc_sendfile.\n" );
     }

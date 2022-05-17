@@ -13,9 +13,15 @@
 These programs have the aim to take a file and copy it. To do it, the program ipc_sendfile read the file and sends the data of the file to the program ipc_receivefile which will write the data to a new file. The exchange is done by IPC.
 
 The IPC methods implemented are:
+<<<<<<< HEAD
 - [x] Queue message passing
 - [x] Pipe
 - [x] Shared memory 
+=======
+- [ ] Queue message passing
+- [x] Pipe
+- [ ] Shared memory 
+>>>>>>> b0cb4f534eb10a0dba48b8d78171a80539f35265
 
 # Setup environment, build and test
 
