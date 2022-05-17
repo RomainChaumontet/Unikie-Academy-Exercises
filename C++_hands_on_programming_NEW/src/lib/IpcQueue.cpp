@@ -36,7 +36,7 @@ void SendQueueHandler::connect()
             else
                 break;
         }
-        if (++attempt > myToolBox_->getMaxAttempt()*20)
+        if (++attempt > myToolBox_->getMaxAttempt()*100)
             throw ipc_exception("Error, can't connect to ipc_receivefile.\n");
         if (errno != ENOENT)
         {
@@ -46,7 +46,7 @@ void SendQueueHandler::connect()
         
         // Queue has not been opened yet
         myToolBox_->updatePrintingElements("Waiting to the ipc_receivefile.");
-        myToolBox_->nap(50);
+        myToolBox_->nap(10);
     } while (1);
 }
 
