@@ -13,9 +13,15 @@
 These programs have the aim to take a file and copy it. To do it, the program ipc_sendfile read the file and sends the data of the file to the program ipc_receivefile which will write the data to a new file. The exchange is done by IPC.
 
 The IPC methods implemented are:
+<<<<<<< HEAD
+- [x] Queue message passing
+- [x] Pipe
+- [x] Shared memory 
+=======
 - [ ] Queue message passing
 - [x] Pipe
 - [ ] Shared memory 
+>>>>>>> b0cb4f534eb10a0dba48b8d78171a80539f35265
 
 # Setup environment, build and test
 
@@ -35,7 +41,7 @@ $ ./build_and_run_tests.sh
 The binary and the test report will be in the folder `output`.
 
 # How to use the program
-You can use the program with the argument `--help` and command `--pipe --file myFile`. You can specify a name for the IPC channel: `--pipe myPipe --file myFile`.
+You can use the program with the argument `--help` and command `--pipe --file myFile`,`--shm --file myFile` or `--queue --file myFile`. You can specify a name for the IPC channel: `--pipe myPipe --file myFile`, `--shm /myShm --file myFile` or `--queue /myQueue --file myFile`.
 
 # Design
 ![Design](Documentation/Current%20Design.PNG)
@@ -63,6 +69,7 @@ This program can handle errors specified below:
   * Ipc channel contains multiple `/` - print statements and proceeds with default IPC Name
   * File to copy doesn't exist - EXIT_FAILURE
   * Different protocols - EXIT_FAILURE
+  * The filepath for the receiver is the same as the ipc channel name- EXIT_FAILURE
 * Killing a program while running - EXIT_FAILURE for the other program
 * IPC Channel already exists - if empty the programs will continue, if there is some message on it EXIT_FAILURE
 * Another program uses the IPC channel - EXIT_FAILURE at least for one of the programs

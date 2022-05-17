@@ -6,11 +6,11 @@
 int main(int argc, char* const argv[])
 {
 
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     std::string filePath = "";
     try
     {
-        copyFileThroughIPC IpcWrapper(argc, argv, &myToolBox, program::RECEIVER, filePath);
+        CopyFileThroughIPC IpcWrapper(argc, argv, &myToolBox, program::RECEIVER, filePath);
         IpcWrapper.launch();
     }
     catch (const std::runtime_error &e)

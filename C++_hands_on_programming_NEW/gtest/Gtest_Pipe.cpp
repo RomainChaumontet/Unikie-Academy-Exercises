@@ -19,9 +19,9 @@ using ::testing::Return;
 
 TEST(FifoHandler, ConstructorAndDestructor)
 {
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     {
-        fifoHandler myFifo(&myToolBox, "HelloFifo");
+        FifoHandler myFifo(&myToolBox, "HelloFifo");
         myFifo.createFifo();
         EXPECT_THAT(myToolBox.checkIfFileExists("HelloFifo"), IsTrue());
     }
@@ -32,11 +32,11 @@ TEST(PipeHandler, ConstructorSender)
 {
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     
-    EXPECT_THROW(sendPipeHandler(&myToolBox,"myPipe","FileDoesNotExists"),file_exception);
+    EXPECT_THROW(SendPipeHandler(&myToolBox,"myPipe","FileDoesNotExists"),file_exception);
 
-    ASSERT_NO_THROW(sendPipeHandler(&myToolBox,"myPipe",fileName));
+    ASSERT_NO_THROW(SendPipeHandler(&myToolBox,"myPipe",fileName));
     EXPECT_THAT(myToolBox.checkIfFileExists("myPipe"), IsFalse());
 }
 
@@ -44,9 +44,9 @@ TEST(PipeHandler, ConstructorSenderSignalHandler)
 {
     std::string fileName = "myFileName";
     CreateRandomFile myFile(fileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
-    sendPipeHandler myPipeHandler(&myToolBox,"myPipe",fileName);
+    SendPipeHandler myPipeHandler(&myToolBox,"myPipe",fileName);
     ASSERT_THAT(sigpipe_received, IsFalse());
     raise(SIGPIPE);
     EXPECT_THAT(sigpipe_received, IsTrue()); 
@@ -65,8 +65,8 @@ TEST(PipeHandler, ConstructorReceiver)
         .WillOnce(Return(10))
         .WillOnce(Return(0));
 
-    ASSERT_NO_THROW(receivePipeHandler(&mockedTB, "myPipe", fileName)); //mocked the pipe exists
-    ASSERT_THROW(receivePipeHandler(&mockedTB, "myPipe", fileName), ipc_exception); //mocked the pipe doesn't exists
+    ASSERT_NO_THROW(ReceivePipeHandler(&mockedTB, "myPipe", fileName)); //mocked the pipe exists
+    ASSERT_THROW(ReceivePipeHandler(&mockedTB, "myPipe", fileName), ipc_exception); //mocked the pipe doesn't exists
 
     remove(fileName.c_str());  
 }
@@ -86,7 +86,7 @@ TEST(PipeHandler, SenderConnectAlone)
     EXPECT_CALL(mockedTB,getMaxAttempt())
         .WillOnce(Return(0));
     
-    sendPipeHandler myPipeHandler(&mockedTB,"myPipe",fileName);
+    SendPipeHandler myPipeHandler(&mockedTB,"myPipe",fileName);
     ASSERT_THROW(myPipeHandler.connect(), ipc_exception);
 }
 
@@ -97,14 +97,15 @@ TEST(PipeHandler, ConnectTogether)
     std::string pipeName = "myPipe";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
 
     ASSERT_NO_THROW(
         {
-            sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
-            receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+            SendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
+            ReceivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
 
             auto senderConnect = std::async(std::launch::async, [&](){Sender.connect();});
+            usleep(50);
             auto receiverConnect = std::async(std::launch::async, [&](){Receiver.connect();});
 
             senderConnect.get();
@@ -122,7 +123,7 @@ TEST(PipeHandler, SendandReceiveData)
     std::string pipeName = "myPipe";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     srand (time(NULL));
     std::vector<char> sendVector = getRandomData();
     std::vector<char> receiveVector;
@@ -132,13 +133,13 @@ TEST(PipeHandler, SendandReceiveData)
         {
             auto senderConnect = std::async(std::launch::async, [&]()
             {
-                sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
+                SendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
                 Sender.connect();
                 Sender.sendData(sendVector.data(), sendVector.size());
             });
             auto receiverConnect = std::async(std::launch::async, [&]()
             {
-                receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+                ReceivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
                 Receiver.connect();
                 size_t bytesInPipe = Receiver.receiveData(receiveVector.data(), myToolBox.getDefaultBufferSize());
                 receiveVector.resize(bytesInPipe);
@@ -160,20 +161,20 @@ TEST(PipeHandler, SendReceiveHeader)
     std::string pipeName = "myPipe";
 
     CreateRandomFile myFile(SenderfileName,1,1);
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     size_t fileSize;
 
     ASSERT_NO_THROW(
         {
             auto senderConnect = std::async(std::launch::async, [&]()
             {
-                sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
+                SendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
                 Sender.connect();
                 Sender.transferHeader();
             });
             auto receiverConnect = std::async(std::launch::async, [&]()
             {
-                receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+                ReceivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
                 Receiver.connect();
                 fileSize = Receiver.transferHeader();
 
@@ -193,7 +194,7 @@ TEST(PipeHandler, TransferData)
     std::string ReceiverfileName = "myRFileName";
     std::string pipeName = "myPipe";
 
-    handyFunctions myToolBox;
+    HandyFunctions myToolBox;
     
     //creating a file of less than 4096 bytes
     std::vector<char> sendVector = getRandomData();
@@ -212,14 +213,14 @@ TEST(PipeHandler, TransferData)
         {
             auto senderConnect = std::async(std::launch::async, [&]()
             {
-                sendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
+                SendPipeHandler Sender(&myToolBox, pipeName, SenderfileName);
                 Sender.connect();
                 Sender.transferHeader();
                 Sender.transferData(senderBuffer);
             });
             auto receiverConnect = std::async(std::launch::async, [&]()
             {
-                receivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
+                ReceivePipeHandler Receiver(&myToolBox, pipeName, ReceiverfileName);
                 Receiver.connect();
                 fileSize = Receiver.transferHeader();
                 Receiver.transferData(receiverBuffer);
@@ -238,8 +239,8 @@ TEST(PipeHandler, TransferData)
 
 TEST(PipeHandler, copyFile)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName" ;
@@ -256,13 +257,13 @@ TEST(PipeHandler, copyFile)
         {
             auto senderThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             usleep(50);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 
@@ -270,15 +271,14 @@ TEST(PipeHandler, copyFile)
             receiverThread.get();
         });
 
-    
     EXPECT_THAT(compareFiles(SenderfileName, ReceiverfileName), IsTrue());
     remove(ReceiverfileName.c_str());
 }
 
 TEST(PipeHandler, SenderCrashed)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
@@ -294,7 +294,7 @@ TEST(PipeHandler, SenderCrashed)
     {
         auto senderThread = std::async(std::launch::async, [&]()
         {
-            sendPipeHandler Sender(&myToolBox1, "PipeIPC", SenderfileName);
+            SendPipeHandler Sender(&myToolBox1, "PipeIPC", SenderfileName);
             Sender.connect();
             Sender.transferHeader();
             int nbOfLoop = rand() %20+1;
@@ -304,7 +304,7 @@ TEST(PipeHandler, SenderCrashed)
         usleep(50);
         auto receiverThread = std::async(std::launch::async, [&]()
         {
-            copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+            CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
             Receiver.launch();
         });
 
@@ -319,8 +319,8 @@ TEST(PipeHandler, SenderCrashed)
 
 TEST(PipeHandler, ReceiverCrashed)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
@@ -336,13 +336,13 @@ TEST(PipeHandler, ReceiverCrashed)
     {
         auto senderThread = std::async(std::launch::async, [&]()
         {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
         });
         usleep(50);
         auto receiverThread = std::async(std::launch::async, [&]()
         {
-            receivePipeHandler Receiver(&myToolBox2, "PipeIPC", ReceiverfileName);
+            ReceivePipeHandler Receiver(&myToolBox2, "PipeIPC", ReceiverfileName);
             Receiver.connect();
             Receiver.transferHeader();
             int nbOfLoop = rand() %10+1;
@@ -362,9 +362,9 @@ TEST(PipeHandler, ReceiverCrashed)
 
 TEST(PipeHandler, DoubleSenders)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
-    handyFunctions myToolBox3;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
+    HandyFunctions myToolBox3;
     
     std::string SenderfileName = "myFileName" ;
     std::string ReceiverfileName = "myRFileName";
@@ -381,20 +381,20 @@ TEST(PipeHandler, DoubleSenders)
         {
             auto sender1Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             usleep(50);
             auto sender2Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox3, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox3, program::SENDER);
                 Sender.launch();
             });
 
             usleep(1000);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 
@@ -411,9 +411,9 @@ TEST(PipeHandler, DoubleSenders)
 
 TEST(PipeHandler, DoubleReceivers)
 {
-    handyFunctions myToolBox1;
-    handyFunctions myToolBox2;
-    handyFunctions myToolBox3;
+    HandyFunctions myToolBox1;
+    HandyFunctions myToolBox2;
+    HandyFunctions myToolBox3;
     
     std::string SenderfileName = "myFileName";
     std::string ReceiverfileName = "myRFileName";
@@ -430,21 +430,21 @@ TEST(PipeHandler, DoubleReceivers)
         {
             auto sender1Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
+                CopyFileThroughIPC Sender(SenderFakeOpt.argc(), SenderFakeOpt.argv(), &myToolBox1, program::SENDER);
                 Sender.launch();
             });
             
             usleep(1000);
             auto receiver2Thread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox3, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox3, program::RECEIVER);
                 Receiver.launch();
             });
 
             usleep(1000);
             auto receiverThread = std::async(std::launch::async, [&]()
             {
-                copyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
+                CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &myToolBox2, program::RECEIVER);
                 Receiver.launch();
             });
 

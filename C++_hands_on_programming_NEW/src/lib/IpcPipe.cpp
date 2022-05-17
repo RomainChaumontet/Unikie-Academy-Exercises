@@ -1,10 +1,10 @@
 #include "IpcCopyFile.h"
 #include "IpcPipe.h"
 
-////////////////// fifoHandler /////////////////
-#pragma region fifoHandler
+////////////////// FifoHandler /////////////////
+#pragma region FifoHandler
 
-void fifoHandler::createFifo() const
+void FifoHandler::createFifo() const
 {
     std::cout << "Creating the pipe " << pipeName_ << std::endl;
     if (mkfifo(pipeName_.c_str(),S_IRWXU | S_IRWXG) == -1 && errno != EEXIST)
@@ -16,15 +16,15 @@ void fifoHandler::createFifo() const
     }
 }
 
-fifoHandler::~fifoHandler()
+FifoHandler::~FifoHandler()
 {
     unlink(pipeName_.c_str());
 }
 
-#pragma endregion fifoHandler
+#pragma endregion FifoHandler
 
-////////////////// sendPipeHandler ////////////
-#pragma region sendPipeHandler
+////////////////// SendPipeHandler ////////////
+#pragma region SendPipeHandler
 
 volatile std::atomic_bool sigpipe_received;
 
@@ -33,8 +33,8 @@ static void sigpipe_handler(int signum)
     sigpipe_received = true;
 }
 
-sendPipeHandler::sendPipeHandler(
-    handyFunctions* toolBox,
+SendPipeHandler::SendPipeHandler(
+    HandyFunctions* toolBox,
     const std::string &pipeName,
     const std::string &filepath
     ):
@@ -47,7 +47,7 @@ sendPipeHandler::sendPipeHandler(
     myFifo_.createFifo();
 }
 
-sendPipeHandler::~sendPipeHandler()
+SendPipeHandler::~SendPipeHandler()
 {
     pipeFile_.close();
 }
@@ -74,7 +74,7 @@ void* OpenThread(void* arg)
     return nullptr;
 }
 
-void sendPipeHandler::connect()
+void SendPipeHandler::connect()
 {
     ThreadInfo info;
     info.pipeName = pipeName_;
@@ -102,9 +102,10 @@ void sendPipeHandler::connect()
     }
 
     std::cout << "Pipe is opened in both sides." << std::endl;
+
 }
 
-void sendPipeHandler::sendData(void *data, size_t data_size_bytes)
+void SendPipeHandler::sendData(void *data, size_t data_size_bytes)
 {
     if (!pipeFile_.is_open())
     {
@@ -140,7 +141,7 @@ void sendPipeHandler::sendData(void *data, size_t data_size_bytes)
     throw ipc_exception("sendData(). Unknown error.");
 }
 
-size_t sendPipeHandler::transferHeader()
+size_t SendPipeHandler::transferHeader()
 {
     size_t fileSize = myFileHandler_.fileSize();
     Header myHeader(myToolBox_->getKey(), fileSize, myToolBox_);
@@ -150,7 +151,7 @@ size_t sendPipeHandler::transferHeader()
     return fileSize;
 }
 
-size_t sendPipeHandler::transferData(std::vector<char> &buffer)
+size_t SendPipeHandler::transferData(std::vector<char> &buffer)
 {
     size_t bufferSize = myToolBox_->getDefaultBufferSize();
     buffer.resize(bufferSize);
@@ -160,13 +161,13 @@ size_t sendPipeHandler::transferData(std::vector<char> &buffer)
     return dataRead;
 }
 
-#pragma endregion sendPipeHandler
+#pragma endregion SendPipeHandler
 
-////////////////// receivePipeHandler ////////////
-#pragma region receivePipeHandler
+////////////////// ReceivePipeHandler ////////////
+#pragma region ReceivePipeHandler
 
-receivePipeHandler::receivePipeHandler(
-    handyFunctions* toolBox,
+ReceivePipeHandler::ReceivePipeHandler(
+    HandyFunctions* toolBox,
     const std::string &pipeName,
     const std::string &filepath
     ):
@@ -178,10 +179,10 @@ receivePipeHandler::receivePipeHandler(
     int attempt = 0;
     int max_attempt = myToolBox_->getMaxAttempt();
     while(!myToolBox_->checkIfFileExists(pipeName_)
-        && attempt++ < max_attempt*20)
+        && attempt++ < max_attempt*100)
     {
         myToolBox_->updatePrintingElements("Waiting for ipc_sendfile.");
-        myToolBox_->nap(50);
+        myToolBox_->nap(10);
     }
     if (attempt >= max_attempt*20)
     {
@@ -189,13 +190,13 @@ receivePipeHandler::receivePipeHandler(
     }
 }
 
-receivePipeHandler::~receivePipeHandler()
+ReceivePipeHandler::~ReceivePipeHandler()
 {
     pipeFile_.close();
     unlink(pipeName_.c_str());
 }
 
-void receivePipeHandler::connect()
+void ReceivePipeHandler::connect()
 {
     std::cout << "Connecting to the pipe " << pipeName_ << std::endl;
     pipeFile_.open(pipeName_, std::ios::in | std::ios::binary);
@@ -206,7 +207,7 @@ void receivePipeHandler::connect()
     }
 }
 
-size_t receivePipeHandler::transferHeader()
+size_t ReceivePipeHandler::transferHeader()
 {
     Header myHeader(myToolBox_->getKey(), myToolBox_);
 
@@ -221,7 +222,7 @@ size_t receivePipeHandler::transferHeader()
     return myHeader.getFileSize();
 }
     
-size_t receivePipeHandler::transferData(std::vector<char> &buffer) 
+size_t ReceivePipeHandler::transferData(std::vector<char> &buffer) 
 {
     size_t bufferSize = myToolBox_->getDefaultBufferSize();
     buffer.resize(bufferSize);
@@ -230,7 +231,7 @@ size_t receivePipeHandler::transferData(std::vector<char> &buffer)
     return sizeReadfromPipe;
 }
 
-size_t receivePipeHandler::receiveData(void* data, size_t bufferSize)
+size_t ReceivePipeHandler::receiveData(void* data, size_t bufferSize)
 {
     if (!pipeFile_.is_open())
     {
@@ -265,4 +266,4 @@ size_t receivePipeHandler::receiveData(void* data, size_t bufferSize)
 
 
 
-#pragma endregion receivePipeHandler
+#pragma endregion ReceivePipeHandler
