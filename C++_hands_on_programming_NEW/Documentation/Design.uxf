@@ -1,0 +1,208 @@
+<diagram program="umletino" version="14.4.0-SNAPSHOT"><zoom_level>10</zoom_level><help_text>&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;1125&lt;/x&gt;&lt;y&gt;860&lt;/y&gt;&lt;w&gt;70&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;30;10;30;40;50;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;595&lt;/x&gt;&lt;y&gt;770&lt;/y&gt;&lt;w&gt;570&lt;/w&gt;&lt;h&gt;230&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;sendPipeHandler
+&amp;lt;IpcPipe.h&amp;gt;
+--
+- myFilfo_: fifoHandler
+- myToolBox_: handyFunctions*
+- myFileHandler_: Reader
+- pipeFile_: std::fstream
+- pipeName_: std::string
+- mySigHandler_: SigHandler
+--
++ sendPipeHandler(toolBox, pipeName, filepath: handyFunctions*, const std::string&amp;amp;, const std::string&amp;amp;)
++ ~sendPipeHandler
++ connect(): void
++ sendData(data, data_size_bytes: void*, size_t): void
++ transferHeader(): size_t
++ transferData(): size_t&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;570&lt;/x&gt;&lt;y&gt;770&lt;/y&gt;&lt;w&gt;570&lt;/w&gt;&lt;h&gt;230&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;sendPipeHandler
+&amp;lt;IpcPipe.h&amp;gt;
+--
+- myFilfo_: fifoHandler
+- myToolBox_: handyFunctions*
+- myFileHandler_: Reader
+- pipeFile_: std::fstream
+- pipeName_: std::string
+- mySigHandler_: SigHandler
+--
++ sendPipeHandler(toolBox, pipeName, filepath: handyFunctions*, const std::string&amp;amp;, const std::string&amp;amp;)
++ ~sendPipeHandler
++ connect(): void
++ sendData(data, data_size_bytes: void*, size_t): void
++ transferHeader(): size_t
++ transferData(): size_t&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;1125&lt;/x&gt;&lt;y&gt;832&lt;/y&gt;&lt;w&gt;90&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;70;10&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;1125&lt;/x&gt;&lt;y&gt;832&lt;/y&gt;&lt;w&gt;90&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;70;10&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;1125&lt;/x&gt;&lt;y&gt;832&lt;/y&gt;&lt;w&gt;90&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;70;10&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;1100&lt;/x&gt;&lt;y&gt;190&lt;/y&gt;&lt;w&gt;110&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;90;10&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;1125&lt;/x&gt;&lt;y&gt;846&lt;/y&gt;&lt;w&gt;90&lt;/w&gt;&lt;h&gt;30&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;70;10&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;915&lt;/x&gt;&lt;y&gt;310&lt;/y&gt;&lt;w&gt;30&lt;/w&gt;&lt;h&gt;270&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;250&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;519&lt;/x&gt;&lt;y&gt;632&lt;/y&gt;&lt;w&gt;430&lt;/w&gt;&lt;h&gt;220&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;410;200;10;190;10;10&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;915&lt;/x&gt;&lt;y&gt;310&lt;/y&gt;&lt;w&gt;30&lt;/w&gt;&lt;h&gt;270&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;250&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;330&lt;/x&gt;&lt;y&gt;490&lt;/y&gt;&lt;w&gt;210&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;10;10;30;190;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;460&lt;/x&gt;&lt;y&gt;180&lt;/y&gt;&lt;w&gt;90&lt;/w&gt;&lt;h&gt;50&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=-
+m1=*
+m2=1
+&amp;lt; use&lt;/panel_attributes&gt;&lt;additional_attributes&gt;10;20;70;20&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;370&lt;/x&gt;&lt;y&gt;390&lt;/y&gt;&lt;w&gt;100&lt;/w&gt;&lt;h&gt;150&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;protocolList
+(enum class)
+&amp;lt;IpcCopyfile.h&amp;gt;
+--
+NONE
+QUEUE
+PIPE
+SHM
+HELP
+ERROR&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;160&lt;/x&gt;&lt;y&gt;760&lt;/y&gt;&lt;w&gt;200&lt;/w&gt;&lt;h&gt;60&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;180;10;10;40&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;UMLClass&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;0&lt;/x&gt;&lt;y&gt;800&lt;/y&gt;&lt;w&gt;340&lt;/w&gt;&lt;h&gt;110&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;Writer
+&amp;lt;Tools.h&amp;gt;
+--
+
+--
++ Writer(filepath, toolBox: const std::string&amp;amp;, handyFunctions*)
++ ~Writer()
++ cleanInCaseOfThrow(): void&lt;/panel_attributes&gt;&lt;additional_attributes&gt;&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;110&lt;/x&gt;&lt;y&gt;410&lt;/y&gt;&lt;w&gt;150&lt;/w&gt;&lt;h&gt;160&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;130;10;130;120;10;120;10;140&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;120&lt;/x&gt;&lt;y&gt;410&lt;/y&gt;&lt;w&gt;140&lt;/w&gt;&lt;h&gt;100&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;120;10;120;80;10;80&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;120&lt;/x&gt;&lt;y&gt;410&lt;/y&gt;&lt;w&gt;140&lt;/w&gt;&lt;h&gt;100&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;120;10;120;80;10;80&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;&lt;diagram program="umletino" version="14.4.0-SNAPSHOT"&gt;&lt;zoom_level&gt;10&lt;/zoom_level&gt;&lt;element&gt;&lt;id&gt;Relation&lt;/id&gt;&lt;coordinates&gt;&lt;x&gt;120&lt;/x&gt;&lt;y&gt;410&lt;/y&gt;&lt;w&gt;140&lt;/w&gt;&lt;h&gt;100&lt;/h&gt;&lt;/coordinates&gt;&lt;panel_attributes&gt;lt=&amp;lt;&amp;lt;-&lt;/panel_attributes&gt;&lt;additional_attributes&gt;120;10;120;80;10;80&lt;/additional_attributes&gt;&lt;/element&gt;&lt;/diagram&gt;Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>80</x><y>0</y><w>400</w><h>320</h></coordinates><panel_attributes>handyFunctions
+&lt;Tools.h&gt;
+--
+# key: size_t = 151563468
+# defaultBufferSize: size_t = 4096
+# maxAttempt_: int = 30
+# lastChar_ size_t = 0
+# wheel_ std::string = "|/-\\"
+# last_update_: time_point = now() - milliseconds(60)
+--
++ getDefaultBufferSize(): size_t
++ getKey(): size_t
++ getMaxAttempt(): int
++ checkFilePath(in &amp;filepath: const std::string): void
++ checkIfFileExists(in &amp;filepath: const std::string): bool
++ returnFileSize(in &amp;filepath: const std::string): size_t
++ enoughSpaceAvailable(in fileSize: const size_t): bool
++ printInstructions(): void
++ updatePrintingElements(in info, forcePrint: std::string, bool = false): void
++ nap(in timeInMs: int): void
++ getTime(in ts: tinespec&amp;): void
++ printFileSize(in fileSize: size_t): void
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1330</x><y>350</y><w>100</w><h>30</h></coordinates><panel_attributes>std::runtime_error</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1250</x><y>400</y><w>100</w><h>30</h></coordinates><panel_attributes>file_exception</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1250</x><y>440</y><w>100</w><h>30</h></coordinates><panel_attributes>ipc_exception</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1320</x><y>480</y><w>130</w><h>30</h></coordinates><panel_attributes>arguments_exception</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1410</x><y>440</y><w>110</w><h>30</h></coordinates><panel_attributes>system_exception</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1410</x><y>400</y><w>100</w><h>30</h></coordinates><panel_attributes>time_exception</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1340</x><y>370</y><w>60</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>40;10;40;30;10;40</additional_attributes></element><element><id>Relation</id><coordinates><x>1340</x><y>370</y><w>60</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>40;10;40;80;10;90</additional_attributes></element><element><id>Relation</id><coordinates><x>1370</x><y>370</y><w>30</w><h>130</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;110</additional_attributes></element><element><id>Relation</id><coordinates><x>1370</x><y>370</y><w>60</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;30;40;40</additional_attributes></element><element><id>Relation</id><coordinates><x>1370</x><y>370</y><w>60</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;80;40;90</additional_attributes></element><element><id>UMLClass</id><coordinates><x>170</x><y>340</y><w>370</w><h>160</h></coordinates><panel_attributes>fileHandler
+&lt;Tools.h&gt;
+--
+# file_: std::fstream
+# filepath_: std::string
+# myToolBox: handyFunctions*
+--
++ fileHandler(filepath, toolBox: const std::string&amp;, handyFunctions*)
++ readFile(buffer, maxSizeToRead: void*, size_t): size_t
++ writeFile(buffer, sizeToWrite: void*, size_t): void
++ fileSize(): size_t</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>530</y><w>340</w><h>110</h></coordinates><panel_attributes>Writer
+&lt;Tools.h&gt;
+--
+
+--
++ Writer(filepath, toolBox: const std::string&amp;, handyFunctions*)
++ ~Writer()
++ cleanInCaseOfThrow(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>350</x><y>530</y><w>340</w><h>110</h></coordinates><panel_attributes>Reader
+&lt;Tools.h&gt;
+--
+
+--
++ Reader(filepath, toolBox: const std::string&amp;, handyFunctions*)
++ ~Reader()</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>160</x><y>490</y><w>200</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>180;10;180;30;10;40</additional_attributes></element><element><id>Relation</id><coordinates><x>330</x><y>490</y><w>210</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;30;190;40</additional_attributes></element><element><id>UMLClass</id><coordinates><x>790</x><y>560</y><w>290</w><h>90</h></coordinates><panel_attributes>/ipcHandler/
+&lt;Tools.h&gt;
+--
+--
++ connect(): void = 0;
++ transferHeader(): size_t = 0;
++ transferData(buffer: std::vector&lt;char&gt;&amp;): size_t = 0
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1640</x><y>1030</y><w>350</w><h>170</h></coordinates><panel_attributes>Header
+&lt;Tools.h&gt;
+--
+# headerVector: std::vector&lt;size_t&gt;
+# myToolBox_: handyFunctions*
+# key_: size_t;
+--
++ Header(key, fileSize, toolbox: size_t, size_t, handyFunctions*)
++ Header(key, toolbox: size_t, handyFunctions*)
++ getData(): void
++ getKey(): size_t
++ getFileSize(): size_t</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1550</x><y>360</y><w>100</w><h>150</h></coordinates><panel_attributes>protocolList
+(enum class)
+&lt;IpcCopyfile.h&gt;
+--
+NONE
+QUEUE
+PIPE
+SHM
+HELP
+ERROR</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>981</x><y>0</y><w>100</w><h>90</h></coordinates><panel_attributes>program
+(enum class)
+&lt;IpcCopyfile.h&gt;
+--
+SENDER
+RECEIVER</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1190</x><y>40</y><w>470</w><h>280</h></coordinates><panel_attributes>ipcParameters
+&lt;IpcCopyFile.h&gt;
+--
+# protocol_: protocolList
+# filepath_: std::string = ""
+# myToolBox_: handyFunctions*
+# IpcNames_: std::map&lt;protolList, std::string&gt; =
+        {
+            {protocolList::QUEUE, "/QueueIPC"},
+            {protocolList::PIPE, "PipeIPC"},
+            {protocolList::SHM, "/ShmIPC"}
+        };
+--
++ ipcParameters(protocol, filepath, toolBox: protocolList, const char*, handyFunctions*)
++ ipcParameters(argc, argv, toolBox: int, char* const [], handyFunctions*)
++ getProtocol(): protocolList
++ getFilePath(): std::string
++ getIpcNames(): std::map&lt;protolList, std::string&gt;
++ correctingIPCName(ipcName: char*): std::string
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>540</x><y>120</y><w>570</w><h>200</h></coordinates><panel_attributes>copyFileThroughIPC
+&lt;IpcCopyFile.h&gt;
+--
+# myToolBox_: handyFunctions*
+# myParameters_: ipcParameters
+# myIpcHandler_: std::shared_ptr&lt;ipcHandler&gt;
+# currentBufferSize_: size_t
+# buffer_: std::vector&lt;char&gt;
+# myTypeOfProgram_: program
+# fileSize: size_t
+--
++ CopyFileThroughIPC(argc, argv, toolbox, whichProgram: int, char* const [], handyFunctions*, program)
++ initSharedPtr(): void
++ launch(): int
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>470</x><y>180</y><w>90</w><h>50</h></coordinates><panel_attributes>lt=-
+m1=*
+m2=1
+&lt; use</panel_attributes><additional_attributes>10;20;70;20</additional_attributes></element><element><id>Relation</id><coordinates><x>1100</x><y>190</y><w>110</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;90;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1017</x><y>80</y><w>30</w><h>60</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;40;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1590</x><y>310</y><w>30</w><h>70</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>915</x><y>310</y><w>30</w><h>270</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;250</additional_attributes></element><element><id>UMLClass</id><coordinates><x>1640</x><y>830</y><w>210</w><h>130</h></coordinates><panel_attributes>fifoHandler
+&lt;IpcPipe.h&gt;
+--
+- myToolBox_: handyFunctions*
+- pipeName_: std::string
+--
++ fifoHandler(toolBox, pipeName: handyFunctions*, const std::string&amp;)
++ ~fifoHandler()
++ createFifo(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1640</x><y>670</y><w>290</w><h>110</h></coordinates><panel_attributes>SigHandler
+&lt;IpcPipe.h&gt;
+--
+# sa: sigaction
+# old_sa: sigaction
+--
++ SigHandler(SIGNUM, sig_handler: int, void(*)(int))
++ ~SigHandler()</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1030</x><y>770</y><w>570</w><h>230</h></coordinates><panel_attributes>sendPipeHandler
+&lt;IpcPipe.h&gt;
+--
+- myFilfo_: fifoHandler
+- myToolBox_: handyFunctions*
+- myFileHandler_: Reader
+- pipeFile_: std::fstream
+- pipeName_: std::string
+- mySigHandler_: SigHandler
+--
++ sendPipeHandler(toolBox, pipeName, filepath: handyFunctions*, const std::string&amp;, const std::string&amp;)
++ ~sendPipeHandler
++ connect(): void
++ sendData(data, data_size_bytes: void*, size_t): void
++ transferHeader(): size_t
++ transferData(): size_t</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>519</x><y>632</y><w>530</w><h>220</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>510;200;10;200;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1555</x><y>707</y><w>110</w><h>80</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;60;10;10;90;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>1035</x><y>1011</y><w>560</w><h>220</h></coordinates><panel_attributes>receivePipeHandler
+&lt;IpcPipe.h&gt;
+--
+- myFilfo_: fifoHandler
+- myToolBox_: handyFunctions*
+- myFileHandler_: Writer
+- pipeFile_: std::fstream
+- pipeName_: std::string
+--
++ sendPipeHandler(toolBox, pipeName, filepath: handyFunctions*, const std::string&amp;, const std::string&amp;)
++ ~sendPipeHandler
++ connect(): void
++ receiveData(data, data_size_bytes: void*, size_t): void
++ transferHeader(): size_t
++ transferData(): size_t</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1590</x><y>890</y><w>70</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;50;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1580</x><y>1120</y><w>80</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;60;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1580</x><y>890</y><w>80</w><h>260</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;240;50;240;50;10;60;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1590</x><y>890</y><w>70</w><h>260</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;40;10;40;240;50;240</additional_attributes></element><element><id>Relation</id><coordinates><x>148</x><y>630</y><w>910</w><h>480</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>890;460;10;460;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>910</x><y>640</y><w>140</w><h>170</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;150;120;150</additional_attributes></element><element><id>Relation</id><coordinates><x>910</x><y>640</y><w>150</w><h>410</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;390;130;390</additional_attributes></element></diagram>
