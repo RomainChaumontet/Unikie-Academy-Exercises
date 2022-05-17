@@ -3,18 +3,23 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "../src/lib/IpcCopyFile.h"
-#include "../src/lib/IpcQueue.h"
 #include <deque>
 #include <vector>
 #include <map>
 #include <mqueue.h>
 #include <fstream>
 #include <pthread.h>
+#include <time.h>
+#include <stdio.h> 
+#include <stdlib.h>
+#include <limits>
+#include <future>
 
 struct inputLineOpt{
   protocolList protocol;
   const char* filepath;
   std::vector<const char*> arguments;
+  const char* ipcPath = "";
 };
 
 bool compareFiles(const std::string& fileName1, const std::string& fileName2); // https://stackoverflow.com/questions/6163611/compare-two-files
@@ -22,9 +27,6 @@ bool compareFiles(const std::string& fileName1, const std::string& fileName2); /
 std::vector<char> getRandomData();
 
 
-//Wrap function into thread to be able to test.
-void *strip_void_star(void *arg);
-void start_pthread(pthread_t *thread, void (*myFunction)(void));
 
 //This class is just here to fake Command Line Opt
 class FakeCmdLineOpt
@@ -107,17 +109,20 @@ class CreateRandomFile
     int blockSize_;
   
   public:
-    CreateRandomFile(const std::string &file_name, int nbOfBlocks, int blockSize): file_name_(file_name), nbOfBlocks_(nbOfBlocks), blockSize_(blockSize)
+    CreateRandomFile(const std::string &file_name, int nbOfBlocks, int blockSize, bool random = true): file_name_(file_name), nbOfBlocks_(nbOfBlocks), blockSize_(blockSize)
     {
       char buffer [100];
       snprintf(buffer, 100, "/bin/dd if=/dev/urandom of=%s bs=%dM count=%d status=none", file_name_.c_str(), blockSize_, nbOfBlocks_);
       std::system(const_cast<char*>(buffer)) ;
       
-      std::vector<char> data = getRandomData();
+      if (random)
+      {
+        std::vector<char> data = getRandomData();
 
-      std::fstream file;
-      file.open(file_name.c_str(), std::ios::binary | std::fstream::in | std::fstream::out | std::fstream::app);
-      file.write(data.data(), data.size());
+        std::fstream file;
+        file.open(file_name, std::ios::binary | std::fstream::in | std::fstream::out | std::fstream::app);
+        file.write(data.data(), data.size());
+      }
 
     }
 
@@ -130,75 +135,16 @@ class CreateRandomFile
 };
 
 
-class FileManipulationClassReader : public Reader
+
+class MockToolBox : public handyFunctions
 {
     public:
-      FileManipulationClassReader(toolBox* myToolBox)
-      {
-        toolBox_ = myToolBox;
-      };
-      void modifyBufferToWrite(const std::string &data)
-      {
-          bufferSize_ = data.size();
-          buffer_ = std::vector<char> (data.begin(), data.end());
-          return;
-      }
-      void modifyBufferToWrite(const std::vector<char> &data)
-      {
-          bufferSize_ = data.size();
-          buffer_ = data;
-          return;
-      }
-      
-      std::string bufferForReading() const
-      {
-          return std::string (buffer_.begin(), buffer_.end());
-      }
-
-      std::vector<char> getBufferRead() const
-      {
-          return buffer_;
-      }
-
-      void syncIPCAndBuffer(){}
-
-      void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}
-
+        MOCK_METHOD(int, getMaxAttempt, (), (const));
+        MOCK_METHOD(bool, enoughSpaceAvailable, (size_t), (const));
+        MOCK_METHOD(bool, checkIfFileExists, (const std::string &filepath), (const));
+        MOCK_METHOD(size_t, returnFileSize, (const std::string &filepath), (const));
+        MOCK_METHOD(void, updatePrintingElements, (std::string info, bool forcePrint), (override));
+        MOCK_METHOD(void, nap, (int), (const, override));
 };
 
-class FileManipulationClassWriter : public Writer
-{
-  public:
-
-        FileManipulationClassWriter(toolBox* myToolBox)
-        {
-          toolBox_ = myToolBox;
-        };
-        void modifyBufferToWrite(const std::string &data)
-        {
-            bufferSize_ = data.size();
-            std::vector<char>(data.size()).swap(buffer_);
-            buffer_ = std::vector<char> (data.begin(), data.end());
-            return;
-        }
-        void modifyBufferToWrite(const std::vector<char> &data)
-        {
-            bufferSize_ = data.size();
-            buffer_ = data;
-            return;
-        }
-
-        std::string bufferForReading() const
-        {
-            return std::string (buffer_.begin(), buffer_.end());
-        }
-
-        std::vector<char> getBufferRead() const
-        {
-            return buffer_;
-        }
-        
-        void syncIPCAndBuffer(){}
-        void syncIPCAndBuffer(void *data, size_t &data_size_bytes){}
-};
-#endif /*GTEST_IPC_H */
+#endif

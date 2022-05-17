@@ -24,8 +24,8 @@ class QueueSendFile : public Queue, public Reader
 {
     public:
         ~QueueSendFile();
-        QueueSendFile(int maxAttempt);
-        QueueSendFile():QueueSendFile(30){};
+        QueueSendFile(int maxAttempt, toolBox* myToolBox);
+        QueueSendFile(toolBox* myToolBox):QueueSendFile(30, myToolBox){};
         void syncIPCAndBuffer(void *data, size_t &data_size_bytes);
         void syncIPCAndBuffer(){return syncIPCAndBuffer(buffer_.data(), bufferSize_);};
 
@@ -34,8 +34,8 @@ class QueueReceiveFile : public Queue, public Writer
 {
     public:
         ~QueueReceiveFile();
-        QueueReceiveFile(int maxAttempt);
-        QueueReceiveFile():QueueReceiveFile(30){};
+        QueueReceiveFile(int maxAttempt, toolBox* myToolBox);
+        QueueReceiveFile(toolBox* myToolBox):QueueReceiveFile(30, myToolBox){};
         void syncIPCAndBuffer(void *data, size_t &data_size_bytes);
         void syncIPCAndBuffer()
         {

@@ -26,11 +26,14 @@ using ::testing::EndsWith;
 
 std::vector<char> randomData = getRandomData();
 
-FileManipulationClassReader getSomeInfo;
+
+toolBox myPipeToolBox;
+FileManipulationClassReader getSomeInfo{&myPipeToolBox};
 
 class PipeTestSendFile : public PipeSendFile
 {
     public:
+        PipeTestSendFile(toolBox* myToolBox):PipeSendFile(myToolBox){};
         void modifyBuffer(std::vector<char> &input_pipe)
         {
             bufferSize_ = input_pipe.size();
@@ -49,8 +52,8 @@ class PipeTestSendFile : public PipeSendFile
 class PipeTestReceiveFile : public PipeReceiveFile
 {
     public:
-        PipeTestReceiveFile(int maxAttempt):PipeReceiveFile(maxAttempt){};
-        PipeTestReceiveFile():PipeTestReceiveFile(30){};
+        PipeTestReceiveFile(int maxAttempt,toolBox* myToolBox):PipeReceiveFile(maxAttempt, myToolBox){};
+        PipeTestReceiveFile(toolBox* myToolBox):PipeTestReceiveFile(30, myToolBox){};
         std::vector<char> getBuffer()
         {
             buffer_.resize(bufferSize_);
@@ -63,12 +66,12 @@ class PipeTestReceiveFile : public PipeReceiveFile
 ///////////////////// Test PipeSendFiles Constructor and Destructor //////////////////////
 void ThreadPipeSendFileConstructor(void)
 {
-    ASSERT_NO_THROW(PipeSendFile myPipe);
+    ASSERT_NO_THROW(PipeSendFile myPipe{&myPipeToolBox});
 }
 
 void ThreadPipeSendFileonstructor2(void)
 {
-    while(!checkIfFileExists("CopyDataThroughPipe"))
+    while(!myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
 
@@ -86,14 +89,14 @@ TEST(PipeSendFile,ConstructorAndDestructor)
     start_pthread(&mThreadID2,ThreadPipeSendFileonstructor2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
 ///////////////////////// Test PipeSendFiles only program launched ///////////////
 TEST(NoOtherProgram,PipeSendFile)
 {
-    EXPECT_THROW(PipeSendFile myPipe(1), ipc_exception);
+    EXPECT_THROW(PipeSendFile myPipe(1,&myPipeToolBox), ipc_exception);
 }
 
 
@@ -101,7 +104,7 @@ TEST(NoOtherProgram,PipeSendFile)
 
 void ThreadPipeSendFilesyncIPCAndBufferTextData(void)
 {
-    PipeTestSendFile myPipe;
+    PipeTestSendFile myPipe(&myPipeToolBox);
     std::string message = "This is a test.";
     myPipe.modifyBuffer(message);
     ASSERT_NO_THROW(myPipe.syncIPCAndBuffer());
@@ -110,7 +113,7 @@ void ThreadPipeSendFilesyncIPCAndBufferTextData(void)
 
 void ThreadPipeSendFilesyncIPCAndBufferTextData2(void)
 {
-    while(!checkIfFileExists("CopyDataThroughPipe"))
+    while(!myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
@@ -137,7 +140,7 @@ TEST(PipeSendFile, syncIPCAndBufferTextData)
     start_pthread(&mThreadID2,ThreadPipeSendFilesyncIPCAndBufferTextData2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
@@ -145,7 +148,7 @@ TEST(PipeSendFile, syncIPCAndBufferTextData)
 
 void ThreadPipeSendFilesyncIPCAndBufferBinaryData(void)
 {
-    PipeTestSendFile myPipe;
+    PipeTestSendFile myPipe(&myPipeToolBox);
     myPipe.modifyBuffer(randomData);
     ASSERT_NO_THROW(myPipe.syncIPCAndBuffer());
 
@@ -153,7 +156,7 @@ void ThreadPipeSendFilesyncIPCAndBufferBinaryData(void)
 
 void ThreadPipeSendFilesyncIPCAndBufferBinaryData2(void)
 {
-    while(!checkIfFileExists("CopyDataThroughPipe"))
+    while(!myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
@@ -177,14 +180,14 @@ TEST(PipeSendFile, syncIPCAndBufferBinaryData)
     start_pthread(&mThreadID2,ThreadPipeSendFilesyncIPCAndBufferBinaryData2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 ///////////////////// Test PipeSendFiles sending multiple binary data //////////////////////
 
 void ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData(void)
 {
-    PipeTestSendFile myPipe;
+    PipeTestSendFile myPipe{&myPipeToolBox};
     myPipe.modifyBuffer(randomData);
     for (int i=0; i<10; i++)
         ASSERT_NO_THROW(myPipe.syncIPCAndBuffer());
@@ -193,7 +196,7 @@ void ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData(void)
 
 void ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData2(void)
 {
-    while(!checkIfFileExists("CopyDataThroughPipe"))
+    while(!myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
@@ -221,23 +224,23 @@ TEST(PipeSendFile, syncIPCAndBufferMultipleBinaryData)
     start_pthread(&mThreadID2,ThreadPipeSendFilesyncIPCAndBufferMultipleBinaryData2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 ///////////////////// Test PipeSendFiles read and send a file //////////////////////
 void ThreadReadAndSend(void)
 {
-    PipeTestSendFile myPipe;
+    PipeTestSendFile myPipe(&myPipeToolBox);
     ASSERT_NO_THROW(myPipe.syncFileWithIPC("input_pipe.dat"));
 }
 
 void ThreadReadAndSend2(void)
 {
-    while(!checkIfFileExists("CopyDataThroughPipe"))
+    while(!myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"))
     {
         usleep(50);
     }
-    FileManipulationClassWriter Receiver;
+    FileManipulationClassWriter Receiver{&myPipeToolBox};
     
     Receiver.openFile("output_pipe.dat");
     std::fstream connect2Pipe;
@@ -281,7 +284,7 @@ TEST(PipeSendFile, ReadAndSend)
     start_pthread(&mThreadID4,ThreadReadAndSend2);
     ::pthread_join(mThreadID3, nullptr);
     ::pthread_join(mThreadID4, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
     ASSERT_THAT(compareFiles("input_pipe.dat","output_pipe.dat"), IsTrue());
     remove("output_pipe.dat");
 }
@@ -290,7 +293,7 @@ TEST(PipeSendFile, ReadAndSend)
 ///////////////////// Test PipeReceiveFiles Constructor and Destructor //////////////////////
 void ThreadPipeReceiveFileConstructor(void)
 {
-    ASSERT_NO_THROW(PipeReceiveFile myPipe);
+    ASSERT_NO_THROW(PipeReceiveFile myPipe{&myPipeToolBox});
 }
 
 void ThreadPipeReceiveFileonstructor2(void)
@@ -316,18 +319,18 @@ TEST(PipeReceiveFile,ConstructorAndDestructor)
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
     EXPECT_THAT(stdcout.str(), StartsWith("Waiting for ipc_sendfile.\n"));
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 ///////////////////////// Test PipeReceiveFiles only program launched ///////////////
 TEST(NoOtherProgram,PipeReceiveFile)
 {
-    EXPECT_THROW(PipeReceiveFile myPipe(1), ipc_exception);
+    EXPECT_THROW(PipeReceiveFile myPipe(1,&myPipeToolBox), ipc_exception);
 }
 
 ///////////////////// Test PipeReceiveFiles Receiving Text Data//////////////////////
 void ThreadPipeReceiveText(void)
 {
-    PipeTestReceiveFile myPipe;
+    PipeTestReceiveFile myPipe{&myPipeToolBox};
     myPipe.getBuffer();//resizing buffer
     myPipe.syncIPCAndBuffer();
     std::vector<char> output;
@@ -356,14 +359,14 @@ TEST(PipeReceiveFile,PipeReceiveText)
     start_pthread(&mThreadID2,ThreadPipeReceiveText2);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
 ///////////////////// Test PipeReceiveFiles Receiving Binary Data//////////////////////
 void ThreadPipeReceiveBinary(void)
 {
-    PipeTestReceiveFile myPipe;
+    PipeTestReceiveFile myPipe{&myPipeToolBox};
     myPipe.getBuffer();
     myPipe.syncIPCAndBuffer();
     std::vector<char> output = myPipe.getBuffer();
@@ -391,7 +394,7 @@ TEST(PipeReceiveFile,PipeReceiveBinary)
     start_pthread(&mThreadID1,ThreadPipeReceiveBinary);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
 }
 
 
@@ -400,7 +403,7 @@ void ThreadPipeReceiveReceiveAndWrite(void)
 {
     ASSERT_NO_THROW(
         {
-            PipeTestReceiveFile myPipe{2};
+            PipeTestReceiveFile myPipe(2, &myPipeToolBox);
             myPipe.syncFileWithIPC("output_pipe.dat");
         });
 }
@@ -408,7 +411,7 @@ void ThreadPipeReceiveReceiveAndWrite(void)
 void ThreadPipeReceiveReceiveAndWrite2(void)
 {
     ASSERT_THAT(open("CopyDataThroughPipe",O_RDONLY), Eq(-1));
-    FileManipulationClassReader myReader;
+    FileManipulationClassReader myReader{&myPipeToolBox};
     std::fstream create2Pipe;
 
     mkfifo("CopyDataThroughPipe",S_IRWXU | S_IRWXG);
@@ -416,10 +419,10 @@ void ThreadPipeReceiveReceiveAndWrite2(void)
     create2Pipe.open("CopyDataThroughPipe",std::ios::out | std::ios::binary);
     ASSERT_THAT(create2Pipe.is_open(), IsTrue);
 
-    int filesize = returnFileSize("input_pipe.dat");
+    int filesize = myPipeToolBox.returnFileSize("input_pipe.dat");
     int datasent = 0;
     myReader.openFile("input_pipe.dat");
-    Header header("input_pipe.dat",myReader.getDefaultBufferSize());
+    Header header("input_pipe.dat",myReader.getDefaultBufferSize(),&myPipeToolBox);
     create2Pipe.write(reinterpret_cast<char*>(header.getHeader().data()), myReader.getDefaultBufferSize());
 
     while (datasent < filesize)
@@ -445,7 +448,7 @@ TEST(PipeReceiveFile,PipeReceiveReceiveAndWrite)
     start_pthread(&mThreadID1,ThreadPipeReceiveReceiveAndWrite);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
     EXPECT_THAT(compareFiles("input_pipe.dat","output_pipe.dat"), IsTrue);
     remove("output_pipe.dat");
 }
@@ -454,13 +457,13 @@ TEST(PipeReceiveFile,PipeReceiveReceiveAndWrite)
 ///////////////////// Test PipeReceiveFile and PipeSendFile//////////////////////
 void ThreadPipeReceiveFile(void)
 {
-    PipeReceiveFile myReceiver;
+    PipeReceiveFile myReceiver(&myPipeToolBox);
     myReceiver.syncFileWithIPC("output_pipe.dat");
 }
 
 void ThreadPipeSendFile(void)
 {
-    PipeSendFile mySender;
+    PipeSendFile mySender{&myPipeToolBox};
     mySender.syncFileWithIPC("input_pipe.dat");
 
 }
@@ -475,7 +478,7 @@ TEST(PipeTest,FullImplementation)
     start_pthread(&mThreadID1,ThreadPipeReceiveFile);
     ::pthread_join(mThreadID1, nullptr);
     ::pthread_join(mThreadID2, nullptr); 
-    ASSERT_THAT(checkIfFileExists("CopyDataThroughPipe"),IsFalse());
+    ASSERT_THAT(myPipeToolBox.checkIfFileExists("CopyDataThroughPipe"),IsFalse());
     EXPECT_THAT(compareFiles("input_pipe.dat","output_pipe.dat"), IsTrue);
     remove("output_pipe.dat");
 }
@@ -486,7 +489,7 @@ TEST(PipeTest,FullImplementation)
 
 void ThreadPipeReceiveFileKilledReceive(void)
 {
-    PipeTestReceiveFile myReceiver(5);
+    PipeTestReceiveFile myReceiver(5,&myPipeToolBox);
     myReceiver.getBuffer();
     myReceiver.receiveHeader();
     myReceiver.syncIPCAndBuffer(); //just sync one time and after leave.
@@ -494,7 +497,7 @@ void ThreadPipeReceiveFileKilledReceive(void)
 
 void ThreadPipeReceiveFileKilledSend(void)
 {
-    PipeSendFile mySender(3);
+    PipeSendFile mySender(3,&myPipeToolBox);
     ASSERT_THROW(mySender.syncFileWithIPC("input_pipe.dat"), ipc_exception);
 }
 
@@ -515,19 +518,21 @@ TEST(KillingAProgram,PipeReceiveFileKilled)
 
 void ThreadPipeSendFileKilledReceive(void)
 {
-    PipeReceiveFile myReceiver(3);
-    ASSERT_THROW(myReceiver.syncFileWithIPC("output_pipe.dat"), ipc_exception);
+    PipeReceiveFile myReceiver(3,&myPipeToolBox);
+    ASSERT_THROW(myReceiver.syncFileWithIPC("input_pipe2.dat"), ipc_exception);
+
 }
 
 void ThreadPipeSendFileKilledSend(void)
 {
     srand (time(NULL));
-    PipeSendFile mySender(3);
+    PipeSendFile mySender(3,&myPipeToolBox);
     std::string filepath = "input_pipe.dat";
     mySender.openFile(filepath);
     size_t headerSize = mySender.getDefaultBufferSize();
-    Header header(filepath, headerSize);
+    Header header(filepath, headerSize,&myPipeToolBox);
     mySender.syncIPCAndBuffer(header.getHeader().data(), headerSize);
+    std::cout << "header sent" << std::endl;
     int numberOfMessage = rand() % 20; //will end after a random number of message
     for (int i = 0; i<numberOfMessage; i++)
     {
@@ -542,6 +547,7 @@ TEST(KillingAProgram,PipeSendFileKilled)
     CreateRandomFile Randomfile("input_pipe.dat",1,1);
     pthread_t mThreadID1, mThreadID2;
     start_pthread(&mThreadID1,ThreadPipeSendFileKilledReceive);
+    usleep(50);
     start_pthread(&mThreadID2,ThreadPipeSendFileKilledSend);
     ::pthread_join(mThreadID2, nullptr); 
     ::pthread_join(mThreadID1, nullptr);
@@ -554,14 +560,14 @@ TEST(KillingAProgram,PipeSendFileKilled)
 void ThreadIPCUsedByAnotherProgramReceive(void)
 {
     
-    PipeReceiveFile myReceiver;
+    PipeReceiveFile myReceiver{&myPipeToolBox};
     ASSERT_THROW(myReceiver.syncFileWithIPC("output_pipe.dat"), ipc_exception);
 }
 
 void ThreadIPCUsedByAnotherProgramSend(void)
 {
     ASSERT_THROW({
-        PipeSendFile mySender;
+        PipeSendFile mySender(&myPipeToolBox);
         mySender.syncFileWithIPC("input_pipe.dat");
     },ipc_exception);
 }
@@ -586,13 +592,13 @@ TEST(IPCUsedByAnotherProgram,PipeDoubleSender)
 
 void ThreadIPCUsedByAnotherProgram2Receive(void)
 {
-    PipeReceiveFile myReceiver;
+    PipeReceiveFile myReceiver{&myPipeToolBox};
     ASSERT_THROW(myReceiver.syncFileWithIPC("output_pipe.dat"), ipc_exception);
 }
 
 void ThreadIPCUsedByAnotherProgram1Send(void)
 {
-    PipeSendFile mySender;
+    PipeSendFile mySender{&myPipeToolBox};
     mySender.syncFileWithIPC("input_pipe.dat");
 }
 

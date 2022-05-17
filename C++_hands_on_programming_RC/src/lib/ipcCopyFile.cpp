@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <signal.h>
+#include <string.h>
 #include "../lib/IpcQueue.h"
 #include "../lib/IpcPipe.h"
 #include "../lib/IpcShm.h"
@@ -11,8 +12,9 @@
 #include <chrono>
 #include <thread>
 #include <string>
+#include <sys/statvfs.h>
 
-void checkFilePath(const std::string &filepath)
+void toolBox::checkFilePath(const std::string &filepath)
 {
     std::string::size_type slashPosition = filepath.rfind('/');
     if (slashPosition == std::string::npos) // no slash in filepath
@@ -35,19 +37,33 @@ void checkFilePath(const std::string &filepath)
     }
 }
 
-bool checkIfFileExists(const std::string &filepath)
+bool toolBox::checkIfFileExists(const std::string &filepath)
 {
     struct stat buffer;
     return (stat(filepath.c_str(), &buffer) == 0);
 }
 
-size_t returnFileSize(const std::string &filepath)
+size_t toolBox::returnFileSize(const std::string &filepath)
 {
     if (checkIfFileExists(filepath) == 0)
         throw file_exception("returnFileSize(). File does not exist.");
     struct stat buffer;
     stat(filepath.c_str(), &buffer);
     return buffer.st_size;
+}
+
+bool toolBox::enoughSpaceAvailable(const size_t fileSize)
+{
+    struct statvfs systemStat;
+    int status = statvfs("/", &systemStat);
+    if(status == -1)
+    {
+        throw std::runtime_error("Error while getting statvfs. Errno:" + std::string(strerror(errno)));
+    }
+    if (fileSize+4096 < systemStat.f_bavail*systemStat.f_bsize)
+        return true;
+    else
+        return false;
 }
 
 struct option long_options[]=
@@ -177,7 +193,7 @@ size_t copyFilethroughIPC::getDefaultBufferSize()
 
 void copyFilethroughIPC::sendHeader(const std::string &filepath)
 {
-    Header header(filepath, defaultBufferSize_);
+    Header header(filepath, defaultBufferSize_, toolBox_);
     syncIPCAndBuffer(header.getHeader().data(),defaultBufferSize_);
     fileSize_ = header.sizeFile();
 }
@@ -199,7 +215,7 @@ void copyFilethroughIPC::receiveHeader()
 ////////////// Writer class ///////////////////////
 void Writer::openFile(const std::string &filepath)
 {
-    if (checkIfFileExists(filepath))
+    if (toolBox_->checkIfFileExists(filepath))
         std::cout << "The file specified to write in already exists. Data will be erased before proceeding."<< std::endl ;
 
     file_.open(filepath, std::ios::out | std::ios::binary | std::ios::trunc);
@@ -249,7 +265,7 @@ void Writer::syncFileWithIPC(const std::string &filepath)
 
     }
     file_.close();
-    if (fileSize_ != returnFileSize(filepath))
+    if (fileSize_ != toolBox_->returnFileSize(filepath))
     {
         throw ipc_exception("Error, filesize mismatch. Maybe another program uses the IPC. Or the sender crashed.\n");
     }
@@ -259,7 +275,7 @@ void Writer::syncFileWithIPC(const std::string &filepath)
 /////////////////// Reader Class
 void Reader::openFile(const std::string &filepath)
 {
-    if (!checkIfFileExists(filepath))
+    if (!toolBox_->checkIfFileExists(filepath))
     {
         throw file_exception("Error. Trying to open a file for reading which does not exist.");
     }
@@ -308,7 +324,7 @@ void Reader::syncFileWithBuffer()
 void Reader::syncFileWithIPC(const std::string &filepath)
 {
     openFile(filepath);
-    ssize_t fileSize = returnFileSize(filepath);
+    ssize_t fileSize = toolBox_->returnFileSize(filepath);
     ssize_t datasent = 0;
 
     sendHeader(filepath);
@@ -324,7 +340,7 @@ void Reader::syncFileWithIPC(const std::string &filepath)
 
 
 
-int receiverMain(int argc, char* const argv[])
+int ipcRun::receiverMain(int argc, char* const argv[])
 {
     ipcParameters parameters {argc, argv};
     try
@@ -337,7 +353,7 @@ int receiverMain(int argc, char* const argv[])
                 || parameters.getProtocol() == protocolList::PIPE
             )
         {
-            checkFilePath(parameters.getFilePath());
+            toolBox_->checkFilePath(parameters.getFilePath());
         }
 
         switch (parameters.getProtocol())
@@ -383,19 +399,19 @@ int receiverMain(int argc, char* const argv[])
             case protocolList::QUEUE:
             {
         
-                QueueReceiveFile myReceiveFile;
+                QueueReceiveFile myReceiveFile(toolBox_);
                 myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::PIPE:
             {
-                PipeReceiveFile myReceiveFile;
+                PipeReceiveFile myReceiveFile(toolBox_);
                 myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::SHM:
             {
-                ShmReceiveFile myReceiveFile;
+                ShmReceiveFile myReceiveFile(toolBox_);
                 myReceiveFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
@@ -413,21 +429,27 @@ int receiverMain(int argc, char* const argv[])
 }
 
 
-int senderMain(int argc, char* const argv[])
+int ipcRun::senderMain(int argc, char* const argv[])
 {
     try
     {
         ipcParameters parameters {argc, argv};
-        if (
-            (
+        if  (
                 parameters.getProtocol() == protocolList::SHM
                 || parameters.getProtocol() == protocolList::QUEUE
                 || parameters.getProtocol() == protocolList::PIPE
             )
-            && !checkIfFileExists(parameters.getFilePath()))
         {
-            std::cerr << "Error, the file specified does not exist. Abord." << std::endl;
-            return EXIT_FAILURE;
+            if (!toolBox_->checkIfFileExists(parameters.getFilePath()))
+            {
+                std::cerr << "Error, the file specified does not exist. Abord." << std::endl;
+                return EXIT_FAILURE;
+            }
+            if (!toolBox_->enoughSpaceAvailable(toolBox_->returnFileSize(parameters.getFilePath())))
+            {
+                std::cerr << "Error, not enough space on the disk to copy the file."<< std::endl;;
+                return EXIT_FAILURE;
+            }
         }
         switch (parameters.getProtocol())
         {
@@ -470,19 +492,19 @@ int senderMain(int argc, char* const argv[])
             }
             case protocolList::QUEUE:
             {
-                QueueSendFile mySendFile;
+                QueueSendFile mySendFile(toolBox_);
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::PIPE:
             {   
-                PipeSendFile mySendFile;
+                PipeSendFile mySendFile(toolBox_);
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
             case protocolList::SHM:
             {
-                ShmSendFile mySendFile;
+                ShmSendFile mySendFile(toolBox_);
                 mySendFile.syncFileWithIPC(parameters.getFilePath());
                 break;
             }
