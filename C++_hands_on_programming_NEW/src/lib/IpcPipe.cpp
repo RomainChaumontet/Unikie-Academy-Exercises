@@ -52,7 +52,7 @@ SendPipeHandler::~SendPipeHandler()
     pipeFile_.close();
 }
 
-void* TimerThread(void* arg)
+void* ThreadTimer(void* arg)
 {
     ThreadInfo* info = static_cast<ThreadInfo*>(arg);
     int attempt = 0;
@@ -61,18 +61,20 @@ void* TimerThread(void* arg)
         info->toolbox->nap(10);
         info->toolbox->updatePrintingElements("Waiting for ipc_receivefile.");
     }
+    std::cout << " timer out " << std::endl;
     pthread_cancel(info->thread1);
 
     return nullptr;
 }
 
-void* OpenThread(void* arg)
+void* ThreadOpenPipeForWriting(void* arg)
 {
     ThreadInfo* info = static_cast<ThreadInfo*>(arg);
     info->pipeFilePtr->open(info->pipeName,std::ios::out | std::ios::binary);
     pthread_cancel(info->timer);
     return nullptr;
 }
+
 
 void SendPipeHandler::connect()
 {
@@ -82,8 +84,8 @@ void SendPipeHandler::connect()
     info.toolbox = myToolBox_;
     std::cout << "Connecting to the pipe " << pipeName_ << std::endl;
 
-    ::pthread_create(&info.thread1, nullptr,&OpenThread, (void*)&info);
-    ::pthread_create(&info.timer, nullptr,&TimerThread, (void*)&info);
+    ::pthread_create(&info.timer, nullptr,&ThreadTimer, (void*)&info);
+    ::pthread_create(&info.thread1, nullptr,&ThreadOpenPipeForWriting, (void*)&info);
     
     ::pthread_join(info.timer, nullptr);
     std::cout << std::endl;
@@ -196,10 +198,36 @@ ReceivePipeHandler::~ReceivePipeHandler()
     unlink(pipeName_.c_str());
 }
 
+void* ThreadOpenPipeForReading(void* arg)
+{
+    ThreadInfo* info = static_cast<ThreadInfo*>(arg);
+    info->pipeFilePtr->open(info->pipeName,std::ios::in | std::ios::binary);
+    pthread_cancel(info->timer);
+    return nullptr;
+}
+
 void ReceivePipeHandler::connect()
 {
+    ThreadInfo info;
+    info.pipeName = pipeName_;
+    info.pipeFilePtr = &pipeFile_;
+    info.toolbox = myToolBox_;
     std::cout << "Connecting to the pipe " << pipeName_ << std::endl;
-    pipeFile_.open(pipeName_, std::ios::in | std::ios::binary);
+
+    ::pthread_create(&info.timer, nullptr,&ThreadTimer, (void*)&info);
+    ::pthread_create(&info.thread1, nullptr,&ThreadOpenPipeForReading, (void*)&info);
+    
+    ::pthread_join(info.timer, nullptr);
+    std::cout << std::endl;
+    void* retval;
+    ::pthread_join(info.thread1, &retval); 
+    if (retval == PTHREAD_CANCELED)
+    {
+        throw ipc_exception("Error, can't connect to the other program.\n" );
+
+    }
+    
+
     if (!pipeFile_.is_open())
     {
         throw ipc_exception(
