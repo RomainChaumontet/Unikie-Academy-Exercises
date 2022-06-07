@@ -317,6 +317,54 @@ TEST(PipeHandler, SenderCrashed)
     remove(ReceiverfileName.c_str());
 }
 
+
+TEST(PipeHandler, SenderCrashedJustBeforeOpeningPipe)
+{
+    HandyFunctions myToolBox1;
+    MockToolBox mockedTB;
+    
+    std::string SenderfileName = "myFileName";
+    std::string ReceiverfileName = "myRFileName";
+    
+    CreateRandomFile myFile(SenderfileName, rand()%20+1, rand()%20+1);
+    ASSERT_THAT(myToolBox1.checkIfFileExists(SenderfileName), IsTrue());
+
+    std::vector<const char*> ReceiverArguments {"--pipe", "--file", "myRFileName"};
+    FakeCmdLineOpt ReceiverFakeOpt(ReceiverArguments.begin(), ReceiverArguments.end());
+    std::vector<char> senderBuffer;
+
+    EXPECT_CALL(mockedTB,checkIfFileExists(A<const std::string&>()))
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(mockedTB,returnFileSize(A<const std::string&>()))
+        .WillRepeatedly(Return(1000));
+    EXPECT_CALL(mockedTB, enoughSpaceAvailable(A<size_t>()))
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(mockedTB,getMaxAttempt())
+        .WillOnce(Return(5))
+        .WillOnce(Return(0));
+
+    ASSERT_THROW(
+    {
+        auto senderThread = std::async(std::launch::async, [&]()
+        {
+            SendPipeHandler Sender(&myToolBox1, "PipeIPC", SenderfileName);
+        });
+        usleep(50);
+        auto receiverThread = std::async(std::launch::async, [&]()
+        {
+            CopyFileThroughIPC Receiver(ReceiverFakeOpt.argc(), ReceiverFakeOpt.argv(), &mockedTB, program::RECEIVER);
+            Receiver.launch();
+        });
+
+        senderThread.get();
+        receiverThread.get();
+    },
+        ipc_exception
+    );
+
+    remove(ReceiverfileName.c_str());
+}
+
 TEST(PipeHandler, ReceiverCrashed)
 {
     HandyFunctions myToolBox1;
